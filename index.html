@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vinicius Soares Brandão | 007 Portfolio</title>
+<title>MI6 CLASSIFIED ACCESS // Vinicius Brandão</title>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
 
 *{
     margin:0;
@@ -15,46 +15,80 @@
 }
 
 body{
-    background: radial-gradient(circle at top, #111 0%, #000 60%);
+    background:#000;
     color:#d6b25e;
-    font-family:'Inter', sans-serif;
+    font-family:'JetBrains Mono', monospace;
     overflow:hidden;
 }
 
-/* GOLD LUXURY GLOW */
-.glow{
+/* ===== BACKGROUND LAYERS ===== */
+
+.bg{
     position:fixed;
-    width:700px;
-    height:700px;
-    background: radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
-    top:-150px;
-    left:-150px;
-    filter: blur(60px);
-    animation: float 10s ease-in-out infinite;
+    width:100%;
+    height:100%;
+    background:
+      radial-gradient(circle at top, rgba(214,178,94,0.08), transparent 40%),
+      radial-gradient(circle at bottom, rgba(214,178,94,0.05), transparent 60%),
+      linear-gradient(180deg, #000, #050505);
+    z-index:0;
 }
 
-.glow2{
+/* scanlines */
+.bg::after{
+    content:"";
+    position:absolute;
+    width:100%;
+    height:100%;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.02),
+        rgba(255,255,255,0.02) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    opacity:0.2;
+}
+
+/* subtle noise */
+.noise{
     position:fixed;
-    width:600px;
-    height:600px;
-    background: radial-gradient(circle, rgba(214,178,94,0.08), transparent 70%);
+    width:100%;
+    height:100%;
+    background:url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity:0.06;
+    z-index:1;
+}
+
+/* floating gold orbs */
+.orb{
+    position:fixed;
+    width:500px;
+    height:500px;
+    background:radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
+    filter:blur(60px);
+    animation:float 10s infinite ease-in-out;
+    z-index:1;
+}
+
+.orb2{
     bottom:-200px;
     right:-200px;
-    filter: blur(80px);
-    animation: float2 12s ease-in-out infinite;
+    animation:float2 12s infinite ease-in-out;
 }
 
 @keyframes float{
     0%,100%{transform:translate(0,0);}
-    50%{transform:translate(60px,40px);}
+    50%{transform:translate(80px,40px);}
 }
 
 @keyframes float2{
     0%,100%{transform:translate(0,0);}
-    50%{transform:translate(-60px,-40px);}
+    50%{transform:translate(-80px,-60px);}
 }
 
-/* CENTER */
+/* ===== MAIN ===== */
+
 .container{
     position:relative;
     z-index:2;
@@ -70,11 +104,10 @@ body{
 /* TITLE */
 h1{
     font-family:'Playfair Display', serif;
-    font-size:3.5rem;
+    font-size:3.2rem;
     letter-spacing:2px;
-    color:#d6b25e;
     opacity:0;
-    animation:fadeIn 1.5s forwards;
+    animation:fadeIn 2s forwards;
 }
 
 h2{
@@ -82,43 +115,71 @@ h2{
     font-weight:300;
     color:#b89a55;
     opacity:0;
-    animation:fadeIn 2s forwards;
-}
-
-/* SUBTITLE LINE */
-.line{
-    margin-top:20px;
-    font-size:1rem;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:#8a6d2f;
     animation:fadeIn 2.5s forwards;
 }
 
-/* CARDS */
+/* TERMINAL */
+.terminal{
+    margin-top:25px;
+    font-size:1rem;
+    color:#d6b25e;
+    border-right:2px solid #d6b25e;
+    white-space:nowrap;
+    overflow:hidden;
+    width:0;
+    animation:typing 4s steps(60,end) forwards, blink .8s infinite;
+}
+
+@keyframes typing{
+    from{width:0;}
+    to{width:520px;}
+}
+
+@keyframes blink{
+    50%{border-color:transparent;}
+}
+
+/* DOSSIER CARDS */
 .cards{
     margin-top:50px;
     display:flex;
-    gap:20px;
+    gap:15px;
     flex-wrap:wrap;
     justify-content:center;
     opacity:0;
-    animation:fadeIn 3s forwards;
+    animation:show 3s forwards;
 }
 
 .card{
-    width:240px;
-    padding:20px;
-    border:1px solid rgba(214,178,94,0.2);
-    background:rgba(0,0,0,0.4);
-    backdrop-filter: blur(10px);
-    border-radius:10px;
+    width:230px;
+    padding:18px;
+    border:1px solid rgba(214,178,94,0.25);
+    background:rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
     transition:0.4s;
-    color:#d6b25e;
+    position:relative;
+    overflow:hidden;
+}
+
+.card::before{
+    content:"";
+    position:absolute;
+    width:100%;
+    height:2px;
+    background:#d6b25e;
+    top:0;
+    left:-100%;
+    animation:scan 3s infinite;
+}
+
+@keyframes scan{
+    0%{left:-100%;}
+    50%{left:100%;}
+    100%{left:100%;}
 }
 
 .card:hover{
-    transform:translateY(-10px);
+    transform:translateY(-8px);
     border-color:#d6b25e;
     box-shadow:0 0 25px rgba(214,178,94,0.2);
 }
@@ -126,13 +187,13 @@ h2{
 /* BUTTON */
 a{
     margin-top:40px;
-    padding:12px 26px;
+    padding:12px 28px;
     border:1px solid #d6b25e;
     color:#d6b25e;
     text-decoration:none;
-    letter-spacing:2px;
+    letter-spacing:3px;
     text-transform:uppercase;
-    font-size:0.8rem;
+    font-size:0.75rem;
     transition:0.4s;
 }
 
@@ -147,7 +208,11 @@ a:hover{
     to{opacity:1; transform:translateY(0);}
 }
 
-/* GOLD PARTICLES */
+@keyframes show{
+    to{opacity:1;}
+}
+
+/* canvas particles */
 canvas{
     position:fixed;
     top:0;
@@ -160,42 +225,37 @@ canvas{
 
 <body>
 
-<div class="glow"></div>
-<div class="glow2"></div>
+<div class="bg"></div>
+<div class="noise"></div>
+<div class="orb orb2"></div>
 
 <div class="container">
 
-    <h1>Vinicius Soares Brandão</h1>
-    <h2>Data Analytics • Business Intelligence • Python</h2>
+    <h1>AGENTE VINICIUS</h1>
+    <h2>MI6 CLASSIFIED DATA ACCESS</h2>
 
-    <div class="line">CLASSIFIED 007 PROFILE</div>
-
-    <div class="cards">
-        <div class="card">
-            📍 São Paulo, Brasil
-        </div>
-
-        <div class="card">
-            💼 Setor Administrativo
-        </div>
-
-        <div class="card">
-            🎯 Data Analyst / BI
-        </div>
-
-        <div class="card">
-            🧠 Python • SQL • Data
-        </div>
+    <div class="terminal">
+        ACCESSING DATABASE... IDENTIDADE CONFIRMADA...
     </div>
 
-    <a href="https://github.com/" target="_blank">Access Repositories</a>
+    <div class="cards">
+        <div class="card">📍 São Paulo / Brazil</div>
+        <div class="card">💼 Operações Administrativas</div>
+        <div class="card">🎯 Data Analyst / BI</div>
+        <div class="card">🧠 Python • SQL • Intelligence</div>
+    </div>
+
+    <a href="https://github.com/" target="_blank">
+        ACCESS REPOSITORIES
+    </a>
 
 </div>
 
 <script>
-// GOLD PARTICLES (ELEGANT MODE)
+// GOLD INTELLIGENCE PARTICLES
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
+
 const ctx = canvas.getContext("2d");
 
 let w = canvas.width = window.innerWidth;
@@ -208,17 +268,17 @@ window.addEventListener("resize",()=>{
 
 let particles = [];
 
-for(let i=0;i<70;i++){
+for(let i=0;i<90;i++){
     particles.push({
-        x: Math.random()*w,
-        y: Math.random()*h,
-        r: Math.random()*1.8,
-        dx:(Math.random()-0.5)*0.3,
-        dy:(Math.random()-0.5)*0.3
+        x:Math.random()*w,
+        y:Math.random()*h,
+        r:Math.random()*1.5,
+        dx:(Math.random()-0.5)*0.4,
+        dy:(Math.random()-0.5)*0.4
     });
 }
 
-function draw(){
+function animate(){
     ctx.clearRect(0,0,w,h);
 
     ctx.fillStyle = "#d6b25e";
@@ -235,10 +295,10 @@ function draw(){
         if(p.y<0||p.y>h) p.dy*=-1;
     });
 
-    requestAnimationFrame(draw);
+    requestAnimationFrame(animate);
 }
 
-draw();
+animate();
 </script>
 
 </body>
