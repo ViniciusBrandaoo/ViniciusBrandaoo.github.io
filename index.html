@@ -3,97 +3,214 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Vinicius Soares Brandão | Portfolio</title>
+<title>Vinicius Soares Brandão | Classified Profile</title>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
 
-*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#d6b25e;
+  --gold2:#8a6d2f;
+  --bg:#050505;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
 
 body{
-  background:#000;
-  color:#d6b25e;
+  background:var(--bg);
+  color:var(--gold);
   font-family:'JetBrains Mono', monospace;
   overflow:hidden;
 }
 
-/* ===== PRISM BACKGROUND LAYER ===== */
-#bg{
+/* =========================
+   BACKGROUND LAYERS
+========================= */
+
+/* gradient base */
+.bg{
   position:fixed;
   inset:0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(214,178,94,0.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(214,178,94,0.06), transparent 45%),
+    radial-gradient(circle at center, #000, #050505);
   z-index:0;
 }
 
-/* vinheta 007 */
+/* moving grid (MI6 HUD) */
+.grid{
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(214,178,94,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214,178,94,0.05) 1px, transparent 1px);
+  background-size:60px 60px;
+  animation:moveGrid 20s linear infinite;
+  opacity:0.25;
+  z-index:1;
+}
+
+@keyframes moveGrid{
+  from{transform:translateY(0);}
+  to{transform:translateY(60px);}
+}
+
+/* floating orbs */
+.orb{
+  position:fixed;
+  width:600px;
+  height:600px;
+  background:radial-gradient(circle, rgba(214,178,94,0.12), transparent 60%);
+  filter:blur(60px);
+  animation:float 12s ease-in-out infinite;
+  z-index:1;
+}
+
+.orb2{
+  right:-200px;
+  bottom:-200px;
+  animation:float2 14s ease-in-out infinite;
+}
+
+@keyframes float{
+  0%,100%{transform:translate(0,0);}
+  50%{transform:translate(80px,40px);}
+}
+
+@keyframes float2{
+  0%,100%{transform:translate(0,0);}
+  50%{transform:translate(-80px,-60px);}
+}
+
+/* scanlines cinematic */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.02),
+    transparent 2px,
+    transparent 6px
+  );
+  opacity:0.08;
+  z-index:2;
+  pointer-events:none;
+}
+
+/* vignette (cinema feel) */
 body::before{
   content:"";
   position:fixed;
   inset:0;
-  background:radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.9) 100%);
-  z-index:1;
+  background:radial-gradient(circle, transparent 40%, rgba(0,0,0,0.95) 100%);
+  z-index:2;
   pointer-events:none;
 }
 
-/* UI */
+/* =========================
+   CONTENT
+========================= */
+
 .container{
   position:relative;
-  z-index:2;
+  z-index:3;
   height:100vh;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   text-align:center;
+  padding:20px;
 }
 
+/* title */
 h1{
   font-family:'Playfair Display';
-  font-size:3rem;
+  font-size:3.2rem;
+  letter-spacing:2px;
+  animation:fadeUp 1.5s ease forwards;
 }
 
+/* subtitle */
 h2{
   margin-top:10px;
-  color:#b89a55;
   font-weight:300;
+  color:#b89a55;
+  animation:fadeUp 2s ease forwards;
 }
 
+/* classified line */
 .line{
   margin-top:15px;
-  letter-spacing:4px;
-  color:#8a6d2f;
   font-size:0.8rem;
+  letter-spacing:4px;
+  color:var(--gold2);
+  opacity:0;
+  animation:fadeUp 2.5s ease forwards;
 }
 
+/* typing effect */
 .typing{
   margin-top:25px;
-  border-right:2px solid #d6b25e;
-  overflow:hidden;
+  border-right:2px solid var(--gold);
   white-space:nowrap;
+  overflow:hidden;
   width:0;
-  animation:typing 3.5s steps(50,end) forwards, blink .8s infinite;
+  animation:typing 4s steps(60,end) forwards, blink .8s infinite;
 }
 
 @keyframes typing{to{width:420px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-/* info clean */
-.info{
-  margin-top:45px;
+/* =========================
+   CARDS MODERNOS (CLEAN)
+========================= */
+
+.cards{
+  margin-top:50px;
   display:flex;
-  flex-direction:column;
-  gap:10px;
+  gap:15px;
+  flex-wrap:wrap;
+  justify-content:center;
 }
 
-.row{
-  width:340px;
-  display:flex;
-  justify-content:space-between;
-  border-bottom:1px solid rgba(214,178,94,0.2);
-  padding:8px 0;
+.card{
+  width:230px;
+  padding:16px;
+  background:rgba(0,0,0,0.55);
+  border:1px solid rgba(214,178,94,0.25);
+  backdrop-filter:blur(14px);
+  border-radius:10px;
+  transform:translateY(20px);
+  opacity:0;
+  animation:cardIn 1s forwards;
+  transition:.3s;
 }
 
-.label{font-size:0.7rem;color:#8a6d2f;}
-.value{font-size:0.9rem;}
+.card:nth-child(1){animation-delay:2.8s;}
+.card:nth-child(2){animation-delay:3.0s;}
+.card:nth-child(3){animation-delay:3.2s;}
+.card:nth-child(4){animation-delay:3.4s;}
+
+@keyframes cardIn{
+  to{opacity:1; transform:translateY(0);}
+}
+
+.card:hover{
+  transform:translateY(-8px) scale(1.03);
+  border-color:var(--gold);
+  box-shadow:0 0 30px rgba(214,178,94,0.15);
+}
+
+/* =========================
+   SOCIAL
+========================= */
 
 .social{
   margin-top:30px;
@@ -102,39 +219,68 @@ h2{
 }
 
 .social a{
-  color:#d6b25e;
+  color:var(--gold);
   text-decoration:none;
+  font-size:0.85rem;
+  opacity:0.8;
+  transition:.3s;
 }
 
+.social a:hover{
+  opacity:1;
+  text-shadow:0 0 10px rgba(214,178,94,0.4);
+}
+
+/* button */
 .btn{
   margin-top:40px;
   padding:12px 26px;
-  border:1px solid #d6b25e;
-  color:#d6b25e;
+  border:1px solid var(--gold);
+  color:var(--gold);
   text-decoration:none;
+  letter-spacing:3px;
+  font-size:0.75rem;
+  transition:.4s;
 }
-.btn:hover{background:#d6b25e;color:#000;}
+
+.btn:hover{
+  background:var(--gold);
+  color:#000;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes fadeUp{
+  from{opacity:0; transform:translateY(10px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="bg"></div>
+<div class="bg"></div>
+<div class="grid"></div>
+<div class="orb"></div>
+<div class="orb orb2"></div>
 
 <div class="container">
 
   <h1>Vinicius Soares Brandão</h1>
   <h2>Data Analytics • Business Intelligence • Python</h2>
 
-  <div class="line">CLASSIFIED PORTFOLIO</div>
+  <div class="line">CLASSIFIED SYSTEM ACCESS</div>
 
-  <div class="typing">Acessando sistema seguro...</div>
+  <div class="typing">Conectando ao sistema MI6...</div>
 
-  <div class="info">
-    <div class="row"><span class="label">LOCAL</span><span class="value">São Paulo</span></div>
-    <div class="row"><span class="label">SETOR</span><span class="value">Administrativo</span></div>
-    <div class="row"><span class="label">FOCO</span><span class="value">Data Analyst / BI</span></div>
-    <div class="row"><span class="label">STACK</span><span class="value">Python • SQL</span></div>
+  <div class="cards">
+    <div class="card">📍 São Paulo, Brasil</div>
+    <div class="card">💼 Administrativo</div>
+    <div class="card">🎯 Data Analyst / BI</div>
+    <div class="card">🐍 Python • SQL</div>
   </div>
 
   <div class="social">
@@ -142,81 +288,9 @@ h2{
     <a href="https://wa.me/5511988226487">WhatsApp</a>
   </div>
 
-  <a class="btn" href="https://github.com/">VER REPOSITÓRIOS</a>
+  <a class="btn" href="https://github.com/">ACESSAR REPOSITÓRIOS</a>
 
 </div>
-
-<!-- ================= PRISM REAL (OGL) ================= -->
-<script src="https://cdn.jsdelivr.net/npm/ogl@0.0.32/dist/ogl.umd.js"></script>
-
-<script>
-const { Renderer, Program, Mesh, Triangle } = OGL;
-
-const container = document.getElementById("bg");
-
-const renderer = new Renderer({ dpr: 2 });
-const gl = renderer.gl;
-container.appendChild(gl.canvas);
-
-gl.clearColor(0,0,0,1);
-
-const geometry = new Triangle(gl);
-
-const vertex = `
-attribute vec2 position;
-void main() {
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
-
-const fragment = `
-precision highp float;
-uniform float uTime;
-
-void main(){
-  vec2 uv = gl_FragCoord.xy / 800.0;
-
-  float wave =
-    sin(uv.x * 10.0 + uTime) *
-    cos(uv.y * 10.0 - uTime);
-
-  vec3 gold = vec3(0.84,0.7,0.35);
-
-  float glow = smoothstep(0.2,0.8,wave);
-
-  gl_FragColor = vec4(gold * glow * 0.6, glow * 0.25);
-}
-`;
-
-const program = new Program(gl, {
-  vertex,
-  fragment,
-  uniforms:{
-    uTime:{value:0}
-  }
-});
-
-const mesh = new Mesh(gl, { geometry, program });
-
-function resize(){
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-window.addEventListener("resize", resize);
-resize();
-
-let t = 0;
-
-function animate(){
-  t += 0.01;
-  program.uniforms.uTime.value = t;
-
-  renderer.render({ scene: mesh });
-
-  requestAnimationFrame(animate);
-}
-
-animate();
-</script>
 
 </body>
 </html>
