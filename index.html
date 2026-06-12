@@ -8,11 +8,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
+*{margin:0;padding:0;box-sizing:border-box;}
 
 body{
   background:#000;
@@ -21,40 +17,24 @@ body{
   overflow:hidden;
 }
 
-/* ================= BACKGROUND PRISM ================= */
-
+/* ===== PRISM BACKGROUND LAYER ===== */
 #bg{
   position:fixed;
   inset:0;
   z-index:0;
-  opacity:1;
 }
 
-/* vinheta cinematográfica */
+/* vinheta 007 */
 body::before{
   content:"";
   position:fixed;
   inset:0;
-  background:radial-gradient(circle at center,
-    rgba(0,0,0,0) 40%,
-    rgba(0,0,0,0.85) 100%);
+  background:radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.9) 100%);
   z-index:1;
   pointer-events:none;
 }
 
-/* textura leve */
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  background-image:url("https://www.transparenttextures.com/patterns/noise.png");
-  opacity:0.05;
-  z-index:1;
-  pointer-events:none;
-}
-
-/* ================= CONTAINER ================= */
-
+/* UI */
 .container{
   position:relative;
   z-index:2;
@@ -66,85 +46,57 @@ body::after{
   text-align:center;
 }
 
-/* animações suaves */
-.fade{
-  opacity:0;
-  transform:translateY(15px);
-  animation:fadeIn 1s forwards;
-}
-
-@keyframes fadeIn{
-  to{opacity:1; transform:translateY(0);}
-}
-
 h1{
   font-family:'Playfair Display';
   font-size:3rem;
-  letter-spacing:2px;
 }
 
 h2{
   margin-top:10px;
-  font-weight:300;
   color:#b89a55;
+  font-weight:300;
 }
 
 .line{
   margin-top:15px;
-  font-size:0.8rem;
   letter-spacing:4px;
   color:#8a6d2f;
+  font-size:0.8rem;
 }
 
 .typing{
   margin-top:25px;
   border-right:2px solid #d6b25e;
-  white-space:nowrap;
   overflow:hidden;
+  white-space:nowrap;
   width:0;
-  animation:typing 3.8s steps(60,end) forwards, blink .8s infinite;
+  animation:typing 3.5s steps(50,end) forwards, blink .8s infinite;
 }
 
-@keyframes typing{to{width:440px;}}
+@keyframes typing{to{width:420px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-/* ================= INFO CLEAN ================= */
-
+/* info clean */
 .info{
-  margin-top:50px;
+  margin-top:45px;
   display:flex;
   flex-direction:column;
   gap:10px;
 }
 
 .row{
+  width:340px;
   display:flex;
   justify-content:space-between;
-  width:340px;
-  padding:8px 0;
   border-bottom:1px solid rgba(214,178,94,0.2);
-  transition:.3s;
+  padding:8px 0;
 }
 
-.row:hover{
-  transform:translateX(6px);
-  border-bottom:1px solid rgba(214,178,94,0.6);
-}
-
-.label{
-  font-size:0.7rem;
-  letter-spacing:2px;
-  color:#8a6d2f;
-}
-
-.value{
-  font-size:0.9rem;
-}
-
-/* ================= SOCIAL ================= */
+.label{font-size:0.7rem;color:#8a6d2f;}
+.value{font-size:0.9rem;}
 
 .social{
-  margin-top:35px;
+  margin-top:30px;
   display:flex;
   gap:20px;
 }
@@ -152,15 +104,7 @@ h2{
 .social a{
   color:#d6b25e;
   text-decoration:none;
-  border-bottom:1px solid transparent;
-  transition:.3s;
 }
-
-.social a:hover{
-  border-bottom:1px solid #d6b25e;
-}
-
-/* ================= BUTTON ================= */
 
 .btn{
   margin-top:40px;
@@ -168,124 +112,110 @@ h2{
   border:1px solid #d6b25e;
   color:#d6b25e;
   text-decoration:none;
-  letter-spacing:3px;
-  font-size:0.75rem;
-  transition:.3s;
 }
-
-.btn:hover{
-  background:#d6b25e;
-  color:#000;
-}
+.btn:hover{background:#d6b25e;color:#000;}
 </style>
 </head>
 
 <body>
 
-<!-- PRISM BACKGROUND -->
 <div id="bg"></div>
 
 <div class="container">
 
-  <h1 class="fade" style="animation-delay:.2s">Vinicius Soares Brandão</h1>
+  <h1>Vinicius Soares Brandão</h1>
+  <h2>Data Analytics • Business Intelligence • Python</h2>
 
-  <h2 class="fade" style="animation-delay:.4s">
-    Data Analytics • Business Intelligence • Python
-  </h2>
+  <div class="line">CLASSIFIED PORTFOLIO</div>
 
-  <div class="line fade" style="animation-delay:.6s">
-    CLASSIFIED PORTFOLIO
+  <div class="typing">Acessando sistema seguro...</div>
+
+  <div class="info">
+    <div class="row"><span class="label">LOCAL</span><span class="value">São Paulo</span></div>
+    <div class="row"><span class="label">SETOR</span><span class="value">Administrativo</span></div>
+    <div class="row"><span class="label">FOCO</span><span class="value">Data Analyst / BI</span></div>
+    <div class="row"><span class="label">STACK</span><span class="value">Python • SQL</span></div>
   </div>
 
-  <div class="typing fade" style="animation-delay:.8s">
-    Acessando sistema seguro...
+  <div class="social">
+    <a href="https://instagram.com/viniciusbrandaoo">Instagram</a>
+    <a href="https://wa.me/5511988226487">WhatsApp</a>
   </div>
 
-  <div class="info fade" style="animation-delay:1s">
-
-    <div class="row">
-      <span class="label">LOCAL</span>
-      <span class="value">São Paulo, BR</span>
-    </div>
-
-    <div class="row">
-      <span class="label">SETOR</span>
-      <span class="value">Administrativo</span>
-    </div>
-
-    <div class="row">
-      <span class="label">FOCO</span>
-      <span class="value">Data Analyst / BI</span>
-    </div>
-
-    <div class="row">
-      <span class="label">STACK</span>
-      <span class="value">Python • SQL • Data</span>
-    </div>
-
-  </div>
-
-  <div class="social fade" style="animation-delay:1.2s">
-    <a href="https://instagram.com/viniciusbrandaoo" target="_blank">Instagram</a>
-    <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
-  </div>
-
-  <a class="btn fade" style="animation-delay:1.4s" href="https://github.com/" target="_blank">
-    VER REPOSITÓRIOS
-  </a>
+  <a class="btn" href="https://github.com/">VER REPOSITÓRIOS</a>
 
 </div>
 
-<!-- ================= PRISM BACKGROUND SCRIPT ================= -->
+<!-- ================= PRISM REAL (OGL) ================= -->
+<script src="https://cdn.jsdelivr.net/npm/ogl@0.0.32/dist/ogl.umd.js"></script>
+
 <script>
-const canvas = document.createElement("canvas");
-document.getElementById("bg").appendChild(canvas);
+const { Renderer, Program, Mesh, Triangle } = OGL;
 
-const ctx = canvas.getContext("2d");
+const container = document.getElementById("bg");
 
-let w, h;
-function resize(){
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
+const renderer = new Renderer({ dpr: 2 });
+const gl = renderer.gl;
+container.appendChild(gl.canvas);
+
+gl.clearColor(0,0,0,1);
+
+const geometry = new Triangle(gl);
+
+const vertex = `
+attribute vec2 position;
+void main() {
+  gl_Position = vec4(position, 0.0, 1.0);
 }
-resize();
-window.addEventListener("resize", resize);
+`;
 
-const gold = [214,178,94];
+const fragment = `
+precision highp float;
+uniform float uTime;
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / 800.0;
+
+  float wave =
+    sin(uv.x * 10.0 + uTime) *
+    cos(uv.y * 10.0 - uTime);
+
+  vec3 gold = vec3(0.84,0.7,0.35);
+
+  float glow = smoothstep(0.2,0.8,wave);
+
+  gl_FragColor = vec4(gold * glow * 0.6, glow * 0.25);
+}
+`;
+
+const program = new Program(gl, {
+  vertex,
+  fragment,
+  uniforms:{
+    uTime:{value:0}
+  }
+});
+
+const mesh = new Mesh(gl, { geometry, program });
+
+function resize(){
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener("resize", resize);
+resize();
 
 let t = 0;
 
-function draw(){
-  t += 0.006;
+function animate(){
+  t += 0.01;
+  program.uniforms.uTime.value = t;
 
-  ctx.clearRect(0,0,w,h);
+  renderer.render({ scene: mesh });
 
-  // partículas douradas estilo "Prism"
-  for(let i=0;i<140;i++){
-    const x = (Math.sin(t + i)*0.5 + 0.5) * w;
-    const y = (Math.cos(t*0.7 + i)*0.5 + 0.5) * h;
-
-    const size = Math.sin(t+i)*2 + 2;
-
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(${gold[0]},${gold[1]},${gold[2]},0.08)`;
-    ctx.arc(x,y,size,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  // linhas suaves (efeito HUD 007)
-  for(let i=0;i<20;i++){
-    ctx.beginPath();
-    ctx.strokeStyle = "rgba(214,178,94,0.03)";
-    ctx.moveTo(0, (i/20)*h + Math.sin(t+i)*10);
-    ctx.lineTo(w, (i/20)*h);
-    ctx.stroke();
-  }
-
-  requestAnimationFrame(draw);
+  requestAnimationFrame(animate);
 }
 
-draw();
+animate();
 </script>
 
 </body>
