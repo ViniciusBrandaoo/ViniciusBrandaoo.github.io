@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MI6 CLASSIFIED ACCESS // Vinicius Brandão</title>
+<title>MI6 // CLASSIFIED ACCESS</title>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
@@ -21,170 +21,186 @@ body{
     overflow:hidden;
 }
 
-/* ===== BACKGROUND LAYERS ===== */
+/* ================= CINEMA BACKGROUND ================= */
 
 .bg{
     position:fixed;
     width:100%;
     height:100%;
     background:
-      radial-gradient(circle at top, rgba(214,178,94,0.08), transparent 40%),
-      radial-gradient(circle at bottom, rgba(214,178,94,0.05), transparent 60%),
-      linear-gradient(180deg, #000, #050505);
+        radial-gradient(circle at 20% 20%, rgba(214,178,94,0.12), transparent 35%),
+        radial-gradient(circle at 80% 70%, rgba(214,178,94,0.08), transparent 40%),
+        radial-gradient(circle at center, #000, #050505);
     z-index:0;
 }
 
+/* moving gold haze */
+.haze{
+    position:fixed;
+    width:120%;
+    height:120%;
+    background: radial-gradient(circle, rgba(214,178,94,0.08), transparent 60%);
+    animation: drift 12s infinite ease-in-out;
+    filter: blur(40px);
+}
+
+@keyframes drift{
+    0%,100%{transform:translate(-5%,-5%) scale(1);}
+    50%{transform:translate(5%,5%) scale(1.1);}
+}
+
 /* scanlines */
-.bg::after{
-    content:"";
-    position:absolute;
+.scan{
+    position:fixed;
     width:100%;
     height:100%;
     background: repeating-linear-gradient(
         to bottom,
-        rgba(255,255,255,0.02),
-        rgba(255,255,255,0.02) 1px,
-        transparent 1px,
-        transparent 3px
+        rgba(255,255,255,0.03),
+        transparent 2px,
+        transparent 4px
     );
-    opacity:0.2;
+    opacity:0.15;
 }
 
-/* subtle noise */
+/* noise film grain */
 .noise{
     position:fixed;
     width:100%;
     height:100%;
-    background:url('https://grainy-gradients.vercel.app/noise.svg');
-    opacity:0.06;
-    z-index:1;
+    background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+    opacity:0.05;
 }
 
-/* floating gold orbs */
-.orb{
+/* ================= BOOT SEQUENCE ================= */
+
+.boot{
     position:fixed;
-    width:500px;
-    height:500px;
-    background:radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
-    filter:blur(60px);
-    animation:float 10s infinite ease-in-out;
-    z-index:1;
+    width:100%;
+    height:100%;
+    background:#000;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:20;
+    animation:bootFade 6s forwards;
+    animation-delay:4s;
 }
 
-.orb2{
-    bottom:-200px;
-    right:-200px;
-    animation:float2 12s infinite ease-in-out;
+@keyframes bootFade{
+    to{opacity:0; visibility:hidden;}
 }
 
-@keyframes float{
-    0%,100%{transform:translate(0,0);}
-    50%{transform:translate(80px,40px);}
+.boot h1{
+    font-family:'Playfair Display';
+    font-size:2.5rem;
+    letter-spacing:4px;
+    animation:fadeIn 1s forwards;
 }
 
-@keyframes float2{
-    0%,100%{transform:translate(0,0);}
-    50%{transform:translate(-80px,-60px);}
+.bootLines{
+    margin-top:20px;
+    font-size:0.85rem;
+    line-height:1.6;
+    opacity:0;
+    animation:fadeIn 2s forwards;
+    animation-delay:1s;
 }
 
-/* ===== MAIN ===== */
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(10px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+/* ================= MAIN ================= */
 
 .container{
     position:relative;
-    z-index:2;
     height:100vh;
     display:flex;
     flex-direction:column;
-    align-items:center;
     justify-content:center;
+    align-items:center;
     text-align:center;
-    padding:20px;
+    z-index:5;
+    opacity:0;
+    animation:enter 2s forwards;
+    animation-delay:5s;
+}
+
+@keyframes enter{
+    to{opacity:1;}
 }
 
 /* TITLE */
 h1{
-    font-family:'Playfair Display', serif;
+    font-family:'Playfair Display';
     font-size:3.2rem;
-    letter-spacing:2px;
-    opacity:0;
-    animation:fadeIn 2s forwards;
+    letter-spacing:3px;
 }
 
 h2{
     margin-top:10px;
     font-weight:300;
     color:#b89a55;
-    opacity:0;
-    animation:fadeIn 2.5s forwards;
 }
 
-/* TERMINAL */
+/* terminal */
 .terminal{
     margin-top:25px;
-    font-size:1rem;
-    color:#d6b25e;
+    font-size:0.95rem;
     border-right:2px solid #d6b25e;
     white-space:nowrap;
     overflow:hidden;
     width:0;
-    animation:typing 4s steps(60,end) forwards, blink .8s infinite;
+    animation:typing 4s steps(70,end) forwards, blink .8s infinite;
 }
 
 @keyframes typing{
-    from{width:0;}
-    to{width:520px;}
+    to{width:620px;}
 }
 
 @keyframes blink{
     50%{border-color:transparent;}
 }
 
-/* DOSSIER CARDS */
+/* ================= DOSSIER ================= */
+
 .cards{
     margin-top:50px;
     display:flex;
     gap:15px;
     flex-wrap:wrap;
     justify-content:center;
-    opacity:0;
-    animation:show 3s forwards;
 }
 
 .card{
-    width:230px;
+    width:220px;
     padding:18px;
-    border:1px solid rgba(214,178,94,0.25);
     background:rgba(0,0,0,0.6);
-    backdrop-filter: blur(12px);
-    transition:0.4s;
-    position:relative;
-    overflow:hidden;
+    border:1px solid rgba(214,178,94,0.25);
+    backdrop-filter:blur(12px);
+    opacity:0;
+    transform:translateY(20px);
+    animation:cardIn 1s forwards;
 }
 
-.card::before{
-    content:"";
-    position:absolute;
-    width:100%;
-    height:2px;
-    background:#d6b25e;
-    top:0;
-    left:-100%;
-    animation:scan 3s infinite;
-}
+.card:nth-child(1){animation-delay:5.5s;}
+.card:nth-child(2){animation-delay:5.7s;}
+.card:nth-child(3){animation-delay:5.9s;}
+.card:nth-child(4){animation-delay:6.1s;}
 
-@keyframes scan{
-    0%{left:-100%;}
-    50%{left:100%;}
-    100%{left:100%;}
+@keyframes cardIn{
+    to{opacity:1; transform:translateY(0);}
 }
 
 .card:hover{
-    transform:translateY(-8px);
+    transform:scale(1.05);
     border-color:#d6b25e;
-    box-shadow:0 0 25px rgba(214,178,94,0.2);
 }
 
-/* BUTTON */
+/* button */
 a{
     margin-top:40px;
     padding:12px 28px;
@@ -192,9 +208,11 @@ a{
     color:#d6b25e;
     text-decoration:none;
     letter-spacing:3px;
-    text-transform:uppercase;
     font-size:0.75rem;
     transition:0.4s;
+    opacity:0;
+    animation:fadeIn 1s forwards;
+    animation-delay:6.5s;
 }
 
 a:hover{
@@ -202,23 +220,10 @@ a:hover{
     color:#000;
 }
 
-/* FADE */
-@keyframes fadeIn{
-    from{opacity:0; transform:translateY(20px);}
-    to{opacity:1; transform:translateY(0);}
-}
-
-@keyframes show{
-    to{opacity:1;}
-}
-
-/* canvas particles */
-canvas{
-    position:fixed;
-    top:0;
-    left:0;
-    z-index:1;
-    opacity:0.25;
+/* flicker */
+@keyframes flicker{
+    0%,100%{opacity:1;}
+    50%{opacity:0.8;}
 }
 </style>
 </head>
@@ -226,79 +231,52 @@ canvas{
 <body>
 
 <div class="bg"></div>
+<div class="haze"></div>
+<div class="scan"></div>
 <div class="noise"></div>
-<div class="orb orb2"></div>
 
+<!-- BOOT -->
+<div class="boot">
+    <h1>MI6 CLASSIFIED SYSTEM</h1>
+    <div class="bootLines">
+        INITIALIZING DATABASE...<br>
+        ACCESSING AGENT FILES...<br>
+        VERIFYING CLEARANCE LEVEL...<br>
+        WELCOME, AGENT.
+    </div>
+</div>
+
+<!-- MAIN -->
 <div class="container">
 
     <h1>AGENTE VINICIUS</h1>
-    <h2>MI6 CLASSIFIED DATA ACCESS</h2>
+    <h2>MI6 // DATA INTELLIGENCE UNIT</h2>
 
     <div class="terminal">
-        ACCESSING DATABASE... IDENTIDADE CONFIRMADA...
+        LOADING DOSSIER... IDENTITY CONFIRMED... CLEARANCE GRANTED...
     </div>
 
     <div class="cards">
-        <div class="card">📍 São Paulo / Brazil</div>
-        <div class="card">💼 Operações Administrativas</div>
-        <div class="card">🎯 Data Analyst / BI</div>
-        <div class="card">🧠 Python • SQL • Intelligence</div>
+        <div class="card">📍 São Paulo, BR</div>
+        <div class="card">💼 Admin Operations</div>
+        <div class="card">🎯 Data Analyst</div>
+        <div class="card">🧠 Python / SQL / BI</div>
     </div>
 
     <a href="https://github.com/" target="_blank">
-        ACCESS REPOSITORIES
+        ACCESS CLASSIFIED FILES
     </a>
 
 </div>
 
 <script>
-// GOLD INTELLIGENCE PARTICLES
-const canvas = document.createElement("canvas");
-document.body.appendChild(canvas);
-
-const ctx = canvas.getContext("2d");
-
-let w = canvas.width = window.innerWidth;
-let h = canvas.height = window.innerHeight;
-
-window.addEventListener("resize",()=>{
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
+// subtle cinematic micro-movement (parallax feel)
+document.addEventListener("mousemove", (e)=>{
+    const x = (e.clientX / window.innerWidth - 0.5) * 10;
+    const y = (e.clientY / window.innerHeight - 0.5) * 10;
+    document.querySelector(".haze").style.transform =
+        `translate(${x}px, ${y}px) scale(1.05)`;
 });
-
-let particles = [];
-
-for(let i=0;i<90;i++){
-    particles.push({
-        x:Math.random()*w,
-        y:Math.random()*h,
-        r:Math.random()*1.5,
-        dx:(Math.random()-0.5)*0.4,
-        dy:(Math.random()-0.5)*0.4
-    });
-}
-
-function animate(){
-    ctx.clearRect(0,0,w,h);
-
-    ctx.fillStyle = "#d6b25e";
-
-    particles.forEach(p=>{
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fill();
-
-        p.x += p.dx;
-        p.y += p.dy;
-
-        if(p.x<0||p.x>w) p.dx*=-1;
-        if(p.y<0||p.y>h) p.dy*=-1;
-    });
-
-    requestAnimationFrame(animate);
-}
-
-animate();
 </script>
 
 </body>
