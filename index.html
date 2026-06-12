@@ -116,18 +116,29 @@ body::before{
     z-index:3;
 }
 
+/* animação geral de entrada */
+.fade{
+    opacity:0;
+    transform:translateY(20px);
+    animation:fadeIn 1s forwards;
+}
+
+.delay1{animation-delay:0.3s;}
+.delay2{animation-delay:0.6s;}
+.delay3{animation-delay:0.9s;}
+.delay4{animation-delay:1.2s;}
+.delay5{animation-delay:1.5s;}
+
 h1{
     font-family:'Playfair Display';
     font-size:3.2rem;
     letter-spacing:2px;
-    animation:fadeIn 2s forwards;
 }
 
 h2{
     margin-top:10px;
     font-weight:300;
     color:#b89a55;
-    animation:fadeIn 2.5s forwards;
 }
 
 .line{
@@ -136,9 +147,9 @@ h2{
     letter-spacing:3px;
     text-transform:uppercase;
     color:#8a6d2f;
-    animation:fadeIn 3s forwards;
 }
 
+/* typing */
 .typing{
     margin-top:25px;
     font-size:0.95rem;
@@ -152,7 +163,7 @@ h2{
 @keyframes typing{to{width:520px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-/* ================= INFO CLEAN (NOVO) ================= */
+/* ================= INFO CLEAN ================= */
 
 .info{
     margin-top:55px;
@@ -188,9 +199,30 @@ h2{
     color:#d6b25e;
 }
 
+/* ================= SOCIAL ================= */
+
+.social{
+    margin-top:40px;
+    display:flex;
+    gap:25px;
+    font-size:0.85rem;
+    opacity:0.9;
+}
+
+.social a{
+    color:#d6b25e;
+    text-decoration:none;
+    border-bottom:1px solid transparent;
+    transition:0.3s;
+}
+
+.social a:hover{
+    border-bottom:1px solid #d6b25e;
+}
+
 /* ================= BOTÃO ================= */
 
-a{
+.button{
     margin-top:45px;
     padding:12px 28px;
     border:1px solid #d6b25e;
@@ -199,11 +231,9 @@ a{
     letter-spacing:3px;
     font-size:0.75rem;
     transition:0.4s;
-    animation:fadeIn 1s forwards;
-    animation-delay:4.5s;
 }
 
-a:hover{
+.button:hover{
     background:#d6b25e;
     color:#000;
 }
@@ -211,8 +241,10 @@ a:hover{
 /* ================= ANIMAÇÕES ================= */
 
 @keyframes fadeIn{
-    from{opacity:0; transform:translateY(10px);}
-    to{opacity:1; transform:translateY(0);}
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
 }
 </style>
 </head>
@@ -227,16 +259,16 @@ a:hover{
 
 <div class="container">
 
-    <h1>Vinicius Soares Brandão</h1>
-    <h2>Data Analytics • Business Intelligence • Python</h2>
+    <h1 class="fade delay1">Vinicius Soares Brandão</h1>
+    <h2 class="fade delay2">Data Analytics • Business Intelligence • Python</h2>
 
-    <div class="line">PORTFOLIO DIGITAL</div>
+    <div class="line fade delay3">PORTFOLIO DIGITAL</div>
 
-    <div class="typing">
+    <div class="typing fade delay4">
         Transformando dados em decisões estratégicas...
     </div>
 
-    <div class="info">
+    <div class="info fade delay5">
 
         <div class="row">
             <span class="label">Local</span>
@@ -260,7 +292,13 @@ a:hover{
 
     </div>
 
-    <a href="https://github.com/" target="_blank">
+    <div class="social fade delay5">
+        <a href="https://instagram.com/viniciusbrandaoo" target="_blank">Instagram</a>
+        <span>•</span>
+        <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
+    </div>
+
+    <a class="button fade delay5" href="https://github.com/" target="_blank">
         VER REPOSITÓRIOS
     </a>
 
