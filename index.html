@@ -3,114 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vinicius Soares Brandão | Portfolio</title>
+<title>Vinicius Soares Brandão | 007 Portfolio</title>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
 
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family: 'Inter', sans-serif;
 }
 
 body{
-    background: radial-gradient(circle at top, #0f0c29, #0b0b12, #000);
-    color:#fff;
-    overflow-x:hidden;
+    background: radial-gradient(circle at top, #111 0%, #000 60%);
+    color:#d6b25e;
+    font-family:'Inter', sans-serif;
+    overflow:hidden;
 }
 
-/* glow background */
+/* GOLD LUXURY GLOW */
 .glow{
     position:fixed;
-    width:600px;
-    height:600px;
-    background: radial-gradient(circle, rgba(36,198,220,0.15), transparent 70%);
-    top:-100px;
-    left:-100px;
-    filter: blur(40px);
-    animation: float 8s infinite ease-in-out;
+    width:700px;
+    height:700px;
+    background: radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
+    top:-150px;
+    left:-150px;
+    filter: blur(60px);
+    animation: float 10s ease-in-out infinite;
 }
 
 .glow2{
     position:fixed;
-    width:500px;
-    height:500px;
-    background: radial-gradient(circle, rgba(139,92,246,0.15), transparent 70%);
-    bottom:-120px;
-    right:-120px;
-    filter: blur(40px);
-    animation: float2 10s infinite ease-in-out;
+    width:600px;
+    height:600px;
+    background: radial-gradient(circle, rgba(214,178,94,0.08), transparent 70%);
+    bottom:-200px;
+    right:-200px;
+    filter: blur(80px);
+    animation: float2 12s ease-in-out infinite;
 }
 
 @keyframes float{
     0%,100%{transform:translate(0,0);}
-    50%{transform:translate(80px,40px);}
+    50%{transform:translate(60px,40px);}
 }
 
 @keyframes float2{
     0%,100%{transform:translate(0,0);}
-    50%{transform:translate(-80px,-40px);}
+    50%{transform:translate(-60px,-40px);}
 }
 
-/* container */
+/* CENTER */
 .container{
     position:relative;
     z-index:2;
+    height:100vh;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    height:100vh;
     text-align:center;
     padding:20px;
 }
 
-/* title */
+/* TITLE */
 h1{
-    font-size:3rem;
-    font-weight:800;
+    font-family:'Playfair Display', serif;
+    font-size:3.5rem;
     letter-spacing:2px;
+    color:#d6b25e;
     opacity:0;
     animation:fadeIn 1.5s forwards;
 }
 
 h2{
-    font-weight:400;
     margin-top:10px;
-    color:#c9d1d9;
+    font-weight:300;
+    color:#b89a55;
     opacity:0;
     animation:fadeIn 2s forwards;
 }
 
-@keyframes fadeIn{
-    from{opacity:0; transform:translateY(20px);}
-    to{opacity:1; transform:translateY(0);}
-}
-
-/* typing effect */
-.typing{
+/* SUBTITLE LINE */
+.line{
     margin-top:20px;
-    font-size:1.1rem;
-    color:#24c6dc;
-    border-right:2px solid #24c6dc;
-    white-space:nowrap;
-    overflow:hidden;
-    width:0;
-    animation:typing 4s steps(40,end) forwards, blink .8s infinite;
+    font-size:1rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:#8a6d2f;
+    animation:fadeIn 2.5s forwards;
 }
 
-@keyframes typing{
-    from{width:0;}
-    to{width:320px;}
-}
-
-@keyframes blink{
-    50%{border-color:transparent;}
-}
-
-/* cards */
+/* CARDS */
 .cards{
     margin-top:50px;
     display:flex;
@@ -118,38 +103,57 @@ h2{
     flex-wrap:wrap;
     justify-content:center;
     opacity:0;
-    animation:fadeIn 2.5s forwards;
+    animation:fadeIn 3s forwards;
 }
 
 .card{
-    background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.1);
+    width:240px;
     padding:20px;
-    border-radius:12px;
-    width:250px;
+    border:1px solid rgba(214,178,94,0.2);
+    background:rgba(0,0,0,0.4);
     backdrop-filter: blur(10px);
-    transition:0.3s;
+    border-radius:10px;
+    transition:0.4s;
+    color:#d6b25e;
 }
 
 .card:hover{
     transform:translateY(-10px);
-    border-color:#24c6dc;
+    border-color:#d6b25e;
+    box-shadow:0 0 25px rgba(214,178,94,0.2);
 }
 
-/* button */
+/* BUTTON */
 a{
     margin-top:40px;
+    padding:12px 26px;
+    border:1px solid #d6b25e;
+    color:#d6b25e;
     text-decoration:none;
-    color:#fff;
-    padding:12px 24px;
-    border:1px solid #24c6dc;
-    border-radius:8px;
-    transition:0.3s;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-size:0.8rem;
+    transition:0.4s;
 }
 
 a:hover{
-    background:#24c6dc;
+    background:#d6b25e;
     color:#000;
+}
+
+/* FADE */
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(20px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+/* GOLD PARTICLES */
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:1;
+    opacity:0.25;
 }
 </style>
 </head>
@@ -164,69 +168,60 @@ a:hover{
     <h1>Vinicius Soares Brandão</h1>
     <h2>Data Analytics • Business Intelligence • Python</h2>
 
-    <div class="typing">Transformando dados em decisões...</div>
+    <div class="line">CLASSIFIED 007 PROFILE</div>
 
     <div class="cards">
         <div class="card">
-            <h3>📍 Local</h3>
-            <p>São Paulo, Brasil</p>
+            📍 São Paulo, Brasil
         </div>
 
         <div class="card">
-            <h3>💼 Atual</h3>
-            <p>Setor Administrativo</p>
+            💼 Setor Administrativo
         </div>
 
         <div class="card">
-            <h3>🎯 Objetivo</h3>
-            <p>Data Analyst / BI</p>
+            🎯 Data Analyst / BI
         </div>
 
         <div class="card">
-            <h3>🐍 Foco</h3>
-            <p>Python • SQL • Dados</p>
+            🧠 Python • SQL • Data
         </div>
     </div>
 
-    <a href="https://github.com/" target="_blank">Ver meus repositórios</a>
+    <a href="https://github.com/" target="_blank">Access Repositories</a>
 
 </div>
 
 <script>
-// efeito de partículas simples
+// GOLD PARTICLES (ELEGANT MODE)
 const canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
-canvas.style.position = "fixed";
-canvas.style.top = 0;
-canvas.style.left = 0;
-canvas.style.zIndex = 1;
-canvas.style.opacity = 0.2;
-
 const ctx = canvas.getContext("2d");
 
 let w = canvas.width = window.innerWidth;
 let h = canvas.height = window.innerHeight;
 
-window.addEventListener("resize", () => {
+window.addEventListener("resize",()=>{
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
 });
 
 let particles = [];
 
-for(let i=0;i<80;i++){
+for(let i=0;i<70;i++){
     particles.push({
         x: Math.random()*w,
         y: Math.random()*h,
-        r: Math.random()*2,
-        dx: (Math.random()-0.5),
-        dy: (Math.random()-0.5)
+        r: Math.random()*1.8,
+        dx:(Math.random()-0.5)*0.3,
+        dy:(Math.random()-0.5)*0.3
     });
 }
 
 function draw(){
     ctx.clearRect(0,0,w,h);
-    ctx.fillStyle = "#24c6dc";
+
+    ctx.fillStyle = "#d6b25e";
 
     particles.forEach(p=>{
         ctx.beginPath();
