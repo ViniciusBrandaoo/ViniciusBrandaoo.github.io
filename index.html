@@ -21,7 +21,7 @@ body{
     overflow:hidden;
 }
 
-/* ===== BACKGROUND CINEMATICO ===== */
+/* ================= FUNDO LUXO ================= */
 
 .bg{
     position:fixed;
@@ -31,15 +31,18 @@ body{
         radial-gradient(circle at 20% 20%, rgba(214,178,94,0.12), transparent 40%),
         radial-gradient(circle at 80% 70%, rgba(214,178,94,0.08), transparent 45%),
         radial-gradient(circle at center, #000, #050505);
+    z-index:0;
 }
 
+/* luz dourada viva */
 .glow{
     position:fixed;
     width:600px;
     height:600px;
-    background: radial-gradient(circle, rgba(214,178,94,0.12), transparent 60%);
-    filter:blur(60px);
+    background: radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
+    filter:blur(70px);
     animation:float 10s infinite ease-in-out;
+    z-index:1;
 }
 
 .glow2{
@@ -49,8 +52,9 @@ body{
     background: radial-gradient(circle, rgba(214,178,94,0.08), transparent 60%);
     bottom:-200px;
     right:-200px;
-    filter:blur(70px);
+    filter:blur(80px);
     animation:float2 12s infinite ease-in-out;
+    z-index:1;
 }
 
 @keyframes float{
@@ -63,23 +67,51 @@ body{
     50%{transform:translate(-60px,-50px);}
 }
 
-/* scanlines elegantes */
-body::after{
+/* vinheta cinematográfica */
+body::before{
     content:"";
     position:fixed;
     width:100%;
     height:100%;
-    background: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.02),
-        transparent 2px,
-        transparent 5px
-    );
-    opacity:0.12;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
+    z-index:2;
     pointer-events:none;
 }
 
-/* ===== CONTEÚDO ===== */
+/* ================= CODE RAIN ================= */
+
+.code-rain{
+    position:fixed;
+    width:100%;
+    height:100%;
+    z-index:1;
+    pointer-events:none;
+    opacity:0.15;
+}
+
+.code-rain span{
+    position:absolute;
+    top:-100px;
+    color:rgba(214,178,94,0.35);
+    font-family:'JetBrains Mono', monospace;
+    font-size:14px;
+    animation:fall linear infinite;
+    text-shadow:0 0 8px rgba(214,178,94,0.1);
+}
+
+@keyframes fall{
+    0%{
+        transform:translateY(-100px);
+        opacity:0;
+    }
+    10%{opacity:0.4;}
+    100%{
+        transform:translateY(110vh);
+        opacity:0;
+    }
+}
+
+/* ================= CONTEÚDO ================= */
 
 .container{
     position:relative;
@@ -89,39 +121,32 @@ body::after{
     justify-content:center;
     align-items:center;
     text-align:center;
-    z-index:2;
+    z-index:3;
 }
 
-/* NOME */
 h1{
     font-family:'Playfair Display';
     font-size:3.2rem;
     letter-spacing:2px;
-    opacity:0;
     animation:fadeIn 2s forwards;
 }
 
-/* SUB */
 h2{
     margin-top:10px;
     font-weight:300;
     color:#b89a55;
-    opacity:0;
     animation:fadeIn 2.5s forwards;
 }
 
-/* LINHA ESTILO LUXO */
 .line{
     margin-top:20px;
     font-size:0.9rem;
     letter-spacing:3px;
     text-transform:uppercase;
     color:#8a6d2f;
-    opacity:0;
     animation:fadeIn 3s forwards;
 }
 
-/* TYPING */
 .typing{
     margin-top:25px;
     font-size:0.95rem;
@@ -140,7 +165,6 @@ h2{
     50%{border-color:transparent;}
 }
 
-/* CARDS */
 .cards{
     margin-top:50px;
     display:flex;
@@ -155,8 +179,6 @@ h2{
     background:rgba(0,0,0,0.6);
     border:1px solid rgba(214,178,94,0.25);
     backdrop-filter:blur(12px);
-    opacity:0;
-    transform:translateY(20px);
     animation:cardIn 1s forwards;
 }
 
@@ -166,15 +188,10 @@ h2{
 .card:nth-child(4){animation-delay:4.1s;}
 
 @keyframes cardIn{
+    from{opacity:0; transform:translateY(20px);}
     to{opacity:1; transform:translateY(0);}
 }
 
-.card:hover{
-    transform:scale(1.05);
-    border-color:#d6b25e;
-}
-
-/* BOTÃO */
 a{
     margin-top:40px;
     padding:12px 28px;
@@ -184,7 +201,6 @@ a{
     letter-spacing:3px;
     font-size:0.75rem;
     transition:0.4s;
-    opacity:0;
     animation:fadeIn 1s forwards;
     animation-delay:4.5s;
 }
@@ -206,6 +222,9 @@ a:hover{
 <div class="bg"></div>
 <div class="glow"></div>
 <div class="glow2"></div>
+
+<!-- FUNDO DE CÓDIGO -->
+<div class="code-rain"></div>
 
 <div class="container">
 
@@ -230,6 +249,32 @@ a:hover{
     </a>
 
 </div>
+
+<script>
+const container = document.querySelector(".code-rain");
+
+const chars = "01{}[]<>/\\|=+-*#@$%^&";
+
+function createDrop(){
+    const span = document.createElement("span");
+
+    span.innerText = Array.from(
+        {length: Math.floor(Math.random()*14)+6},
+        () => chars[Math.floor(Math.random()*chars.length)]
+    ).join("");
+
+    span.style.left = Math.random() * 100 + "vw";
+    span.style.animationDuration = (Math.random()*6 + 5) + "s";
+    span.style.fontSize = (Math.random()*6 + 10) + "px";
+    span.style.opacity = Math.random() * 0.25 + 0.08;
+
+    container.appendChild(span);
+
+    setTimeout(() => span.remove(), 11000);
+}
+
+setInterval(createDrop, 100);
+</script>
 
 </body>
 </html>
