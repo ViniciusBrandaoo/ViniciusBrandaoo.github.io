@@ -21,7 +21,7 @@ body{
     overflow:hidden;
 }
 
-/* ================= FUNDO LUXO ================= */
+/* ================= BACKGROUND ================= */
 
 .bg{
     position:fixed;
@@ -34,7 +34,6 @@ body{
     z-index:0;
 }
 
-/* luz dourada viva */
 .glow{
     position:fixed;
     width:600px;
@@ -67,7 +66,7 @@ body{
     50%{transform:translate(-60px,-50px);}
 }
 
-/* vinheta cinematográfica */
+/* vinheta */
 body::before{
     content:"";
     position:fixed;
@@ -86,32 +85,25 @@ body::before{
     height:100%;
     z-index:1;
     pointer-events:none;
-    opacity:0.15;
+    opacity:0.14;
 }
 
 .code-rain span{
     position:absolute;
     top:-100px;
     color:rgba(214,178,94,0.35);
-    font-family:'JetBrains Mono', monospace;
+    font-family:'JetBrains Mono';
     font-size:14px;
     animation:fall linear infinite;
-    text-shadow:0 0 8px rgba(214,178,94,0.1);
 }
 
 @keyframes fall{
-    0%{
-        transform:translateY(-100px);
-        opacity:0;
-    }
+    0%{transform:translateY(-100px); opacity:0;}
     10%{opacity:0.4;}
-    100%{
-        transform:translateY(110vh);
-        opacity:0;
-    }
+    100%{transform:translateY(110vh); opacity:0;}
 }
 
-/* ================= CONTEÚDO ================= */
+/* ================= CONTAINER ================= */
 
 .container{
     position:relative;
@@ -157,43 +149,49 @@ h2{
     animation:typing 4s steps(60,end) forwards, blink .8s infinite;
 }
 
-@keyframes typing{
-    to{width:520px;}
-}
+@keyframes typing{to{width:520px;}}
+@keyframes blink{50%{border-color:transparent;}}
 
-@keyframes blink{
-    50%{border-color:transparent;}
-}
+/* ================= INFO CLEAN (NOVO) ================= */
 
-.cards{
-    margin-top:50px;
+.info{
+    margin-top:55px;
     display:flex;
-    gap:15px;
-    flex-wrap:wrap;
-    justify-content:center;
+    flex-direction:column;
+    gap:14px;
+    align-items:center;
 }
 
-.card{
-    width:220px;
-    padding:18px;
-    background:rgba(0,0,0,0.6);
-    border:1px solid rgba(214,178,94,0.25);
-    backdrop-filter:blur(12px);
-    animation:cardIn 1s forwards;
+.row{
+    display:flex;
+    justify-content:space-between;
+    width:340px;
+    padding:10px 0;
+    border-bottom:1px solid rgba(214,178,94,0.15);
+    transition:0.3s;
 }
 
-.card:nth-child(1){animation-delay:3.5s;}
-.card:nth-child(2){animation-delay:3.7s;}
-.card:nth-child(3){animation-delay:3.9s;}
-.card:nth-child(4){animation-delay:4.1s;}
-
-@keyframes cardIn{
-    from{opacity:0; transform:translateY(20px);}
-    to{opacity:1; transform:translateY(0);}
+.row:hover{
+    border-bottom:1px solid rgba(214,178,94,0.5);
+    transform:translateX(6px);
 }
+
+.label{
+    font-size:0.7rem;
+    letter-spacing:2px;
+    color:#8a6d2f;
+    text-transform:uppercase;
+}
+
+.value{
+    font-size:0.9rem;
+    color:#d6b25e;
+}
+
+/* ================= BOTÃO ================= */
 
 a{
-    margin-top:40px;
+    margin-top:45px;
     padding:12px 28px;
     border:1px solid #d6b25e;
     color:#d6b25e;
@@ -210,6 +208,8 @@ a:hover{
     color:#000;
 }
 
+/* ================= ANIMAÇÕES ================= */
+
 @keyframes fadeIn{
     from{opacity:0; transform:translateY(10px);}
     to{opacity:1; transform:translateY(0);}
@@ -223,7 +223,6 @@ a:hover{
 <div class="glow"></div>
 <div class="glow2"></div>
 
-<!-- FUNDO DE CÓDIGO -->
 <div class="code-rain"></div>
 
 <div class="container">
@@ -237,11 +236,28 @@ a:hover{
         Transformando dados em decisões estratégicas...
     </div>
 
-    <div class="cards">
-        <div class="card">📍 São Paulo, Brasil</div>
-        <div class="card">💼 Setor Administrativo</div>
-        <div class="card">🎯 Data Analyst / BI</div>
-        <div class="card">🧠 Python • SQL • Data</div>
+    <div class="info">
+
+        <div class="row">
+            <span class="label">Local</span>
+            <span class="value">São Paulo, Brasil</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Atual</span>
+            <span class="value">Setor Administrativo</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Objetivo</span>
+            <span class="value">Data Analyst / BI</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Stack</span>
+            <span class="value">Python • SQL • Data</span>
+        </div>
+
     </div>
 
     <a href="https://github.com/" target="_blank">
@@ -263,17 +279,16 @@ function createDrop(){
         () => chars[Math.floor(Math.random()*chars.length)]
     ).join("");
 
-    span.style.left = Math.random() * 100 + "vw";
-    span.style.animationDuration = (Math.random()*6 + 5) + "s";
-    span.style.fontSize = (Math.random()*6 + 10) + "px";
-    span.style.opacity = Math.random() * 0.25 + 0.08;
+    span.style.left = Math.random()*100 + "vw";
+    span.style.animationDuration = (Math.random()*6+5)+"s";
+    span.style.opacity = Math.random()*0.25 + 0.08;
 
     container.appendChild(span);
 
-    setTimeout(() => span.remove(), 11000);
+    setTimeout(()=>span.remove(),11000);
 }
 
-setInterval(createDrop, 100);
+setInterval(createDrop,120);
 </script>
 
 </body>
