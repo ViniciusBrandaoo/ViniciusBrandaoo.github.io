@@ -364,18 +364,30 @@ function getCtx(){
 // Initialise on first gesture
 ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,()=>getCtx(),{once:true}));
 
-/* Key click — short high-pitched tick (typewriter feel) */
-function playKey(vol=0.7){
+/* Key click — mechanical keyboard, subtle */
+function playKey(vol=0.008){
   const c=getCtx();if(!c)return;
   const now=c.currentTime,sr=c.sampleRate;
-  const len=Math.floor(sr*.0025);
-  const n=c.createBuffer(1,len,sr);
-  const d=n.getChannelData(0);
-  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3);
-  const s=c.createBufferSource();s.buffer=n;
-  const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=5500;f.Q.value=1.2;
-  const g=c.createGain();g.gain.setValueAtTime(vol,now);g.gain.exponentialRampToValueAtTime(.001,now+.012);
-  s.connect(f);f.connect(g);g.connect(c.destination);s.start(now);
+
+  // Layer 1: initial transient (the "click" on press)
+  const clickLen=Math.floor(sr*.006);
+  const clickBuf=c.createBuffer(1,clickLen,sr);
+  const cd=clickBuf.getChannelData(0);
+  for(let i=0;i<clickLen;i++) cd[i]=(Math.random()*2-1)*Math.pow(1-i/clickLen,4);
+  const click=c.createBufferSource();click.buffer=clickBuf;
+  const fClick=c.createBiquadFilter();fClick.type='bandpass';fClick.frequency.value=3200;fClick.Q.value=0.8;
+  const gClick=c.createGain();gClick.gain.setValueAtTime(vol,now);gClick.gain.exponentialRampToValueAtTime(.001,now+.018);
+  click.connect(fClick);fClick.connect(gClick);gClick.connect(c.destination);click.start(now);
+
+  // Layer 2: body resonance — low thud right after
+  const bodyLen=Math.floor(sr*.04);
+  const bodyBuf=c.createBuffer(1,bodyLen,sr);
+  const bd=bodyBuf.getChannelData(0);
+  for(let i=0;i<bodyLen;i++) bd[i]=(Math.random()*2-1)*Math.pow(1-i/bodyLen,2)*.5;
+  const body=c.createBufferSource();body.buffer=bodyBuf;
+  const fBody=c.createBiquadFilter();fBody.type='lowpass';fBody.frequency.value=420;
+  const gBody=c.createGain();gBody.gain.setValueAtTime(vol*.45,now+.003);gBody.gain.exponentialRampToValueAtTime(.001,now+.045);
+  body.connect(fBody);fBody.connect(gBody);gBody.connect(c.destination);body.start(now+.003);
 }
 
 /* Hover click — slightly softer, same DNA */
