@@ -5,334 +5,682 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vinicius Soares Brandão | Portfolio</title>
 
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpolygon%20points%3D%228%2C8%2056%2C8%2040%2C36%2024%2C36%22%20fill%3D%22%23b03a2e%22%2F%3E%3Cpolygon%20points%3D%228%2C8%2022%2C8%2018%2C22%22%20fill%3D%22%23e74c3c%22%20opacity%3D%220.45%22%2F%3E%3Crect%20x%3D%2229%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%2212%22%20fill%3D%22%23922b21%22%2F%3E%3Crect%20x%3D%2219%22%20y%3D%2248%22%20width%3D%2226%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%23c0a040%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%227%22%20fill%3D%22%23e67e22%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%224%22%20fill%3D%22%23f5b041%22%20opacity%3D%220.7%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%221.5%22%20fill%3D%22%23e67e22%22%2F%3E%3Cline%20x1%3D%2246%22%20y1%3D%229%22%20x2%3D%2246%22%20y2%3D%2220%22%20stroke%3D%22%23c0a040%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%229%22%20r%3D%221.5%22%20fill%3D%22%23c0a040%22%2F%3E%3C%2Fsvg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpath%20d%3D%22M18%2C12%20L46%2C12%20L36%2C34%20L28%2C34%20Z%22%20fill%3D%22%239b2335%22%20opacity%3D%220.92%22%2F%3E%3Cpath%20d%3D%22M22%2C14%20L42%2C14%20L38%2C26%20L26%2C26%20Z%22%20fill%3D%22%23c0392b%22%20opacity%3D%220.6%22%2F%3E%3Crect%20x%3D%2230%22%20y%3D%2234%22%20width%3D%224%22%20height%3D%2211%22%20rx%3D%221.5%22%20fill%3D%22%238a7040%22%2F%3E%3Crect%20x%3D%2221%22%20y%3D%2245%22%20width%3D%2222%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%23c0a040%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2217%22%20width%3D%226%22%20height%3D%226%22%20rx%3D%221%22%20fill%3D%22rgba(200%2C230%2C255%2C0.35)%22%20stroke%3D%22rgba(200%2C230%2C255%2C0.6)%22%20stroke-width%3D%220.5%22%2F%3E%3Crect%20x%3D%2233%22%20y%3D%2219%22%20width%3D%225%22%20height%3D%225%22%20rx%3D%221%22%20fill%3D%22rgba(200%2C230%2C255%2C0.28)%22%20stroke%3D%22rgba(200%2C230%2C255%2C0.5)%22%20stroke-width%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M44%2C10%20A8%2C8%200%200%2C1%2044%2C26%20Z%22%20fill%3D%22%23e67e22%22%20opacity%3D%220.9%22%2F%3E%3Cpath%20d%3D%22M44%2C10%20A8%2C8%200%200%2C1%2044%2C26%22%20fill%3D%22none%22%20stroke%3D%22%23f39c12%22%20stroke-width%3D%221%22%2F%3E%3C%2Fsvg%3E"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=JetBrains+Mono:wght@300;400;600&display=swap');
-
-/*
-  Paleta old money:
-  --gold-bright : #c9a84c  → dourado quente, usado no título principal
-  --gold-mid    : #a8864a  → dourado médio, subtítulo e valores
-  --gold-muted  : #7a6535  → dourado apagado elegante, labels e detalhes
-  --gold-dim    : #4a3c20  → dourado escuro, bordas e glows
-*/
-
 *{margin:0;padding:0;box-sizing:border-box;}
 
+:root{
+  --gold:  #c9a84c;
+  --gold2: #a8864a;
+  --gold3: #7a6535;
+  --gold4: #4a3c20;
+  --gold5: #2a2010;
+}
+
+html{ scroll-behavior:smooth; }
+
 body{
-    background:#000;
-    color:#a8864a;
-    font-family:'JetBrains Mono', monospace;
-    overflow:hidden;
+  background:#000;
+  color:#a8864a;
+  font-family:'JetBrains Mono', monospace;
+  overflow-x:hidden;
 }
 
+/* ── BG ATMOSPHERE ── */
 .bg{
-    position:fixed;width:100%;height:100%;
-    background:
-        radial-gradient(circle at 20% 20%, rgba(180,140,60,0.10), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(180,140,60,0.06), transparent 45%),
-        radial-gradient(circle at center, #020100, #050403);
-    z-index:0;
+  position:fixed;width:100%;height:100%;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(180,140,60,0.10), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(180,140,60,0.06), transparent 45%),
+    radial-gradient(circle at center, #020100, #050403);
+  z-index:0;pointer-events:none;
 }
-
 .glow{
-    position:fixed;width:600px;height:600px;
-    background:radial-gradient(circle, rgba(180,140,60,0.12), transparent 60%);
-    filter:blur(70px);
-    animation:float 10s infinite ease-in-out;
-    z-index:1;
+  position:fixed;width:600px;height:600px;
+  background:radial-gradient(circle, rgba(180,140,60,0.12), transparent 60%);
+  filter:blur(70px);top:-100px;left:-100px;
+  animation:float 10s infinite ease-in-out;
+  z-index:1;pointer-events:none;
 }
-
 .glow2{
-    position:fixed;width:500px;height:500px;
-    background:radial-gradient(circle, rgba(180,140,60,0.07), transparent 60%);
-    bottom:-200px;right:-200px;
-    filter:blur(80px);
-    animation:float2 12s infinite ease-in-out;
-    z-index:1;
+  position:fixed;width:500px;height:500px;
+  background:radial-gradient(circle, rgba(180,140,60,0.07), transparent 60%);
+  bottom:-200px;right:-200px;filter:blur(80px);
+  animation:float2 12s infinite ease-in-out;
+  z-index:1;pointer-events:none;
 }
-
+body::before{
+  content:"";position:fixed;width:100%;height:100%;
+  background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.92) 100%);
+  z-index:2;pointer-events:none;
+}
+.code-rain{position:fixed;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.15;}
+.code-rain span{
+  position:absolute;top:-100px;color:#7a6535;
+  font-family:'JetBrains Mono';font-size:12px;
+  animation:fall linear infinite;
+}
+@keyframes fall{0%{transform:translateY(-100px);opacity:0;}10%{opacity:1;}100%{transform:translateY(110vh);opacity:0;}}
 @keyframes float{0%,100%{transform:translate(0,0);}50%{transform:translate(60px,40px);}}
 @keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-60px,-50px);}}
 
-body::before{
-    content:"";position:fixed;width:100%;height:100%;
-    background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.92) 100%);
-    z-index:2;pointer-events:none;
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 48px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+  backdrop-filter:blur(2px);
+}
+.nav-logo{
+  font-family:'Playfair Display';font-size:1.1rem;
+  color:var(--gold);letter-spacing:2px;
+}
+.nav-links{display:flex;gap:32px;}
+.nav-links a{
+  color:var(--gold3);text-decoration:none;font-size:0.65rem;
+  letter-spacing:3px;text-transform:uppercase;transition:color 0.3s;
+}
+.nav-links a:hover{color:var(--gold);}
+
+/* ── SECTIONS ── */
+section{
+  position:relative;z-index:3;
+  min-height:100vh;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  padding:80px 24px;
+}
+section:not(#hero){
+  border-top:1px solid rgba(120,90,40,0.12);
 }
 
-.code-rain{position:fixed;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.18;}
+/* ── HERO ── */
+#hero{text-align:center;}
 
-.code-rain span{
-    position:absolute;top:-100px;
-    color:#7a6535;
-    font-family:'JetBrains Mono';font-size:13px;
-    animation:fall linear infinite;
+.photo-ring{
+  width:140px;height:140px;border-radius:50%;
+  border:2px solid var(--gold4);
+  padding:4px;margin:0 auto 28px;
+  position:relative;
+  animation:fadeIn 1s forwards;opacity:0;
 }
-
-@keyframes fall{
-    0%{transform:translateY(-100px);opacity:0;}
-    10%{opacity:1;}
-    100%{transform:translateY(110vh);opacity:0;}
+.photo-ring::before{
+  content:"";position:absolute;inset:-6px;border-radius:50%;
+  border:1px solid var(--gold4);opacity:0.4;
 }
-
-.container{
-    position:relative;height:100vh;
-    display:flex;flex-direction:column;
-    justify-content:center;align-items:center;
-    text-align:center;z-index:3;
+.photo-ring img,
+.photo-placeholder{
+  width:100%;height:100%;border-radius:50%;object-fit:cover;
+  display:block;
 }
+.photo-placeholder{
+  background:var(--gold5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.6rem;letter-spacing:2px;color:var(--gold3);
+  text-align:center;line-height:1.7;
+  flex-direction:column;gap:6px;
+}
+.photo-placeholder svg{opacity:0.4;}
 
 .fade{opacity:0;transform:translateY(20px);animation:fadeIn 1s forwards;}
-.delay1{animation-delay:0.3s;}
-.delay2{animation-delay:0.6s;}
-.delay3{animation-delay:0.9s;}
-.delay4{animation-delay:1.2s;}
-.delay5{animation-delay:1.5s;}
+.d1{animation-delay:.2s}.d2{animation-delay:.4s}.d3{animation-delay:.6s}
+.d4{animation-delay:.8s}.d5{animation-delay:1s}.d6{animation-delay:1.2s}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
 
-/* título: dourado mais rico, Playfair itálico para refinamento */
 h1{
-    font-family:'Playfair Display';
-    font-size:3.2rem;
-    letter-spacing:3px;
-    color:#c9a84c;
-    text-shadow: 0 0 60px rgba(180,140,60,0.25);
+  font-family:'Playfair Display';font-size:3rem;
+  letter-spacing:3px;color:var(--gold);
+  text-shadow:0 0 60px rgba(180,140,60,0.2);
 }
-
-/* subtítulo: espaçamento mais arejado */
-h2{
-    margin-top:12px;
-    font-weight:300;
-    font-size:0.85rem;
-    letter-spacing:4px;
-    color:#7a6535;
+.hero-sub{
+  margin-top:10px;font-weight:300;font-size:0.78rem;
+  letter-spacing:4px;color:var(--gold3);
 }
-
-.line{
-    margin-top:22px;font-size:0.72rem;
-    letter-spacing:5px;text-transform:uppercase;
-    color:#4a3c20;
+.divider-gem{
+  margin:20px auto;
+  display:flex;align-items:center;gap:14px;
+  color:var(--gold4);font-size:0.65rem;
+  width:fit-content;
 }
-
-/* separador decorativo entre .line e .typing */
-.divider{
-    margin-top:18px;
-    display:flex;align-items:center;gap:12px;
-    color:#4a3c20;font-size:0.65rem;letter-spacing:2px;
+.divider-gem::before,.divider-gem::after{
+  content:"";display:block;width:70px;height:1px;
+  background:linear-gradient(to right, transparent, var(--gold4), transparent);
 }
-.divider::before,.divider::after{
-    content:"";display:block;width:60px;height:1px;
-    background:linear-gradient(to right, transparent, #4a3c20, transparent);
+.typing-wrap{
+  margin-top:6px;font-size:0.84rem;color:#8a7040;
+  height:26px;overflow:hidden;
 }
-
 .typing{
-    margin-top:18px;font-size:0.88rem;
-    color:#8a7040;
-    border-right:1px solid #7a6535;
-    white-space:nowrap;overflow:hidden;width:0;
-    animation:typing 4s steps(60,end) forwards, blink 1s infinite;
+  border-right:1px solid var(--gold3);
+  white-space:nowrap;overflow:hidden;width:0;
+  animation:typing 3.5s steps(55,end) 1.4s forwards, blink 1s 1.4s infinite;
+  display:inline-block;
 }
-
-@keyframes typing{to{width:480px;}}
+@keyframes typing{to{width:440px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-.info{margin-top:50px;display:flex;flex-direction:column;gap:10px;align-items:center;}
-
+.hero-info{margin-top:44px;display:flex;flex-direction:column;gap:8px;align-items:center;}
 .row{
-    display:flex;justify-content:space-between;
-    width:360px;padding:11px 0;
-    border-bottom:1px solid rgba(120,90,40,0.18);
-    transition:all 0.35s ease;cursor:default;
+  display:flex;justify-content:space-between;
+  width:340px;padding:10px 0;
+  border-bottom:1px solid rgba(120,90,40,0.18);
+  transition:all 0.35s;cursor:default;
 }
+.row:hover{border-bottom-color:rgba(180,140,60,0.45);transform:translateX(8px);}
+.label{font-size:0.6rem;letter-spacing:3px;color:var(--gold4);text-transform:uppercase;}
+.value{font-size:0.84rem;color:var(--gold2);letter-spacing:1px;}
 
-.row:hover{
-    border-bottom:1px solid rgba(180,140,60,0.45);
-    transform:translateX(8px);
+.hero-ctas{margin-top:36px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.btn{
+  padding:10px 26px;text-decoration:none;font-size:0.65rem;
+  letter-spacing:4px;text-transform:uppercase;transition:0.35s;
+  display:inline-block;
 }
-
-.label{
-    font-size:0.65rem;letter-spacing:3px;
-    color:#4a3c20;text-transform:uppercase;
+.btn-outline{border:1px solid var(--gold4);color:var(--gold3);}
+.btn-outline:hover{border-color:var(--gold2);color:var(--gold);}
+.btn-fill{
+  border:1px solid var(--gold3);
+  background:rgba(120,90,40,0.12);color:var(--gold2);
 }
-
-.value{
-    font-size:0.88rem;
-    color:#a8864a;
-    letter-spacing:1px;
-}
+.btn-fill:hover{background:rgba(180,140,60,0.18);color:var(--gold);}
 
 .social{
-    margin-top:38px;display:flex;gap:28px;
-    font-size:0.78rem;letter-spacing:2px;opacity:0.8;
+  margin-top:32px;display:flex;gap:24px;
+  font-size:0.72rem;letter-spacing:2px;
 }
 .social a{
-    color:#7a6535;text-decoration:none;
-    border-bottom:1px solid transparent;transition:0.35s;
-    text-transform:uppercase;
+  color:var(--gold3);text-decoration:none;
+  border-bottom:1px solid transparent;transition:0.3s;text-transform:uppercase;
 }
-.social a:hover{color:#a8864a;border-bottom:1px solid #7a6535;}
+.social a:hover{color:var(--gold2);border-bottom-color:var(--gold3);}
 
-.button{
-    margin-top:42px;padding:11px 30px;
-    border:1px solid #4a3c20;
-    color:#7a6535;
-    text-decoration:none;letter-spacing:4px;font-size:0.7rem;
-    transition:0.4s;text-transform:uppercase;
+/* ── SECTION TITLES ── */
+.sec-eyebrow{
+  font-size:0.6rem;letter-spacing:5px;color:var(--gold4);
+  text-transform:uppercase;margin-bottom:10px;text-align:center;
 }
-.button:hover{
-    border-color:#a8864a;
-    color:#c9a84c;
+.sec-title{
+  font-family:'Playfair Display';font-size:2rem;
+  color:var(--gold);letter-spacing:2px;text-align:center;
+  margin-bottom:48px;
 }
 
-@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+/* ── SOBRE ── */
+#sobre .sobre-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:40px;max-width:860px;width:100%;align-items:center;
+}
+.sobre-text{color:var(--gold2);font-size:0.82rem;line-height:2;letter-spacing:0.5px;}
+.sobre-text p+p{margin-top:14px;}
+.sobre-text strong{color:var(--gold);}
+.sobre-photo{
+  width:260px;height:320px;border-radius:2px;
+  border:1px solid var(--gold4);
+  overflow:hidden;position:relative;margin:0 auto;
+}
+.sobre-photo::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg, rgba(180,140,60,0.08), transparent);
+}
+.sobre-photo img,.sobre-photo-ph{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.sobre-photo-ph{
+  background:var(--gold5);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:8px;
+  color:var(--gold3);font-size:0.6rem;letter-spacing:2px;text-align:center;
+}
+.sobre-photo-ph svg{opacity:0.35;}
+
+/* ── SKILLS ── */
+#skills .skills-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:20px;max-width:860px;width:100%;
+}
+.skill-card{
+  border:1px solid rgba(120,90,40,0.22);
+  padding:22px 20px;transition:0.35s;
+}
+.skill-card:hover{
+  border-color:rgba(180,140,60,0.4);
+  background:rgba(120,90,40,0.06);
+}
+.skill-name{
+  font-size:0.65rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:14px;
+}
+.skill-bar-bg{
+  height:2px;background:rgba(120,90,40,0.2);position:relative;
+}
+.skill-bar-fill{
+  position:absolute;top:0;left:0;height:100%;
+  background:linear-gradient(to right, var(--gold4), var(--gold3));
+  transition:width 1s ease;
+}
+.skill-pct{
+  margin-top:6px;font-size:0.6rem;color:var(--gold3);letter-spacing:2px;
+  text-align:right;
+}
+
+/* ── PROJETOS ── */
+#projetos .proj-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:20px;max-width:1000px;width:100%;
+}
+.proj-card{
+  border:1px solid rgba(120,90,40,0.22);
+  display:flex;flex-direction:column;transition:0.35s;
+  overflow:hidden;
+}
+.proj-card:hover{
+  border-color:rgba(180,140,60,0.4);
+  transform:translateY(-4px);
+}
+.proj-thumb{
+  height:130px;background:var(--gold5);
+  display:flex;align-items:center;justify-content:center;
+  border-bottom:1px solid rgba(120,90,40,0.2);
+  position:relative;overflow:hidden;
+}
+.proj-thumb-label{
+  font-size:0.6rem;letter-spacing:2px;color:var(--gold3);text-transform:uppercase;
+}
+.proj-thumb-icon{font-size:2rem;opacity:0.25;margin-bottom:6px;}
+.proj-body{padding:18px;}
+.proj-tag{
+  font-size:0.55rem;letter-spacing:3px;color:var(--gold4);
+  text-transform:uppercase;margin-bottom:8px;
+}
+.proj-name{
+  font-family:'Playfair Display';font-size:1rem;
+  color:var(--gold);margin-bottom:8px;line-height:1.4;
+}
+.proj-desc{
+  font-size:0.7rem;color:var(--gold3);line-height:1.8;letter-spacing:0.3px;
+  flex:1;
+}
+.proj-stack{
+  margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;
+}
+.tag{
+  font-size:0.55rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold4);border:1px solid var(--gold5);padding:3px 8px;
+}
+.proj-link{
+  margin-top:14px;font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--gold3);text-decoration:none;border-bottom:1px solid transparent;
+  transition:0.3s;display:inline-block;
+}
+.proj-link:hover{color:var(--gold);border-bottom-color:var(--gold3);}
+
+/* ── CONTATO ── */
+#contato{text-align:center;}
+.contato-links{
+  display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:8px;
+}
+.contato-item{
+  border:1px solid var(--gold4);padding:20px 28px;
+  text-decoration:none;transition:0.35s;
+  display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;
+}
+.contato-item:hover{border-color:var(--gold2);background:rgba(120,90,40,0.06);}
+.contato-item-label{
+  font-size:0.55rem;letter-spacing:4px;color:var(--gold4);text-transform:uppercase;
+}
+.contato-item-val{font-size:0.8rem;color:var(--gold2);letter-spacing:1px;}
+.footer{
+  position:relative;z-index:3;
+  border-top:1px solid rgba(120,90,40,0.12);
+  padding:24px;text-align:center;
+  font-size:0.6rem;letter-spacing:3px;color:var(--gold4);
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity 0.7s, transform 0.7s;}
+.reveal.visible{opacity:1;transform:none;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  nav{padding:16px 20px;}
+  .nav-links{gap:16px;}
+  h1{font-size:2rem;}
+  @keyframes typing{to{width:280px;}}
+  .row{width:290px;}
+  #sobre .sobre-grid{grid-template-columns:1fr;text-align:center;}
+  .sobre-photo{order:-1;}
+  #skills .skills-grid{grid-template-columns:1fr 1fr;}
+  #projetos .proj-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
-
 <body>
+
 <div class="bg"></div>
 <div class="glow"></div>
 <div class="glow2"></div>
 <div class="code-rain"></div>
 
-<div class="container">
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">VSB</div>
+  <div class="nav-links">
+    <a href="#sobre">Sobre</a>
+    <a href="#skills">Skills</a>
+    <a href="#projetos">Projetos</a>
+    <a href="#contato">Contato</a>
+  </div>
+</nav>
 
-    <h1 class="fade delay1">Vinicius Soares Brandão</h1>
-    <h2 class="fade delay2">Data Analytics &nbsp;•&nbsp; Business Intelligence &nbsp;•&nbsp; Python</h2>
-    <div class="line fade delay2">Portfolio Digital</div>
+<!-- HERO -->
+<section id="hero">
 
-    <div class="divider fade delay3">◆</div>
+  <div class="photo-ring fade d1">
+    <!--
+      SUBSTITUA ABAIXO:
+      <img src="SUA_FOTO.jpg" alt="Vinicius Soares Brandão">
+    -->
+    <div class="photo-placeholder">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="11" r="6" stroke="#7a6535" stroke-width="1.5"/>
+        <path d="M4 28c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#7a6535" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      sua foto aqui
+    </div>
+  </div>
 
-    <div class="typing fade delay3">
-        Transformando dados em decisões estratégicas...
+  <h1 class="fade d2">Vinicius Soares Brandão</h1>
+  <p class="hero-sub fade d2">Data Analytics &nbsp;·&nbsp; Business Intelligence &nbsp;·&nbsp; Python</p>
+
+  <div class="divider-gem fade d3">◆</div>
+
+  <div class="typing-wrap fade d3">
+    <span class="typing">Transformando dados em decisões estratégicas...</span>
+  </div>
+
+  <div class="hero-info fade d4">
+    <div class="row"><span class="label">Local</span><span class="value">São Paulo, Brasil</span></div>
+    <div class="row"><span class="label">Atual</span><span class="value">Setor Administrativo</span></div>
+    <div class="row"><span class="label">Objetivo</span><span class="value">Data Analyst / BI</span></div>
+    <div class="row"><span class="label">Stack</span><span class="value">Python &nbsp;·&nbsp; SQL &nbsp;·&nbsp; Power BI</span></div>
+  </div>
+
+  <div class="hero-ctas fade d5">
+    <a class="btn btn-fill" href="https://github.com/ViniciusBrandaoo" target="_blank">Ver GitHub</a>
+    <a class="btn btn-outline" href="#projetos">Ver Projetos</a>
+  </div>
+
+  <div class="social fade d6">
+    <a href="https://linkedin.com" target="_blank">LinkedIn</a>
+    <span style="color:var(--gold4)">·</span>
+    <a href="https://instagram.com/viniciusbrandaoo" target="_blank">Instagram</a>
+    <span style="color:var(--gold4)">·</span>
+    <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
+  </div>
+
+</section>
+
+<!-- SOBRE -->
+<section id="sobre">
+  <p class="sec-eyebrow reveal">Quem sou</p>
+  <h2 class="sec-title reveal">Sobre mim</h2>
+
+  <div class="sobre-grid reveal">
+
+    <div class="sobre-photo">
+      <!--
+        SUBSTITUA ABAIXO pela mesma foto ou uma diferente (vertical fica melhor aqui):
+        <img src="SUA_FOTO.jpg" alt="Vinicius">
+      -->
+      <div class="sobre-photo-ph">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="14" r="8" stroke="#7a6535" stroke-width="1.5"/>
+          <path d="M4 36c0-8.837 7.163-16 16-16s16 7.163 16 16" stroke="#7a6535" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        foto aqui
+      </div>
     </div>
 
-    <div class="info fade delay4">
-        <div class="row"><span class="label">Local</span><span class="value">São Paulo, Brasil</span></div>
-        <div class="row"><span class="label">Atual</span><span class="value">Setor Administrativo</span></div>
-        <div class="row"><span class="label">Objetivo</span><span class="value">Data Analyst / BI</span></div>
-        <div class="row"><span class="label">Stack</span><span class="value">Python &nbsp;•&nbsp; SQL &nbsp;•&nbsp; Data</span></div>
+    <div class="sobre-text">
+      <p>
+        Profissional em transição para a área de <strong>dados e Business Intelligence</strong>,
+        com base sólida no setor administrativo e paixão por transformar números brutos
+        em narrativas que guiam decisões.
+      </p>
+      <p>
+        Combino o raciocínio analítico construído no dia a dia operacional com
+        <strong>Python, SQL e Power BI</strong> para criar dashboards e análises
+        que realmente fazem diferença.
+      </p>
+      <p>
+        Baseado em <strong>São Paulo</strong>, busco minha primeira oportunidade
+        formal como Data Analyst ou Analista de BI — onde posso continuar aprendendo
+        e entregando valor imediato.
+      </p>
     </div>
 
-    <div class="social fade delay5">
-        <a href="https://instagram.com/viniciusbrandaoo" target="_blank">Instagram</a>
-        <span style="color:#4a3c20;">•</span>
-        <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <p class="sec-eyebrow reveal">Ferramentas & linguagens</p>
+  <h2 class="sec-title reveal">Stack técnico</h2>
+
+  <div class="skills-grid reveal">
+
+    <div class="skill-card">
+      <div class="skill-name">Python</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="82%"></div></div>
+      <div class="skill-pct">Avançado</div>
     </div>
 
-    <a class="button fade delay5" href="https://github.com/ViniciusBrandaoo" target="_blank">
-        Ver Repositórios
+    <div class="skill-card">
+      <div class="skill-name">SQL</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="78%"></div></div>
+      <div class="skill-pct">Intermediário–Avançado</div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-name">Power BI</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="70%"></div></div>
+      <div class="skill-pct">Intermediário</div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-name">Pandas / NumPy</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="75%"></div></div>
+      <div class="skill-pct">Intermediário–Avançado</div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-name">Matplotlib / Seaborn</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="65%"></div></div>
+      <div class="skill-pct">Intermediário</div>
+    </div>
+
+    <div class="skill-card">
+      <div class="skill-name">Excel Avançado</div>
+      <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:0" data-w="88%"></div></div>
+      <div class="skill-pct">Avançado</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROJETOS -->
+<section id="projetos">
+  <p class="sec-eyebrow reveal">Trabalhos selecionados</p>
+  <h2 class="sec-title reveal">Projetos</h2>
+
+  <div class="proj-grid reveal">
+
+    <div class="proj-card">
+      <div class="proj-thumb">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <div class="proj-thumb-icon">📊</div>
+          <span class="proj-thumb-label">Dashboard de Vendas</span>
+        </div>
+      </div>
+      <div class="proj-body">
+        <div class="proj-tag">Análise de Negócios</div>
+        <div class="proj-name">Dashboard de Vendas Regional</div>
+        <div class="proj-desc">
+          Painel interativo em Power BI com KPIs de receita, ticket médio e
+          performance por região. Integração via SQL com banco de dados PostgreSQL.
+        </div>
+        <div class="proj-stack">
+          <span class="tag">Power BI</span>
+          <span class="tag">SQL</span>
+          <span class="tag">PostgreSQL</span>
+        </div>
+        <a class="proj-link" href="https://github.com/ViniciusBrandaoo" target="_blank">Ver repositório →</a>
+      </div>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-thumb">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <div class="proj-thumb-icon">🐍</div>
+          <span class="proj-thumb-label">Análise Python</span>
+        </div>
+      </div>
+      <div class="proj-body">
+        <div class="proj-tag">Data Science</div>
+        <div class="proj-name">Análise Exploratória de Dados de E-commerce</div>
+        <div class="proj-desc">
+          EDA completa com Pandas e Seaborn: limpeza de dados, análise de cohort,
+          heatmaps de correlação e insights sobre comportamento do consumidor.
+        </div>
+        <div class="proj-stack">
+          <span class="tag">Python</span>
+          <span class="tag">Pandas</span>
+          <span class="tag">Seaborn</span>
+        </div>
+        <a class="proj-link" href="https://github.com/ViniciusBrandaoo" target="_blank">Ver repositório →</a>
+      </div>
+    </div>
+
+    <div class="proj-card">
+      <div class="proj-thumb">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+          <div class="proj-thumb-icon">📈</div>
+          <span class="proj-thumb-label">Forecast</span>
+        </div>
+      </div>
+      <div class="proj-body">
+        <div class="proj-tag">Machine Learning</div>
+        <div class="proj-name">Previsão de Demanda com Séries Temporais</div>
+        <div class="proj-desc">
+          Modelo de forecasting usando Prophet para prever demanda mensal.
+          Visualizações interativas e relatório executivo exportado em PDF.
+        </div>
+        <div class="proj-stack">
+          <span class="tag">Python</span>
+          <span class="tag">Prophet</span>
+          <span class="tag">Plotly</span>
+        </div>
+        <a class="proj-link" href="https://github.com/ViniciusBrandaoo" target="_blank">Ver repositório →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:36px;text-align:center;" class="reveal">
+    <a class="btn btn-outline" href="https://github.com/ViniciusBrandaoo" target="_blank">
+      Ver todos os repositórios
     </a>
+  </div>
+</section>
 
-</div>
+<!-- CONTATO -->
+<section id="contato">
+  <p class="sec-eyebrow reveal">Vamos conversar</p>
+  <h2 class="sec-title reveal">Contato</h2>
+
+  <div class="contato-links reveal">
+    <a class="contato-item" href="https://linkedin.com" target="_blank">
+      <span class="contato-item-label">LinkedIn</span>
+      <span class="contato-item-val">Vinicius Brandão</span>
+    </a>
+    <a class="contato-item" href="mailto:seu@email.com">
+      <span class="contato-item-label">E-mail</span>
+      <span class="contato-item-val">seu@email.com</span>
+    </a>
+    <a class="contato-item" href="https://wa.me/5511988226487" target="_blank">
+      <span class="contato-item-label">WhatsApp</span>
+      <span class="contato-item-val">+55 11 98822-6487</span>
+    </a>
+    <a class="contato-item" href="https://instagram.com/viniciusbrandaoo" target="_blank">
+      <span class="contato-item-label">Instagram</span>
+      <span class="contato-item-val">@viniciusbrandaoo</span>
+    </a>
+  </div>
+</section>
+
+<footer class="footer">
+  © 2025 Vinicius Soares Brandão &nbsp;·&nbsp; São Paulo, Brasil
+</footer>
 
 <script>
-let audioCtx = null;
-
-function getCtx() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-        const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioCtx.destination);
-        src.start(0);
-    }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    return audioCtx;
-}
-
-document.addEventListener('click', () => getCtx(), { once: true });
-document.addEventListener('touchstart', () => getCtx(), { once: true });
-
-function playKeyClick() {
-    const ctx = getCtx();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-    const sr  = ctx.sampleRate;
-
-    const crackLen = Math.floor(sr * 0.002);
-    const crackBuf = ctx.createBuffer(1, crackLen, sr);
-    const crackData = crackBuf.getChannelData(0);
-    for (let i = 0; i < crackLen; i++) {
-        let s = Math.max(-0.6, Math.min(0.6, (Math.random()*2-1)*3));
-        crackData[i] = s * Math.pow(1 - i/crackLen, 2);
-    }
-    const crackSrc = ctx.createBufferSource(); crackSrc.buffer = crackBuf;
-    const hp1 = ctx.createBiquadFilter(); hp1.type='highpass'; hp1.frequency.value=5000; hp1.Q.value=1.5;
-    const hp2 = ctx.createBiquadFilter(); hp2.type='highpass'; hp2.frequency.value=4000; hp2.Q.value=2;
-    const gCrack = ctx.createGain();
-    gCrack.gain.setValueAtTime(1.2, now);
-    gCrack.gain.exponentialRampToValueAtTime(0.001, now+0.004);
-    crackSrc.connect(hp1); hp1.connect(hp2); hp2.connect(gCrack); gCrack.connect(ctx.destination);
-    crackSrc.start(now);
-
-    const bodyLen = Math.floor(sr * 0.006);
-    const bodyBuf = ctx.createBuffer(1, bodyLen, sr);
-    const bodyData = bodyBuf.getChannelData(0);
-    for (let i = 0; i < bodyLen; i++) bodyData[i] = (Math.random()*2-1)*Math.pow(1-i/bodyLen,3);
-    const bodySrc = ctx.createBufferSource(); bodySrc.buffer = bodyBuf;
-    const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=4800; bp.Q.value=0.6;
-    const gBody = ctx.createGain();
-    gBody.gain.setValueAtTime(0.6, now+0.001);
-    gBody.gain.exponentialRampToValueAtTime(0.001, now+0.010);
-    bodySrc.connect(bp); bp.connect(gBody); gBody.connect(ctx.destination);
-    bodySrc.start(now+0.001);
-
-    const osc = ctx.createOscillator(); osc.type='sawtooth';
-    osc.frequency.setValueAtTime(6500, now);
-    osc.frequency.exponentialRampToValueAtTime(3200, now+0.008);
-    const ws = ctx.createWaveShaper();
-    const curve = new Float32Array(256);
-    for (let i=0;i<256;i++){const x=(i*2)/256-1; curve[i]=(Math.PI+200)*x/(Math.PI+200*Math.abs(x));}
-    ws.curve = curve;
-    const gOsc = ctx.createGain();
-    gOsc.gain.setValueAtTime(0.04, now);
-    gOsc.gain.exponentialRampToValueAtTime(0.001, now+0.010);
-    osc.connect(ws); ws.connect(gOsc); gOsc.connect(ctx.destination);
-    osc.start(now); osc.stop(now+0.010);
-
-    const botLen = Math.floor(sr * 0.010);
-    const botBuf = ctx.createBuffer(1, botLen, sr);
-    const botData = botBuf.getChannelData(0);
-    for (let i=0;i<botLen;i++) botData[i]=(Math.random()*2-1)*Math.pow(1-i/botLen,5)*0.4;
-    const botSrc = ctx.createBufferSource(); botSrc.buffer = botBuf;
-    const lpBot = ctx.createBiquadFilter(); lpBot.type='lowpass'; lpBot.frequency.value=800;
-    const gBot = ctx.createGain();
-    gBot.gain.setValueAtTime(0.3, now+0.003);
-    gBot.gain.exponentialRampToValueAtTime(0.001, now+0.015);
-    botSrc.connect(lpBot); lpBot.connect(gBot); gBot.connect(ctx.destination);
-    botSrc.start(now+0.003);
-}
-
-document.querySelectorAll('.row').forEach(row => {
-    row.addEventListener('mouseenter', playKeyClick);
-});
-
-const rainContainer = document.querySelector(".code-rain");
-const chars = [
-    "import pandas as pd","df.groupby('região')","SELECT * FROM dados",
-    "plt.show()","def analyze(df):","return df.describe()",
-    "df.dropna(inplace=True)","fig, ax = plt.subplots()","WHERE receita > 0",
-    "df['kpi'].mean()","JOIN vendas ON id","model.fit(X_train)",
-    "df.to_csv('output.csv')","print(df.head())","ax.set_title('KPI')",
-    "GROUP BY mes, ano","df.corr().round(2)","sns.heatmap(corr)",
-    "ORDER BY data DESC","y_pred = model.predict(X)",
+/* código-chuva */
+const rain = document.querySelector(".code-rain");
+const drops = [
+  "import pandas as pd","df.groupby('região')","SELECT * FROM dados",
+  "plt.show()","def analyze(df):","return df.describe()",
+  "df.dropna()","fig, ax = plt.subplots()","WHERE receita > 0",
+  "df['kpi'].mean()","JOIN vendas ON id","model.fit(X_train)",
+  "df.to_csv('output')","print(df.head())","GROUP BY mes",
+  "df.corr().round(2)","sns.heatmap(corr)","ORDER BY data DESC",
 ];
-
-function createDrop(){
-    const span = document.createElement("span");
-    span.innerText = chars[Math.floor(Math.random()*chars.length)];
-    span.style.left = Math.random()*100 + "vw";
-    span.style.animationDuration = (Math.random()*6+5)+"s";
-    span.style.opacity = Math.random()*0.2 + 0.08;
-    span.style.fontSize = (Math.random() > 0.5 ? "12px" : "13px");
-    rainContainer.appendChild(span);
-    setTimeout(()=>span.remove(),11000);
+function drop(){
+  const s=document.createElement("span");
+  s.innerText=drops[Math.floor(Math.random()*drops.length)];
+  s.style.cssText=`left:${Math.random()*100}vw;animation-duration:${Math.random()*6+5}s;opacity:${Math.random()*0.2+0.06};font-size:${Math.random()>.5?'11px':'13px'}`;
+  rain.appendChild(s);
+  setTimeout(()=>s.remove(),12000);
 }
+setInterval(drop,130);
 
-setInterval(createDrop,120);
+/* hover som nas rows */
+let ctx=null;
+function getCtx(){
+  if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();
+  if(ctx.state==='suspended')ctx.resume();
+  return ctx;
+}
+document.addEventListener('click',()=>getCtx(),{once:true});
+document.addEventListener('touchstart',()=>getCtx(),{once:true});
+function click(){
+  const c=getCtx();if(!c)return;
+  const now=c.currentTime,sr=c.sampleRate;
+  const n=c.createBuffer(1,Math.floor(sr*.003),sr);
+  const d=n.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2)*.8;
+  const s=c.createBufferSource();s.buffer=n;
+  const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=4500;
+  const g=c.createGain();g.gain.setValueAtTime(.9,now);g.gain.exponentialRampToValueAtTime(.001,now+.005);
+  s.connect(f);f.connect(g);g.connect(c.destination);s.start(now);
+}
+document.querySelectorAll('.row').forEach(r=>r.addEventListener('mouseenter',click));
+
+/* scroll reveal */
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      e.target.classList.add('visible');
+      /* animar barras */
+      e.target.querySelectorAll('.skill-bar-fill[data-w]').forEach(b=>{
+        b.style.width=b.dataset.w;
+      });
+    }
+  });
+},{threshold:0.15});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
 </script>
-
 </body>
 </html>
