@@ -5,17 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vinicius Soares Brandão | Portfolio</title>
 
-<!-- Favicon: copo de Negroni -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Cpolygon points='14,10 50,10 38,38 26,38' fill='%23c0392b' opacity='0.95'/%3E%3Crect x='26' y='38' width='12' height='14' fill='%23922b21'/%3E%3Crect x='20' y='52' width='24' height='4' rx='2' fill='%23d6b25e'/%3E%3Ccircle cx='38' cy='22' r='7' fill='%23e8721a' opacity='0.85'/%3E%3Cline x1='44' y1='8' x2='44' y2='18' stroke='%23d6b25e' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpolygon%20points%3D%228%2C8%2056%2C8%2040%2C36%2024%2C36%22%20fill%3D%22%23b03a2e%22%2F%3E%3Cpolygon%20points%3D%228%2C8%2022%2C8%2018%2C22%22%20fill%3D%22%23e74c3c%22%20opacity%3D%220.45%22%2F%3E%3Crect%20x%3D%2229%22%20y%3D%2236%22%20width%3D%226%22%20height%3D%2212%22%20fill%3D%22%23922b21%22%2F%3E%3Crect%20x%3D%2219%22%20y%3D%2248%22%20width%3D%2226%22%20height%3D%224%22%20rx%3D%222%22%20fill%3D%22%23c0a040%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%227%22%20fill%3D%22%23e67e22%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%224%22%20fill%3D%22%23f5b041%22%20opacity%3D%220.7%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%2220%22%20r%3D%221.5%22%20fill%3D%22%23e67e22%22%2F%3E%3Cline%20x1%3D%2246%22%20y1%3D%229%22%20x2%3D%2246%22%20y2%3D%2220%22%20stroke%3D%22%23c0a040%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2246%22%20cy%3D%229%22%20r%3D%221.5%22%20fill%3D%22%23c0a040%22%2F%3E%3C%2Fsvg%3E"/>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=JetBrains+Mono:wght@300;400;600&display=swap');
+
+/*
+  Paleta old money:
+  --gold-bright : #c9a84c  → dourado quente, usado no título principal
+  --gold-mid    : #a8864a  → dourado médio, subtítulo e valores
+  --gold-muted  : #7a6535  → dourado apagado elegante, labels e detalhes
+  --gold-dim    : #4a3c20  → dourado escuro, bordas e glows
+*/
 
 *{margin:0;padding:0;box-sizing:border-box;}
 
 body{
     background:#000;
-    color:#d6b25e;
+    color:#a8864a;
     font-family:'JetBrains Mono', monospace;
     overflow:hidden;
 }
@@ -23,15 +30,15 @@ body{
 .bg{
     position:fixed;width:100%;height:100%;
     background:
-        radial-gradient(circle at 20% 20%, rgba(214,178,94,0.12), transparent 40%),
-        radial-gradient(circle at 80% 70%, rgba(214,178,94,0.08), transparent 45%),
-        radial-gradient(circle at center, #000, #050505);
+        radial-gradient(circle at 20% 20%, rgba(180,140,60,0.10), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(180,140,60,0.06), transparent 45%),
+        radial-gradient(circle at center, #020100, #050403);
     z-index:0;
 }
 
 .glow{
     position:fixed;width:600px;height:600px;
-    background:radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
+    background:radial-gradient(circle, rgba(180,140,60,0.12), transparent 60%);
     filter:blur(70px);
     animation:float 10s infinite ease-in-out;
     z-index:1;
@@ -39,7 +46,7 @@ body{
 
 .glow2{
     position:fixed;width:500px;height:500px;
-    background:radial-gradient(circle, rgba(214,178,94,0.08), transparent 60%);
+    background:radial-gradient(circle, rgba(180,140,60,0.07), transparent 60%);
     bottom:-200px;right:-200px;
     filter:blur(80px);
     animation:float2 12s infinite ease-in-out;
@@ -51,22 +58,22 @@ body{
 
 body::before{
     content:"";position:fixed;width:100%;height:100%;
-    background:radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
+    background:radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.92) 100%);
     z-index:2;pointer-events:none;
 }
 
-.code-rain{position:fixed;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.22;}
+.code-rain{position:fixed;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.18;}
 
 .code-rain span{
     position:absolute;top:-100px;
-    color:rgba(214,178,94,0.5);
-    font-family:'JetBrains Mono';font-size:14px;
+    color:#7a6535;
+    font-family:'JetBrains Mono';font-size:13px;
     animation:fall linear infinite;
 }
 
 @keyframes fall{
     0%{transform:translateY(-100px);opacity:0;}
-    10%{opacity:0.6;}
+    10%{opacity:1;}
     100%{transform:translateY(110vh);opacity:0;}
 }
 
@@ -84,48 +91,99 @@ body::before{
 .delay4{animation-delay:1.2s;}
 .delay5{animation-delay:1.5s;}
 
-h1{font-family:'Playfair Display';font-size:3.2rem;letter-spacing:2px;}
-h2{margin-top:10px;font-weight:300;color:#b89a55;}
+/* título: dourado mais rico, Playfair itálico para refinamento */
+h1{
+    font-family:'Playfair Display';
+    font-size:3.2rem;
+    letter-spacing:3px;
+    color:#c9a84c;
+    text-shadow: 0 0 60px rgba(180,140,60,0.25);
+}
+
+/* subtítulo: espaçamento mais arejado */
+h2{
+    margin-top:12px;
+    font-weight:300;
+    font-size:0.85rem;
+    letter-spacing:4px;
+    color:#7a6535;
+}
 
 .line{
-    margin-top:20px;font-size:0.9rem;
-    letter-spacing:3px;text-transform:uppercase;color:#8a6d2f;
+    margin-top:22px;font-size:0.72rem;
+    letter-spacing:5px;text-transform:uppercase;
+    color:#4a3c20;
+}
+
+/* separador decorativo entre .line e .typing */
+.divider{
+    margin-top:18px;
+    display:flex;align-items:center;gap:12px;
+    color:#4a3c20;font-size:0.65rem;letter-spacing:2px;
+}
+.divider::before,.divider::after{
+    content:"";display:block;width:60px;height:1px;
+    background:linear-gradient(to right, transparent, #4a3c20, transparent);
 }
 
 .typing{
-    margin-top:25px;font-size:0.95rem;
-    border-right:2px solid #d6b25e;
+    margin-top:18px;font-size:0.88rem;
+    color:#8a7040;
+    border-right:1px solid #7a6535;
     white-space:nowrap;overflow:hidden;width:0;
-    animation:typing 4s steps(60,end) forwards, blink .8s infinite;
+    animation:typing 4s steps(60,end) forwards, blink 1s infinite;
 }
 
-@keyframes typing{to{width:520px;}}
+@keyframes typing{to{width:480px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-.info{margin-top:55px;display:flex;flex-direction:column;gap:14px;align-items:center;}
+.info{margin-top:50px;display:flex;flex-direction:column;gap:10px;align-items:center;}
 
 .row{
     display:flex;justify-content:space-between;
-    width:340px;padding:10px 0;
-    border-bottom:1px solid rgba(214,178,94,0.15);
-    transition:0.3s;cursor:default;
+    width:360px;padding:11px 0;
+    border-bottom:1px solid rgba(120,90,40,0.18);
+    transition:all 0.35s ease;cursor:default;
 }
 
-.row:hover{border-bottom:1px solid rgba(214,178,94,0.5);transform:translateX(6px);}
+.row:hover{
+    border-bottom:1px solid rgba(180,140,60,0.45);
+    transform:translateX(8px);
+}
 
-.label{font-size:0.7rem;letter-spacing:2px;color:#8a6d2f;text-transform:uppercase;}
-.value{font-size:0.9rem;color:#d6b25e;}
+.label{
+    font-size:0.65rem;letter-spacing:3px;
+    color:#4a3c20;text-transform:uppercase;
+}
 
-.social{margin-top:40px;display:flex;gap:25px;font-size:0.85rem;opacity:0.9;}
-.social a{color:#d6b25e;text-decoration:none;border-bottom:1px solid transparent;transition:0.3s;}
-.social a:hover{border-bottom:1px solid #d6b25e;}
+.value{
+    font-size:0.88rem;
+    color:#a8864a;
+    letter-spacing:1px;
+}
+
+.social{
+    margin-top:38px;display:flex;gap:28px;
+    font-size:0.78rem;letter-spacing:2px;opacity:0.8;
+}
+.social a{
+    color:#7a6535;text-decoration:none;
+    border-bottom:1px solid transparent;transition:0.35s;
+    text-transform:uppercase;
+}
+.social a:hover{color:#a8864a;border-bottom:1px solid #7a6535;}
 
 .button{
-    margin-top:45px;padding:12px 28px;
-    border:1px solid #d6b25e;color:#d6b25e;
-    text-decoration:none;letter-spacing:3px;font-size:0.75rem;transition:0.4s;
+    margin-top:42px;padding:11px 30px;
+    border:1px solid #4a3c20;
+    color:#7a6535;
+    text-decoration:none;letter-spacing:4px;font-size:0.7rem;
+    transition:0.4s;text-transform:uppercase;
 }
-.button:hover{background:#d6b25e;color:#000;}
+.button:hover{
+    border-color:#a8864a;
+    color:#c9a84c;
+}
 
 @keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
 </style>
@@ -140,8 +198,10 @@ h2{margin-top:10px;font-weight:300;color:#b89a55;}
 <div class="container">
 
     <h1 class="fade delay1">Vinicius Soares Brandão</h1>
-    <h2 class="fade delay2">Data Analytics • Business Intelligence • Python</h2>
-    <div class="line fade delay2">PORTFOLIO DIGITAL</div>
+    <h2 class="fade delay2">Data Analytics &nbsp;•&nbsp; Business Intelligence &nbsp;•&nbsp; Python</h2>
+    <div class="line fade delay2">Portfolio Digital</div>
+
+    <div class="divider fade delay3">◆</div>
 
     <div class="typing fade delay3">
         Transformando dados em decisões estratégicas...
@@ -151,152 +211,105 @@ h2{margin-top:10px;font-weight:300;color:#b89a55;}
         <div class="row"><span class="label">Local</span><span class="value">São Paulo, Brasil</span></div>
         <div class="row"><span class="label">Atual</span><span class="value">Setor Administrativo</span></div>
         <div class="row"><span class="label">Objetivo</span><span class="value">Data Analyst / BI</span></div>
-        <div class="row"><span class="label">Stack</span><span class="value">Python • SQL • Data</span></div>
+        <div class="row"><span class="label">Stack</span><span class="value">Python &nbsp;•&nbsp; SQL &nbsp;•&nbsp; Data</span></div>
     </div>
 
     <div class="social fade delay5">
         <a href="https://instagram.com/viniciusbrandaoo" target="_blank">Instagram</a>
-        <span>•</span>
+        <span style="color:#4a3c20;">•</span>
         <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
     </div>
 
     <a class="button fade delay5" href="https://github.com/ViniciusBrandaoo" target="_blank">
-        VER REPOSITÓRIOS
+        Ver Repositórios
     </a>
 
 </div>
 
 <script>
-// AudioContext criado mas só destravado no primeiro clique/toque do usuário
 let audioCtx = null;
 
 function getCtx() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
     }
-    // Resume caso esteja suspenso (política autoplay do browser)
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
 }
 
-// Destravar no primeiro gesto do usuário (qualquer lugar da página)
-function unlockAudio() {
-    getCtx();
-    document.removeEventListener('click', unlockAudio);
-    document.removeEventListener('touchstart', unlockAudio);
-    document.removeEventListener('keydown', unlockAudio);
-    document.removeEventListener('mousemove', unlockAudio);
-}
-document.addEventListener('click', unlockAudio);
-document.addEventListener('touchstart', unlockAudio);
-document.addEventListener('keydown', unlockAudio);
-document.addEventListener('mousemove', unlockAudio, { once: true });
+document.addEventListener('click', () => getCtx(), { once: true });
+document.addEventListener('touchstart', () => getCtx(), { once: true });
 
 function playKeyClick() {
     const ctx = getCtx();
-    if (!ctx || ctx.state === 'suspended') return;
+    if (!ctx) return;
     const now = ctx.currentTime;
     const sr  = ctx.sampleRate;
 
-    // --- Camada 1: crack agudo inicial (2ms) ---
     const crackLen = Math.floor(sr * 0.002);
     const crackBuf = ctx.createBuffer(1, crackLen, sr);
     const crackData = crackBuf.getChannelData(0);
     for (let i = 0; i < crackLen; i++) {
-        let s = (Math.random() * 2 - 1);
-        s = Math.max(-0.6, Math.min(0.6, s * 3));
-        crackData[i] = s * Math.pow(1 - i / crackLen, 2);
+        let s = Math.max(-0.6, Math.min(0.6, (Math.random()*2-1)*3));
+        crackData[i] = s * Math.pow(1 - i/crackLen, 2);
     }
-    const crackSrc = ctx.createBufferSource();
-    crackSrc.buffer = crackBuf;
-
-    const hp1 = ctx.createBiquadFilter();
-    hp1.type = 'highpass'; hp1.frequency.value = 5000; hp1.Q.value = 1.5;
-    const hp2 = ctx.createBiquadFilter();
-    hp2.type = 'highpass'; hp2.frequency.value = 4000; hp2.Q.value = 2;
-
+    const crackSrc = ctx.createBufferSource(); crackSrc.buffer = crackBuf;
+    const hp1 = ctx.createBiquadFilter(); hp1.type='highpass'; hp1.frequency.value=5000; hp1.Q.value=1.5;
+    const hp2 = ctx.createBiquadFilter(); hp2.type='highpass'; hp2.frequency.value=4000; hp2.Q.value=2;
     const gCrack = ctx.createGain();
-    gCrack.gain.setValueAtTime(3.5, now);
-    gCrack.gain.exponentialRampToValueAtTime(0.001, now + 0.004);
-
-    crackSrc.connect(hp1); hp1.connect(hp2); hp2.connect(gCrack);
-    gCrack.connect(ctx.destination);
+    gCrack.gain.setValueAtTime(1.2, now);
+    gCrack.gain.exponentialRampToValueAtTime(0.001, now+0.004);
+    crackSrc.connect(hp1); hp1.connect(hp2); hp2.connect(gCrack); gCrack.connect(ctx.destination);
     crackSrc.start(now);
 
-    // --- Camada 2: corpo band-pass ~5kHz (6ms) ---
     const bodyLen = Math.floor(sr * 0.006);
     const bodyBuf = ctx.createBuffer(1, bodyLen, sr);
     const bodyData = bodyBuf.getChannelData(0);
-    for (let i = 0; i < bodyLen; i++) {
-        bodyData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bodyLen, 3);
-    }
-    const bodySrc = ctx.createBufferSource();
-    bodySrc.buffer = bodyBuf;
-
-    const bp = ctx.createBiquadFilter();
-    bp.type = 'bandpass'; bp.frequency.value = 4800; bp.Q.value = 0.6;
-
+    for (let i = 0; i < bodyLen; i++) bodyData[i] = (Math.random()*2-1)*Math.pow(1-i/bodyLen,3);
+    const bodySrc = ctx.createBufferSource(); bodySrc.buffer = bodyBuf;
+    const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=4800; bp.Q.value=0.6;
     const gBody = ctx.createGain();
-    gBody.gain.setValueAtTime(1.8, now + 0.001);
-    gBody.gain.exponentialRampToValueAtTime(0.001, now + 0.010);
+    gBody.gain.setValueAtTime(0.6, now+0.001);
+    gBody.gain.exponentialRampToValueAtTime(0.001, now+0.010);
+    bodySrc.connect(bp); bp.connect(gBody); gBody.connect(ctx.destination);
+    bodySrc.start(now+0.001);
 
-    bodySrc.connect(bp); bp.connect(gBody);
-    gBody.connect(ctx.destination);
-    bodySrc.start(now + 0.001);
-
-    // --- Camada 3: ping sawtooth saturado (10ms) ---
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
+    const osc = ctx.createOscillator(); osc.type='sawtooth';
     osc.frequency.setValueAtTime(6500, now);
-    osc.frequency.exponentialRampToValueAtTime(3200, now + 0.008);
-
+    osc.frequency.exponentialRampToValueAtTime(3200, now+0.008);
     const ws = ctx.createWaveShaper();
     const curve = new Float32Array(256);
-    for (let i = 0; i < 256; i++) {
-        const x = (i * 2) / 256 - 1;
-        curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
-    }
+    for (let i=0;i<256;i++){const x=(i*2)/256-1; curve[i]=(Math.PI+200)*x/(Math.PI+200*Math.abs(x));}
     ws.curve = curve;
-
     const gOsc = ctx.createGain();
-    gOsc.gain.setValueAtTime(0.12, now);
-    gOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.010);
+    gOsc.gain.setValueAtTime(0.04, now);
+    gOsc.gain.exponentialRampToValueAtTime(0.001, now+0.010);
+    osc.connect(ws); ws.connect(gOsc); gOsc.connect(ctx.destination);
+    osc.start(now); osc.stop(now+0.010);
 
-    osc.connect(ws); ws.connect(gOsc);
-    gOsc.connect(ctx.destination);
-    osc.start(now); osc.stop(now + 0.010);
-
-    // --- Camada 4: bottom-out seco (10ms, delay 3ms) ---
     const botLen = Math.floor(sr * 0.010);
     const botBuf = ctx.createBuffer(1, botLen, sr);
     const botData = botBuf.getChannelData(0);
-    for (let i = 0; i < botLen; i++) {
-        botData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / botLen, 5) * 0.4;
-    }
-    const botSrc = ctx.createBufferSource();
-    botSrc.buffer = botBuf;
-
-    const lpBot = ctx.createBiquadFilter();
-    lpBot.type = 'lowpass'; lpBot.frequency.value = 800;
-
+    for (let i=0;i<botLen;i++) botData[i]=(Math.random()*2-1)*Math.pow(1-i/botLen,5)*0.4;
+    const botSrc = ctx.createBufferSource(); botSrc.buffer = botBuf;
+    const lpBot = ctx.createBiquadFilter(); lpBot.type='lowpass'; lpBot.frequency.value=800;
     const gBot = ctx.createGain();
-    gBot.gain.setValueAtTime(0.9, now + 0.003);
-    gBot.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
-
-    botSrc.connect(lpBot); lpBot.connect(gBot);
-    gBot.connect(ctx.destination);
-    botSrc.start(now + 0.003);
+    gBot.gain.setValueAtTime(0.3, now+0.003);
+    gBot.gain.exponentialRampToValueAtTime(0.001, now+0.015);
+    botSrc.connect(lpBot); lpBot.connect(gBot); gBot.connect(ctx.destination);
+    botSrc.start(now+0.003);
 }
 
 document.querySelectorAll('.row').forEach(row => {
     row.addEventListener('mouseenter', playKeyClick);
 });
 
-// ================= CODE RAIN =================
 const rainContainer = document.querySelector(".code-rain");
-
 const chars = [
     "import pandas as pd","df.groupby('região')","SELECT * FROM dados",
     "plt.show()","def analyze(df):","return df.describe()",
@@ -312,7 +325,7 @@ function createDrop(){
     span.innerText = chars[Math.floor(Math.random()*chars.length)];
     span.style.left = Math.random()*100 + "vw";
     span.style.animationDuration = (Math.random()*6+5)+"s";
-    span.style.opacity = Math.random()*0.25 + 0.1;
+    span.style.opacity = Math.random()*0.2 + 0.08;
     span.style.fontSize = (Math.random() > 0.5 ? "12px" : "13px");
     rainContainer.appendChild(span);
     setTimeout(()=>span.remove(),11000);
