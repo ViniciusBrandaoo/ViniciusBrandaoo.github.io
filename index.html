@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vinicius Soares Brandão | Portfolio</title>
 
+<!-- Favicon: copo de Negroni -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Cpolygon points='14,10 50,10 38,38 26,38' fill='%23c0392b' opacity='0.95'/%3E%3Crect x='26' y='38' width='12' height='14' fill='%23922b21'/%3E%3Crect x='20' y='52' width='24' height='4' rx='2' fill='%23d6b25e'/%3E%3Ccircle cx='38' cy='22' r='7' fill='%23e8721a' opacity='0.85'/%3E%3Cline x1='44' y1='8' x2='44' y2='18' stroke='%23d6b25e' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"/>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@300;400;600&display=swap');
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+*{margin:0;padding:0;box-sizing:border-box;}
 
 body{
     background:#000;
@@ -21,12 +20,8 @@ body{
     overflow:hidden;
 }
 
-/* ================= BACKGROUND ================= */
-
 .bg{
-    position:fixed;
-    width:100%;
-    height:100%;
+    position:fixed;width:100%;height:100%;
     background:
         radial-gradient(circle at 20% 20%, rgba(214,178,94,0.12), transparent 40%),
         radial-gradient(circle at 80% 70%, rgba(214,178,94,0.08), transparent 45%),
@@ -35,261 +30,128 @@ body{
 }
 
 .glow{
-    position:fixed;
-    width:600px;
-    height:600px;
-    background: radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
+    position:fixed;width:600px;height:600px;
+    background:radial-gradient(circle, rgba(214,178,94,0.15), transparent 60%);
     filter:blur(70px);
     animation:float 10s infinite ease-in-out;
     z-index:1;
 }
 
 .glow2{
-    position:fixed;
-    width:500px;
-    height:500px;
-    background: radial-gradient(circle, rgba(214,178,94,0.08), transparent 60%);
-    bottom:-200px;
-    right:-200px;
+    position:fixed;width:500px;height:500px;
+    background:radial-gradient(circle, rgba(214,178,94,0.08), transparent 60%);
+    bottom:-200px;right:-200px;
     filter:blur(80px);
     animation:float2 12s infinite ease-in-out;
     z-index:1;
 }
 
-@keyframes float{
-    0%,100%{transform:translate(0,0);}
-    50%{transform:translate(60px,40px);}
-}
+@keyframes float{0%,100%{transform:translate(0,0);}50%{transform:translate(60px,40px);}}
+@keyframes float2{0%,100%{transform:translate(0,0);}50%{transform:translate(-60px,-50px);}}
 
-@keyframes float2{
-    0%,100%{transform:translate(0,0);}
-    50%{transform:translate(-60px,-50px);}
-}
-
-/* vinheta */
 body::before{
-    content:"";
-    position:fixed;
-    width:100%;
-    height:100%;
-    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
-    z-index:2;
-    pointer-events:none;
+    content:"";position:fixed;width:100%;height:100%;
+    background:radial-gradient(circle, transparent 40%, rgba(0,0,0,0.9) 100%);
+    z-index:2;pointer-events:none;
 }
 
-/* ================= CODE RAIN ================= */
-
-.code-rain{
-    position:fixed;
-    width:100%;
-    height:100%;
-    z-index:1;
-    pointer-events:none;
-    opacity:0.14;
-}
+.code-rain{position:fixed;width:100%;height:100%;z-index:1;pointer-events:none;opacity:0.22;}
 
 .code-rain span{
-    position:absolute;
-    top:-100px;
-    color:rgba(214,178,94,0.35);
-    font-family:'JetBrains Mono';
-    font-size:14px;
+    position:absolute;top:-100px;
+    color:rgba(214,178,94,0.5);
+    font-family:'JetBrains Mono';font-size:14px;
     animation:fall linear infinite;
 }
 
 @keyframes fall{
-    0%{transform:translateY(-100px); opacity:0;}
-    10%{opacity:0.4;}
-    100%{transform:translateY(110vh); opacity:0;}
+    0%{transform:translateY(-100px);opacity:0;}
+    10%{opacity:0.6;}
+    100%{transform:translateY(110vh);opacity:0;}
 }
-
-/* ================= CONTAINER ================= */
 
 .container{
-    position:relative;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    z-index:3;
+    position:relative;height:100vh;
+    display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    text-align:center;z-index:3;
 }
 
-/* animação geral de entrada */
-.fade{
-    opacity:0;
-    transform:translateY(20px);
-    animation:fadeIn 1s forwards;
-}
-
+.fade{opacity:0;transform:translateY(20px);animation:fadeIn 1s forwards;}
 .delay1{animation-delay:0.3s;}
 .delay2{animation-delay:0.6s;}
 .delay3{animation-delay:0.9s;}
 .delay4{animation-delay:1.2s;}
 .delay5{animation-delay:1.5s;}
 
-h1{
-    font-family:'Playfair Display';
-    font-size:3.2rem;
-    letter-spacing:2px;
-}
-
-h2{
-    margin-top:10px;
-    font-weight:300;
-    color:#b89a55;
-}
+h1{font-family:'Playfair Display';font-size:3.2rem;letter-spacing:2px;}
+h2{margin-top:10px;font-weight:300;color:#b89a55;}
 
 .line{
-    margin-top:20px;
-    font-size:0.9rem;
-    letter-spacing:3px;
-    text-transform:uppercase;
-    color:#8a6d2f;
+    margin-top:20px;font-size:0.9rem;
+    letter-spacing:3px;text-transform:uppercase;color:#8a6d2f;
 }
 
-/* typing */
 .typing{
-    margin-top:25px;
-    font-size:0.95rem;
+    margin-top:25px;font-size:0.95rem;
     border-right:2px solid #d6b25e;
-    white-space:nowrap;
-    overflow:hidden;
-    width:0;
+    white-space:nowrap;overflow:hidden;width:0;
     animation:typing 4s steps(60,end) forwards, blink .8s infinite;
 }
 
 @keyframes typing{to{width:520px;}}
 @keyframes blink{50%{border-color:transparent;}}
 
-/* ================= INFO CLEAN ================= */
-
-.info{
-    margin-top:55px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-    align-items:center;
-}
+.info{margin-top:55px;display:flex;flex-direction:column;gap:14px;align-items:center;}
 
 .row{
-    display:flex;
-    justify-content:space-between;
-    width:340px;
-    padding:10px 0;
+    display:flex;justify-content:space-between;
+    width:340px;padding:10px 0;
     border-bottom:1px solid rgba(214,178,94,0.15);
-    transition:0.3s;
+    transition:0.3s;cursor:default;
 }
 
-.row:hover{
-    border-bottom:1px solid rgba(214,178,94,0.5);
-    transform:translateX(6px);
-}
+.row:hover{border-bottom:1px solid rgba(214,178,94,0.5);transform:translateX(6px);}
 
-.label{
-    font-size:0.7rem;
-    letter-spacing:2px;
-    color:#8a6d2f;
-    text-transform:uppercase;
-}
+.label{font-size:0.7rem;letter-spacing:2px;color:#8a6d2f;text-transform:uppercase;}
+.value{font-size:0.9rem;color:#d6b25e;}
 
-.value{
-    font-size:0.9rem;
-    color:#d6b25e;
-}
-
-/* ================= SOCIAL ================= */
-
-.social{
-    margin-top:40px;
-    display:flex;
-    gap:25px;
-    font-size:0.85rem;
-    opacity:0.9;
-}
-
-.social a{
-    color:#d6b25e;
-    text-decoration:none;
-    border-bottom:1px solid transparent;
-    transition:0.3s;
-}
-
-.social a:hover{
-    border-bottom:1px solid #d6b25e;
-}
-
-/* ================= BOTÃO ================= */
+.social{margin-top:40px;display:flex;gap:25px;font-size:0.85rem;opacity:0.9;}
+.social a{color:#d6b25e;text-decoration:none;border-bottom:1px solid transparent;transition:0.3s;}
+.social a:hover{border-bottom:1px solid #d6b25e;}
 
 .button{
-    margin-top:45px;
-    padding:12px 28px;
-    border:1px solid #d6b25e;
-    color:#d6b25e;
-    text-decoration:none;
-    letter-spacing:3px;
-    font-size:0.75rem;
-    transition:0.4s;
+    margin-top:45px;padding:12px 28px;
+    border:1px solid #d6b25e;color:#d6b25e;
+    text-decoration:none;letter-spacing:3px;font-size:0.75rem;transition:0.4s;
 }
+.button:hover{background:#d6b25e;color:#000;}
 
-.button:hover{
-    background:#d6b25e;
-    color:#000;
-}
-
-/* ================= ANIMAÇÕES ================= */
-
-@keyframes fadeIn{
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 
 <body>
-
 <div class="bg"></div>
 <div class="glow"></div>
 <div class="glow2"></div>
-
 <div class="code-rain"></div>
 
 <div class="container">
 
     <h1 class="fade delay1">Vinicius Soares Brandão</h1>
     <h2 class="fade delay2">Data Analytics • Business Intelligence • Python</h2>
+    <div class="line fade delay2">PORTFOLIO DIGITAL</div>
 
-    <div class="line fade delay3">PORTFOLIO DIGITAL</div>
-
-    <div class="typing fade delay4">
+    <div class="typing fade delay3">
         Transformando dados em decisões estratégicas...
     </div>
 
-    <div class="info fade delay5">
-
-        <div class="row">
-            <span class="label">Local</span>
-            <span class="value">São Paulo, Brasil</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Atual</span>
-            <span class="value">Setor Administrativo</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Objetivo</span>
-            <span class="value">Data Analyst / BI</span>
-        </div>
-
-        <div class="row">
-            <span class="label">Stack</span>
-            <span class="value">Python • SQL • Data</span>
-        </div>
-
+    <div class="info fade delay4">
+        <div class="row"><span class="label">Local</span><span class="value">São Paulo, Brasil</span></div>
+        <div class="row"><span class="label">Atual</span><span class="value">Setor Administrativo</span></div>
+        <div class="row"><span class="label">Objetivo</span><span class="value">Data Analyst / BI</span></div>
+        <div class="row"><span class="label">Stack</span><span class="value">Python • SQL • Data</span></div>
     </div>
 
     <div class="social fade delay5">
@@ -298,31 +160,161 @@ h2{
         <a href="https://wa.me/5511988226487" target="_blank">WhatsApp</a>
     </div>
 
-    <a class="button fade delay5" href="https://github.com/" target="_blank">
+    <a class="button fade delay5" href="https://github.com/ViniciusBrandaoo" target="_blank">
         VER REPOSITÓRIOS
     </a>
 
 </div>
 
 <script>
-const container = document.querySelector(".code-rain");
+// AudioContext criado mas só destravado no primeiro clique/toque do usuário
+let audioCtx = null;
 
-const chars = "01{}[]<>/\\|=+-*#@$%^&";
+function getCtx() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // Resume caso esteja suspenso (política autoplay do browser)
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+// Destravar no primeiro gesto do usuário (qualquer lugar da página)
+function unlockAudio() {
+    getCtx();
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('keydown', unlockAudio);
+    document.removeEventListener('mousemove', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
+document.addEventListener('mousemove', unlockAudio, { once: true });
+
+function playKeyClick() {
+    const ctx = getCtx();
+    if (!ctx || ctx.state === 'suspended') return;
+    const now = ctx.currentTime;
+    const sr  = ctx.sampleRate;
+
+    // --- Camada 1: crack agudo inicial (2ms) ---
+    const crackLen = Math.floor(sr * 0.002);
+    const crackBuf = ctx.createBuffer(1, crackLen, sr);
+    const crackData = crackBuf.getChannelData(0);
+    for (let i = 0; i < crackLen; i++) {
+        let s = (Math.random() * 2 - 1);
+        s = Math.max(-0.6, Math.min(0.6, s * 3));
+        crackData[i] = s * Math.pow(1 - i / crackLen, 2);
+    }
+    const crackSrc = ctx.createBufferSource();
+    crackSrc.buffer = crackBuf;
+
+    const hp1 = ctx.createBiquadFilter();
+    hp1.type = 'highpass'; hp1.frequency.value = 5000; hp1.Q.value = 1.5;
+    const hp2 = ctx.createBiquadFilter();
+    hp2.type = 'highpass'; hp2.frequency.value = 4000; hp2.Q.value = 2;
+
+    const gCrack = ctx.createGain();
+    gCrack.gain.setValueAtTime(3.5, now);
+    gCrack.gain.exponentialRampToValueAtTime(0.001, now + 0.004);
+
+    crackSrc.connect(hp1); hp1.connect(hp2); hp2.connect(gCrack);
+    gCrack.connect(ctx.destination);
+    crackSrc.start(now);
+
+    // --- Camada 2: corpo band-pass ~5kHz (6ms) ---
+    const bodyLen = Math.floor(sr * 0.006);
+    const bodyBuf = ctx.createBuffer(1, bodyLen, sr);
+    const bodyData = bodyBuf.getChannelData(0);
+    for (let i = 0; i < bodyLen; i++) {
+        bodyData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bodyLen, 3);
+    }
+    const bodySrc = ctx.createBufferSource();
+    bodySrc.buffer = bodyBuf;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass'; bp.frequency.value = 4800; bp.Q.value = 0.6;
+
+    const gBody = ctx.createGain();
+    gBody.gain.setValueAtTime(1.8, now + 0.001);
+    gBody.gain.exponentialRampToValueAtTime(0.001, now + 0.010);
+
+    bodySrc.connect(bp); bp.connect(gBody);
+    gBody.connect(ctx.destination);
+    bodySrc.start(now + 0.001);
+
+    // --- Camada 3: ping sawtooth saturado (10ms) ---
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(6500, now);
+    osc.frequency.exponentialRampToValueAtTime(3200, now + 0.008);
+
+    const ws = ctx.createWaveShaper();
+    const curve = new Float32Array(256);
+    for (let i = 0; i < 256; i++) {
+        const x = (i * 2) / 256 - 1;
+        curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+    }
+    ws.curve = curve;
+
+    const gOsc = ctx.createGain();
+    gOsc.gain.setValueAtTime(0.12, now);
+    gOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.010);
+
+    osc.connect(ws); ws.connect(gOsc);
+    gOsc.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.010);
+
+    // --- Camada 4: bottom-out seco (10ms, delay 3ms) ---
+    const botLen = Math.floor(sr * 0.010);
+    const botBuf = ctx.createBuffer(1, botLen, sr);
+    const botData = botBuf.getChannelData(0);
+    for (let i = 0; i < botLen; i++) {
+        botData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / botLen, 5) * 0.4;
+    }
+    const botSrc = ctx.createBufferSource();
+    botSrc.buffer = botBuf;
+
+    const lpBot = ctx.createBiquadFilter();
+    lpBot.type = 'lowpass'; lpBot.frequency.value = 800;
+
+    const gBot = ctx.createGain();
+    gBot.gain.setValueAtTime(0.9, now + 0.003);
+    gBot.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+
+    botSrc.connect(lpBot); lpBot.connect(gBot);
+    gBot.connect(ctx.destination);
+    botSrc.start(now + 0.003);
+}
+
+document.querySelectorAll('.row').forEach(row => {
+    row.addEventListener('mouseenter', playKeyClick);
+});
+
+// ================= CODE RAIN =================
+const rainContainer = document.querySelector(".code-rain");
+
+const chars = [
+    "import pandas as pd","df.groupby('região')","SELECT * FROM dados",
+    "plt.show()","def analyze(df):","return df.describe()",
+    "df.dropna(inplace=True)","fig, ax = plt.subplots()","WHERE receita > 0",
+    "df['kpi'].mean()","JOIN vendas ON id","model.fit(X_train)",
+    "df.to_csv('output.csv')","print(df.head())","ax.set_title('KPI')",
+    "GROUP BY mes, ano","df.corr().round(2)","sns.heatmap(corr)",
+    "ORDER BY data DESC","y_pred = model.predict(X)",
+];
 
 function createDrop(){
     const span = document.createElement("span");
-
-    span.innerText = Array.from(
-        {length: Math.floor(Math.random()*14)+6},
-        () => chars[Math.floor(Math.random()*chars.length)]
-    ).join("");
-
+    span.innerText = chars[Math.floor(Math.random()*chars.length)];
     span.style.left = Math.random()*100 + "vw";
     span.style.animationDuration = (Math.random()*6+5)+"s";
-    span.style.opacity = Math.random()*0.25 + 0.08;
-
-    container.appendChild(span);
-
+    span.style.opacity = Math.random()*0.25 + 0.1;
+    span.style.fontSize = (Math.random() > 0.5 ? "12px" : "13px");
+    rainContainer.appendChild(span);
     setTimeout(()=>span.remove(),11000);
 }
 
