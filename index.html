@@ -44,6 +44,42 @@ body{
   font-family:'Inter',sans-serif;
   overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
+  cursor:none;
+}
+a,button,[onclick]{cursor:none;}
+
+/* ── CUSTOM CURSOR ── */
+#cursor-dot{
+  position:fixed;width:8px;height:8px;border-radius:50%;
+  background:var(--s-gold);
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:width .2s,height .2s,background .2s,opacity .2s;
+  box-shadow:0 0 10px rgba(201,168,76,.8),0 0 20px rgba(201,168,76,.3);
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(201,168,76,.5);
+  pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:width .35s ease,height .35s ease,border-color .35s,opacity .3s;
+}
+body.cursor-hover #cursor-dot{
+  width:12px;height:12px;
+  background:var(--s-gold);
+  box-shadow:0 0 18px rgba(201,168,76,1),0 0 36px rgba(201,168,76,.4);
+}
+body.cursor-hover #cursor-ring{
+  width:52px;height:52px;
+  border-color:rgba(201,168,76,.8);
+}
+body.cursor-click #cursor-dot{
+  width:6px;height:6px;
+  background:#fff;
+}
+body.cursor-click #cursor-ring{
+  width:24px;height:24px;
+  border-color:var(--s-gold);
 }
 
 /* ── BACKGROUND LAYERS ── */
@@ -566,6 +602,8 @@ footer{
 </head>
 <body>
 
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
 <div class="bg-gradient"></div>
 <div class="code-rain-dark"></div>
 <div class="code-rain-light"></div>
@@ -988,26 +1026,6 @@ function getCtx(){
 }
 ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,()=>getCtx(),{once:true}));
 
-function playKey(vol=0.015){
-  const c=getCtx();if(!c)return;
-  const now=c.currentTime,sr=c.sampleRate;
-  const clickLen=Math.floor(sr*.006);
-  const clickBuf=c.createBuffer(1,clickLen,sr);
-  const cd=clickBuf.getChannelData(0);
-  for(let i=0;i<clickLen;i++) cd[i]=(Math.random()*2-1)*Math.pow(1-i/clickLen,4);
-  const click=c.createBufferSource();click.buffer=clickBuf;
-  const fClick=c.createBiquadFilter();fClick.type='bandpass';fClick.frequency.value=3200;fClick.Q.value=0.8;
-  const gClick=c.createGain();gClick.gain.setValueAtTime(vol,now);gClick.gain.exponentialRampToValueAtTime(.001,now+.018);
-  click.connect(fClick);fClick.connect(gClick);gClick.connect(c.destination);click.start(now);
-  const bodyLen=Math.floor(sr*.04);
-  const bodyBuf=c.createBuffer(1,bodyLen,sr);
-  const bd=bodyBuf.getChannelData(0);
-  for(let i=0;i<bodyLen;i++) bd[i]=(Math.random()*2-1)*Math.pow(1-i/bodyLen,2)*.5;
-  const body=c.createBufferSource();body.buffer=bodyBuf;
-  const fBody=c.createBiquadFilter();fBody.type='lowpass';fBody.frequency.value=420;
-  const gBody=c.createGain();gBody.gain.setValueAtTime(vol*.45,now+.003);gBody.gain.exponentialRampToValueAtTime(.001,now+.045);
-  body.connect(fBody);fBody.connect(gBody);gBody.connect(c.destination);body.start(now+.003);
-}
 
 function playHover(){
   const c=getCtx();if(!c)return;
@@ -1044,7 +1062,7 @@ function startTypewriter(){
     if(i<phrase.length){
       tw.textContent=phrase.slice(0,i+1);
       const delay=52+Math.random()*48+(phrase[i]===' '?25:0)+(phrase[i]==='.'?100:0)+(phrase[i]==='·'?80:0);
-      playKey(0.012+Math.random()*0.005);i++;setTimeout(typeChar,delay);
+      i++;setTimeout(typeChar,delay);
     } else {
       tw.classList.add('blink');
       setTimeout(erasePhrase, 2600);
@@ -1097,6 +1115,29 @@ function closePdf(){
   document.body.style.overflow='';
 }
 document.getElementById('pdf-modal').addEventListener('click',function(e){if(e.target===this)closePdf();});
+
+/* ── CUSTOM GOLDEN CURSOR ── */
+const dot=document.getElementById('cursor-dot');
+const ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  dot.style.left=mx+'px';dot.style.top=my+'px';
+});
+(function animRing(){
+  rx+=(mx-rx)*.12;ry+=(my-ry)*.12;
+  ring.style.left=rx+'px';ring.style.top=ry+'px';
+  requestAnimationFrame(animRing);
+})();
+const hoverEls='a,button,[onclick],.skill-card,.proj-card,.contato-item,.cert-card,.hero-stat,.nav-links a';
+document.querySelectorAll(hoverEls).forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('cursor-hover'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('cursor-hover'));
+});
+document.addEventListener('mousedown',()=>document.body.classList.add('cursor-click'));
+document.addEventListener('mouseup',()=>document.body.classList.remove('cursor-click'));
+document.addEventListener('mouseleave',()=>{dot.style.opacity='0';ring.style.opacity='0';});
+document.addEventListener('mouseenter',()=>{dot.style.opacity='1';ring.style.opacity='1';});
 </script>
 </body>
 </html>
