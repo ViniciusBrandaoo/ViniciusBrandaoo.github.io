@@ -28,7 +28,7 @@ T.nomeExibicao = function (nome) {
 };
 
 T.CAMPOS_FUNCIONARIO = function (v) {
-  var regime = (v && v.regime) || "HORISTA_AULA";
+  var regime = (v && v.regime) || "MENSALISTA";
   var base = [
     { secao: "Identificação" },
     { id: "nome", rotulo: "Nome completo", obrigatorio: true },
@@ -36,10 +36,10 @@ T.CAMPOS_FUNCIONARIO = function (v) {
     { id: "cpf", rotulo: "CPF", dica: "Cifrado no banco; nunca aparece em log." },
     { id: "cargo", rotulo: "Cargo", obrigatorio: true, par: true },
     // O setor atual da pessoa entra na lista mesmo que não seja um dos padrões: sem isso o
-    // formulário trocava o setor por "Direção" ao salvar (ex.: "Aux. Coordenação", "Gerente ADM").
+    // formulário trocava o setor por "Direção" ao salvar (ex.: "Aux. Gerência de Setor", "Gerente ADM").
     { id: "departamento", rotulo: "Setor", tipo: "select",
-      opcoes: ["Direção", "Coordenação", "Secretaria", "Financeiro", "Administrativo", "Docente", "Apoio"]
-        .concat(v && v.departamento && ["Direção", "Coordenação", "Secretaria", "Financeiro", "Administrativo", "Docente", "Apoio"].indexOf(v.departamento) === -1 ? [v.departamento] : []) },
+      opcoes: ["Direção", "Recepção", "Governança", "Alimentos e Bebidas", "Manutenção", "Financeiro", "Administrativo", "Reservas e Comercial", "Lazer"]
+        .concat(v && v.departamento && ["Direção", "Recepção", "Governança", "Alimentos e Bebidas", "Manutenção", "Financeiro", "Administrativo", "Reservas e Comercial", "Lazer"].indexOf(v.departamento) === -1 ? [v.departamento] : []) },
     { id: "admissao", rotulo: "Data de admissão", tipo: "data", obrigatorio: true, par: true, padrao: L.hoje() },
     { id: "dependentes", rotulo: "Dependentes de IRRF", tipo: "numero", min: 0 },
     { fimSecao: true },
@@ -49,8 +49,7 @@ T.CAMPOS_FUNCIONARIO = function (v) {
     // servidor recusar no final. Prestador PJ/MEI já tem (migration 017,
     // `contratos_prestador`/`prestador_pagamentos`), sem contrato CLT nenhum.
     { id: "regime", rotulo: "Regime", tipo: "select", padrao: regime,
-      opcoes: [{ valor: "HORISTA_AULA", rotulo: "Professor CLT — por hora-aula" },
-               { valor: "MENSALISTA", rotulo: "Mensalista CLT — salário fixo" },
+      opcoes: [{ valor: "MENSALISTA", rotulo: "Mensalista CLT — salário fixo" },
                { valor: "HORISTA_RELOGIO", rotulo: "Horista CLT — por hora batida" },
                { valor: "PRESTADOR_PJ", rotulo: "Prestador — MEI ou PJ" }].concat(L.USA_BACKEND ? [] : [
                { valor: "ESTAGIARIO", rotulo: "Estagiário — bolsa" }]),
@@ -74,7 +73,7 @@ T.CAMPOS_FUNCIONARIO = function (v) {
     // (não é hora-aula: o divisor do mês é outro, 5 semanas, não 4,5).
     base.push({ id: "valorHora", rotulo: "Valor da hora", tipo: "moeda", obrigatorio: true, par: true });
     base.push({ id: "horasSemanais", rotulo: "Horas por semana", tipo: "numero", obrigatorio: true, min: 1,
-      dica: "O mês deste regime é de 5 semanas, não as 4,5 do professor." });
+      dica: "O mês deste regime é de 5 semanas, não as 4,5 do colaborador." });
   } else if (regime === "ESTAGIARIO") {
     // Lei 11.788/2008: não é vínculo empregatício — bolsa e auxílio, não
     // salário; sem INSS, sem FGTS, sem 13º nem férias.
@@ -96,9 +95,9 @@ T.CAMPOS_FUNCIONARIO = function (v) {
       dica: "Pode deixar em branco e completar depois — o cadastro funciona sem." });
     base.push({ id: "valorMensal", rotulo: "Valor mensal da nota", tipo: "moeda", par: true,
       dica: "Pode deixar em branco e completar depois." });
-    base.push({ id: "servicoComCpp", rotulo: "Serviço gera CPP para a escola?", tipo: "select",
+    base.push({ id: "servicoComCpp", rotulo: "Serviço gera CPP para o hotel?", tipo: "select",
       opcoes: [{ valor: "NAO", rotulo: "Não" }, { valor: "SIM", rotulo: "Sim" }],
-      dica: "Só hidráulica, eletricidade, pintura, alvenaria, carpintaria e manutenção de veículos geram CPP de 20% para a escola." });
+      dica: "Só hidráulica, eletricidade, pintura, alvenaria, carpintaria e manutenção de veículos geram CPP de 20% para o hotel." });
     if (L.USA_BACKEND) {
       base.push({ id: "empresaCodigo", rotulo: "Empresa pagadora", tipo: "select", par: true,
         opcoes: Object.keys(L.EMPRESAS).map(function (k) { return { valor: k, rotulo: L.EMPRESAS[k].nome }; }) });
@@ -118,7 +117,7 @@ T.CAMPOS_FUNCIONARIO = function (v) {
     base.push({ secao: "Checagem de vínculo" });
     base.push({ id: "temHorarioFixo", rotulo: "Cumpre horário fixo?", tipo: "select", par: true,
       opcoes: [{ valor: "NAO", rotulo: "Não" }, { valor: "SIM", rotulo: "Sim" }] });
-    base.push({ id: "temExclusividade", rotulo: "Presta serviço só para a escola?", tipo: "select",
+    base.push({ id: "temExclusividade", rotulo: "Presta serviço só para o hotel?", tipo: "select",
       opcoes: [{ valor: "NAO", rotulo: "Não" }, { valor: "SIM", rotulo: "Sim" }] });
     base.push({ id: "temSubordinacao", rotulo: "Recebe ordens diretas?", tipo: "select", par: true,
       opcoes: [{ valor: "NAO", rotulo: "Não" }, { valor: "SIM", rotulo: "Sim" }] });
@@ -329,7 +328,7 @@ T.acoes["novo-funcionario"] = function (id) {
             T.ir("funcionarios");
             U.avisar((atual ? "Cadastro atualizado." : "Funcionário cadastrado.") +
               (corpo.regime === "HORISTA_AULA" && Number(corpo.aulasSemanais) > 40
-                ? " Atenção: a grade passa de 40 aulas — passe o excedente para Aula extra / projeto (botão no cadastro do professor)." : ""));
+                ? " Atenção: a grade passa de 40 aulas — passe o excedente para Aula extra / projeto (botão no cadastro do colaborador)." : ""));
           }).catch(function (erro) {
             U.avisar(erro.message || "Não foi possível salvar.");
           });
@@ -372,7 +371,7 @@ T.acoes["novo-funcionario"] = function (id) {
     descontosFixos: Array.isArray(atual.descontosFixos)
       ? atual.descontosFixos.map(function (d) { return d.nome + ": " + L.brl(d.valor); }).join("\n")
       : (atual.descontosFixos || "")
-  }) : { regime: "HORISTA_AULA", admissao: L.hoje() });
+  }) : { regime: "MENSALISTA", admissao: L.hoje() });
 };
 
 T.telas.funcionarios = function () {
@@ -402,14 +401,14 @@ T.telas.funcionarios = function () {
   html += T.abasCategoria();
   // A conferência de aulas é assunto de professor; não polui a aba de
   // colaborador, que não tem carga por módulo.
-  if (!soColaboradores) html += T.resumoConferenciaHtml();
+  if (!soColaboradores && L.professores().length) html += T.resumoConferenciaHtml();
 
   var barra = '<div class="barra-ferramentas">' +
     '<input type="search" data-filtro="funcionarios" aria-label="Buscar funcionário por nome, cargo ou matrícula" placeholder="Buscar por nome, cargo ou matrícula" value="' + U.esc(T.filtros.funcionarios || "") + '">' +
-    (soColaboradores ? "" :
+    (soColaboradores || !L.professores().length ? "" :
       U.seletorRico({
-        rotulo: "Filtrar por módulo", valor: T.filtros.modulo || "",
-        itens: [{ valor: "", rotulo: "Todos os módulos" }].concat(
+        rotulo: "Filtrar por setor", valor: T.filtros.modulo || "",
+        itens: [{ valor: "", rotulo: "Todos os setores" }].concat(
           L.MODULOS_ENSINO.map(function (m) { return { valor: m, rotulo: m }; })),
         atributos: { filtro: "modulo" }
       })) +
@@ -595,7 +594,7 @@ T.acoes["ficha-funcionario"] = function (id) {
   // MEI dentro do total: o líquido da folha inclui o MEI; o líquido CLT é só a parte CLT.
   if (div && div.meiDentro) linhas.push(["Líquido CLT previsto", L.brl(Math.max(0, r.liquido - div.mei))]);
   else linhas.push([pj ? "Líquido da nota" : "Líquido previsto", L.brl(r.liquido)]);
-  linhas.push(["Custo p/ a escola", L.brl(r.custoEmpregador + (!pj && f.valorMei > 0 && f.valorClt > 0 && Math.abs(f.valorClt - r.custoEmpregador) <= 100 ? f.valorMei : 0))]);
+  linhas.push(["Custo p/ o hotel", L.brl(r.custoEmpregador + (!pj && f.valorMei > 0 && f.valorClt > 0 && Math.abs(f.valorClt - r.custoEmpregador) <= 100 ? f.valorMei : 0))]);
   if (estagiario && f.dataFimPrevista) linhas.push(["Fim previsto", L.dataBR(f.dataFimPrevista)]);
 
   var ficha = '<dl class="ficha">' + linhas.map(function (p) {
@@ -627,7 +626,7 @@ T.acoes["ficha-funcionario"] = function (id) {
       var totalMes = linhasCarga.reduce(function (a, c) { return a + c.mes; }, 0);
       linhasCarga.push({ id: "total", segmento: "Total", aulas: totalAulas, hora: null, mes: totalMes, total: true });
     }
-    ficha += '<h3 style="font-size:var(--t-2);margin:20px 0 8px">Carga por segmento</h3>' +
+    ficha += '<h3 style="font-size:var(--t-2);margin:20px 0 8px">Carga por setor</h3>' +
       U.tabelaHtml([
         { rotulo: "Segmento", conteudo: function (c) {
           return c.total ? "<strong>Total</strong>" : (c.projeto ? "<strong>" + U.esc(c.segmento) + "</strong>" : U.esc(c.segmento)); } },
@@ -686,7 +685,7 @@ T.acoes["ficha-funcionario"] = function (id) {
         }
       }
       if (f.regime === "HORISTA_AULA" && L.USA_BACKEND && T.podeEditar()) {
-        lista.push({ rotulo: "Carga por segmento", esquerda: true,
+        lista.push({ rotulo: "Carga por setor", esquerda: true,
           aoClicar: function () { U.fecharModal(); T.acoes["editar-cargas-segmento"](id); } });
         lista.push({ rotulo: "Aula extra / projeto", esquerda: true,
           aoClicar: function () { U.fecharModal(); T.acoes["lancar-movimento"](id); } });
@@ -750,7 +749,7 @@ T.acoes["editar-cargas-segmento"] = function (id) {
   var total = f.aulasSemanais || 0;
 
   U.abrirFormulario({
-    titulo: "Carga por segmento",
+    titulo: "Carga por setor",
     sub: f.nome + " · a soma precisa bater com o total de " + total + " aula(s) semanais",
     campos: L.MODULOS_ENSINO.map(function (seg, i) {
       return { id: "seg" + i, rotulo: seg, tipo: "numero", passo: "0.5", par: i % 2 === 1,
@@ -768,7 +767,7 @@ T.acoes["editar-cargas-segmento"] = function (id) {
       }
       L.api.patch("/api/funcionarios/" + id, { cargasPorSegmento: cargas })
         .then(function () { return L.recarregarFuncionarios(); })
-        .then(function () { U.fecharModal(); U.avisar("Carga por segmento atualizada."); })
+        .then(function () { U.fecharModal(); U.avisar("Carga por setor atualizada."); })
         .catch(function (erro) { U.avisar(erro.message || "Não foi possível salvar."); });
     }
   });
@@ -928,7 +927,7 @@ T.acoes["novo-fornecedor"] = function (id) {
       { id: "razaoSocial", rotulo: "Razão social", obrigatorio: true },
       { id: "documento", rotulo: "CNPJ ou CPF", obrigatorio: true, par: true, dica: "Cifrado no banco." },
       { id: "categoria", rotulo: "Categoria", tipo: "select",
-        opcoes: ["Material didático", "Tecnologia", "Estrutura", "Manutenção", "Marketing", "Terceirizados", "Eventos", "Administrativo", "Outros"] },
+        opcoes: ["Enxoval e amenities", "Tecnologia", "Estrutura", "Manutenção", "Marketing", "Terceirizados", "Eventos", "Administrativo", "Outros"] },
       { id: "contato", rotulo: "Contato", par: true },
       { id: "telefone", rotulo: "Telefone" },
       { id: "email", rotulo: "E-mail" }
@@ -963,7 +962,7 @@ T.telas.fornecedores = function () {
   if (L.USA_BACKEND && !T._fornecedoresCarregados) carregarFornecedoresDaApi();
 
   var html = T.cabecalho("Fornecedores",
-    "Quem a escola paga, com histórico de compras.",
+    "Quem o hotel paga, com histórico de compras.",
     T.botaoNovo("novo-fornecedor", "Cadastrar fornecedor"));
 
   html += '<div class="painel">' + U.tabelaHtml([
@@ -989,7 +988,7 @@ T.telas.fornecedores = function () {
 
 // ---------------------------------------------------------------- contas a pagar
 
-T.CATEGORIAS = ["Folha e pessoal", "Impostos", "Material didático", "Tecnologia", "Estrutura",
+T.CATEGORIAS = ["Folha e pessoal", "Impostos", "Enxoval e amenities", "Tecnologia", "Estrutura",
   "Manutenção", "Marketing", "Terceirizados", "Eventos", "Administrativo", "Outros"];
 
 /** Mesmo padrão de T.ROTULOS_AUSENCIA (telas-c.js): nome de exibição, nunca
@@ -1201,7 +1200,7 @@ T.evolucaoFolha = function (compAtual) {
     var atual = x.competencia === compAtual;
     return '<div class="barra-dado"' + (atual ? ' style="background:var(--superficie-alt)"' : "") + ">" +
       "<span>" + U.esc(L.competenciaBR(x.competencia)) +
-      '<div class="secundario">' + x.professores + " professores · " + x.aulasSemanais + " aulas/sem</div></span>" +
+      '<div class="secundario">' + x.professores + " colaboradores · " + x.aulasSemanais + " aulas/sem</div></span>" +
       '<span class="trilho"><span class="preenche" style="width:' +
       Math.max(3, Math.round((x.totalPlanilha / maior) * 100)) + '%"></span></span>' +
       '<span class="valor num">' + L.brl(x.totalPlanilha) +
@@ -1213,10 +1212,10 @@ T.evolucaoFolha = function (compAtual) {
       "</span></div>";
   }).join("");
 
-  return U.painelHtml("Evolução da folha de professores",
+  return U.painelHtml("Evolução da folha de colaboradores",
     L.competenciaBR(primeiro.competencia) + " a " + L.competenciaBR(ultimo.competencia),
     '<div class="aviso-tela" style="margin:16px 18px 6px"><span aria-hidden="true">·</span><div>' +
-    "Valores brutos importados da planilha da escola, antes de encargos. " +
+    "Valores brutos importados da planilha do hotel, antes de encargos. " +
     "No período a folha variou <strong>" +
     (variacao >= 0 ? "+" : "") + variacao.toFixed(1) + "%</strong>, de " +
     L.brl(primeiro.totalPlanilha) + " para " + L.brl(ultimo.totalPlanilha) + ".</div></div>" +
@@ -1297,7 +1296,7 @@ T.telas.fechamento = function () {
     '<dl class="resumo">' + [
       { r: "Previsto", v: previsto }, { r: "Aprovado", v: aprovado }, { r: "Pago", v: pago },
       { r: "Pendente", v: pendente }, { r: "Vencido", v: vencido },
-      { r: apuracao.doHistorico ? "Folha bruta dos professores" : (L.impostosPelaContabilidade() ? "Custo da folha" : "Folha com encargos"), v: folha, forte: true }
+      { r: apuracao.doHistorico ? "Folha bruta dos colaboradores" : (L.impostosPelaContabilidade() ? "Custo da folha" : "Folha com encargos"), v: folha, forte: true }
     ].map(function (i) {
       return '<div class="resumo-item' + (i.forte ? " forte" : "") + '"><dt>' + i.r +
         '</dt><dd class="num">' + L.brl(i.v) + "</dd></div>";
@@ -1314,7 +1313,7 @@ T.telas.fechamento = function () {
   });
   // Rótulo diferente para não somar bruto com custo no mesmo gráfico sem aviso.
   var rotuloFolha = apuracao.doHistorico
-    ? "Folha de professores (bruto)"
+    ? "Folha de colaboradores (bruto)"
     : (L.impostosPelaContabilidade() ? "Folha e pessoal" : "Folha e pessoal (com encargos)");
   if (folha > 0) porCategoria[rotuloFolha] = (porCategoria[rotuloFolha] || 0) + folha;
   var categorias = Object.keys(porCategoria).sort(function (a, b) { return porCategoria[b] - porCategoria[a]; });

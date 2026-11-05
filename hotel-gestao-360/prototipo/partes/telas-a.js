@@ -21,7 +21,6 @@ T.MODULOS = [
   { grupo: "Pessoas", chave: "folha", nome: "Folha de Pagamento" },
   { grupo: "Pessoas", chave: "ferias", nome: "Férias e Ausências" },
   { grupo: "Pessoas", chave: "eventos", nome: "13º, Férias e Rescisão" },
-  { grupo: "Pessoas", chave: "lotacao", nome: "Lotação de Aulas" },
   { grupo: "Financeiro", chave: "contas", nome: "Contas a Pagar" },
   { grupo: "Financeiro", chave: "fechamento", nome: "Fechamento Mensal" },
   { grupo: "Financeiro", chave: "fornecedores", nome: "Fornecedores" },
@@ -70,17 +69,17 @@ T.PERFIS = {
   // portaria é trabalho de quem entende de folha, não da Direção. A decisão
   // final continua com a Direção, que é quem fecha a competência — são duas
   // travas em série, não uma.
-  RH: { nome: "Recursos Humanos", resumo: "Pessoas, banco de horas, folha, férias, lotação de aulas, documentos e tabelas legais.",
-    modulos: ["dashboard","aprovacoes","funcionarios","banco","folha","ferias","eventos","lotacao","documentos","relatorios","auditoria","tabelas"] },
+  RH: { nome: "Recursos Humanos", resumo: "Pessoas, banco de horas, folha, férias, documentos e tabelas legais.",
+    modulos: ["dashboard","aprovacoes","funcionarios","banco","folha","ferias","eventos","documentos","relatorios","auditoria","tabelas"] },
   ADMINISTRATIVO: { nome: "Administrativo", resumo: "Compras, fornecedores, contratos e documentos.",
     modulos: ["dashboard","aprovacoes","contas","fornecedores","contratos","solicitacoes","documentos"] },
   // Sem "funcionarios": esse módulo mostra CPF e salário de todo mundo, e a
   // rotina da coordenação pedagógica é aprovar ausência e solicitação da
   // equipe, não abrir a ficha completa de RH. Quem precisar de exceção, o
   // administrador concede pontualmente em Controle de Acesso.
-  COORDENACAO: { nome: "Coordenação", resumo: "Ausências, solicitações da equipe e lotação de aulas.",
-    modulos: ["dashboard","aprovacoes","ferias","solicitacoes","lotacao"] },
-  SECRETARIA: { nome: "Secretaria", resumo: "Solicitações e central de documentos.",
+  COORDENACAO: { nome: "Gerência de Setor", resumo: "Ausências e solicitações da equipe do setor.",
+    modulos: ["dashboard","aprovacoes","ferias","solicitacoes"] },
+  SECRETARIA: { nome: "Recepção", resumo: "Solicitações e central de documentos.",
     modulos: ["dashboard","solicitacoes","documentos"] },
   GESTOR: { nome: "Gestor de equipe", resumo: "Aprova o que é da sua equipe; não vê dado financeiro.",
     modulos: ["dashboard","aprovacoes","banco","ferias","solicitacoes"] },
@@ -384,7 +383,7 @@ T.montarAjuda = function () {
   if (!botao || !painel) return;
   painel.innerHTML = '<div class="capsula-popover-titulo">Ajuda</div>' +
     '<p class="capsula-popover-texto">Encontrou um número que não bate ou uma dúvida sobre o sistema? ' +
-    "Fale direto com a Direção — aqui toda decisão final passa por quem é dono da escola.</p>";
+    "Fale direto com a Direção — aqui toda decisão final passa por quem é dono do hotel.</p>";
   U.ligarPopoverCapsula(botao, painel);
 };
 
@@ -867,7 +866,7 @@ T.acoes["reabrir-competencia"] = function () {
       (quantas ? " Esta competência já foi reaberta " + quantas + "× antes." : "") +
       "</div></div>" +
       '<label class="campo"><span>Por que precisa reabrir</span>' +
-      '<textarea id="motivo-reabrir" placeholder="Ex.: lançamento de 12 aulas extras da professora X não entrou antes do fechamento."></textarea>' +
+      '<textarea id="motivo-reabrir" placeholder="Ex.: lançamento de 12 aulas extras da colaboradora X não entrou antes do fechamento."></textarea>' +
       '<span class="dica">Fica na trilha de auditoria, com o seu nome.</span>' +
       '<span class="erro oculto" id="erro-motivo-reabrir"></span></label>',
     acoes: [
@@ -1025,7 +1024,7 @@ T.faixaDemonstracao = function () {
   if (!L.DADOS_REAIS || !L.DADOS_REAIS.demonstracao) return "";
   return '<div class="faixa-demo" role="note">' +
     "<strong>Demonstração</strong><span> · " +
-    L.DADOS_REAIS.professores.length + " professores fictícios. Sem dados reais.</span>" +
+    L.DADOS_REAIS.professores.length + " colaboradores fictícios. Sem dados reais.</span>" +
     "</div>";
 };
 
@@ -1099,7 +1098,7 @@ T.resumoConferenciaHtml = function () {
     var faltando = c.linhas.filter(function (l) { return l.diferenca < 0; });
     var sobrando = c.linhas.filter(function (l) { return l.diferenca > 0; });
     faltando.forEach(function (l) {
-      alertas.push(Math.abs(l.diferenca) + " de " + l.segmento + " sem professor");
+      alertas.push(Math.abs(l.diferenca) + " de " + l.segmento + " sem colaborador");
     });
     sobrando.forEach(function (l) {
       alertas.push("+" + l.diferenca + " em " + l.segmento + " além do previsto");
@@ -1242,8 +1241,8 @@ T.CONFIG_INICIAL = function () {
     { titulo: "Cadastrar e conferir as tabelas de INSS e IRRF do exercício",
       detalhe: "Sem tabela vigente e conferida o cálculo roda, mas a folha não fecha.",
       pronto: L.pendenciaTabelas(L.estado.competencia).length === 0, acao: "conferir-tabelas" },
-    { titulo: "Cadastrar funcionários e professores", detalhe: "Regime, carga e valor da hora-aula de cada um.", pronto: e.funcionarios.length > 0, acao: "novo-funcionario" },
-    { titulo: "Cadastrar fornecedores", detalhe: "Quem a escola paga todo mês.", pronto: e.fornecedores.length > 0, acao: "novo-fornecedor" },
+    { titulo: "Cadastrar funcionários", detalhe: "Regime, setor, salário e jornada de cada um.", pronto: e.funcionarios.length > 0, acao: "novo-funcionario" },
+    { titulo: "Cadastrar fornecedores", detalhe: "Quem o hotel paga todo mês.", pronto: e.fornecedores.length > 0, acao: "novo-fornecedor" },
     { titulo: "Lançar as contas a pagar", detalhe: "A partir daqui o dashboard passa a ter conteúdo.", pronto: e.contas.length > 0, acao: "nova-conta" },
     { titulo: "Registrar os contratos recorrentes", detalhe: "Para receber alerta antes de cada vencimento.", pronto: e.contratos.length > 0, acao: "novo-contrato" }
   ];
@@ -1726,9 +1725,6 @@ T.painelTicket = function (ativos) {
     U.seletorRico({ rotulo: "Filtrar por empresa", valor: empresa,
       itens: [{ valor: "", rotulo: "Todas as empresas" }].concat(L.empresasPresentes(ativos).map(function (e) { return { valor: e, rotulo: e }; })),
       atributos: { filtro: "folhaEmpresa" } }) +
-    U.seletorRico({ rotulo: "Professor ou colaborador", valor: regimeSel,
-      itens: [{ valor: "", rotulo: "Professores e colaboradores" }, { valor: "PROFESSOR", rotulo: "Só professores" }, { valor: "COLABORADOR", rotulo: "Só colaboradores" }],
-      atributos: { filtro: "ticketPapel" } }) +
     '<span class="direita">' +
     (podeAlterar ? '<button class="botao miudo primario" data-acao="conceder-ticket">Conceder Ticket</button> ' : "") +
     '<button class="botao miudo" data-acao="exportar-ticket">Excel</button></span></div>';
@@ -1769,8 +1765,8 @@ T.painelTicket = function (ativos) {
   return '<div class="painel"><div class="painel-topo"><h2>Ticket</h2><span class="contexto">' + comTicket.length +
     " pessoa(s)" + (comTicket.filter(function (x) { return !(x.valorTicket > 0); }).length ? " · " + comTicket.filter(function (x) { return !(x.valorTicket > 0); }).length + " sem valor" : "") + " · total " + L.brl(descontado + positivo) + "</span></div>" +
     '<div class="painel-corpo" style="padding-top:0;padding-bottom:0">' + T.abasFolha(ativos) +
-    '<p class="secundario" style="margin:0 0 12px">Professor: o Ticket é descontado da folha. Colaborador: o Ticket é positivo, não desconta. Prestador MEI/PJ: pago à parte, fora da nota fiscal.</p>' + barra + tabela + "</div>" +
-    '<div class="painel-corpo"><div class="ficha"><div><dt>Descontado dos professores</dt><dd>' + L.brl(descontado) +
+    '<p class="secundario" style="margin:0 0 12px">Colaborador: o Ticket é descontado da folha. Colaborador: o Ticket é positivo, não desconta. Prestador MEI/PJ: pago à parte, fora da nota fiscal.</p>' + barra + tabela + "</div>" +
+    '<div class="painel-corpo"><div class="ficha"><div><dt>Descontado dos colaboradores</dt><dd>' + L.brl(descontado) +
     "</dd></div><div><dt>Positivo para colaboradores</dt><dd>" + L.brl(positivo) + "</dd></div><div><dt>Total de Ticket</dt><dd>" +
     L.brl(descontado + positivo) + "</dd></div></div></div></div>";
 };
@@ -1877,11 +1873,11 @@ T.acoes["ajustar-ticket"] = function (id) {
   var f = L.buscarPorId("funcionarios", id);
   if (!f) return;
   U.abrirFormulario({
-    titulo: "Ajustar Ticket", sub: f.nome + (f.regime === "HORISTA_AULA" ? " · professor: o valor é descontado da folha"
+    titulo: "Ajustar Ticket", sub: f.nome + (f.regime === "HORISTA_AULA" ? " · colaborador: o valor é descontado da folha"
       : f.regime === "PRESTADOR_PJ" ? " · prestador: pago à parte, fora da nota fiscal" : " · colaborador: o valor é positivo"),
     campos: [{ id: "valorTicket", rotulo: "Valor do Ticket", tipo: "moeda", dica: "Deixe 0 para tirar o Ticket." }].concat(
       f.regime === "HORISTA_AULA" ? [{ id: "ticketModo", rotulo: "Na folha", tipo: "select",
-        opcoes: [{ valor: "DESCONTA", rotulo: "Descontar da folha (padrão do professor)" }, { valor: "SOMA", rotulo: "Somar, como colaborador" }] }] : []),
+        opcoes: [{ valor: "DESCONTA", rotulo: "Descontar da folha (padrão do colaborador)" }, { valor: "SOMA", rotulo: "Somar, como colaborador" }] }] : []),
     valores: { valorTicket: f.valorTicket ? (f.valorTicket / 100).toFixed(2) : "", ticketModo: f.ticketSoma ? "SOMA" : "DESCONTA" },
     rotuloSalvar: "Salvar",
     aoSalvar: function (v) { T.salvarTicket(id, Number(v.valorTicket) || 0, f.regime === "HORISTA_AULA" ? v.ticketModo === "SOMA" : undefined); }
@@ -1895,8 +1891,8 @@ T.acoes["conceder-ticket"] = function () {
     campos: [
       { id: "funcionarioId", rotulo: "Funcionário", tipo: "select", opcoes: sem.map(function (x) { return { valor: x.id, rotulo: x.nome, detalhe: (x.regime === "HORISTA_AULA" ? "Professor" : x.regime === "PRESTADOR_PJ" ? "Prestador MEI/PJ" : "Colaborador") + (x.cargo ? " · " + x.cargo : "") }; }) },
       { id: "valorTicket", rotulo: "Valor do Ticket", tipo: "moeda", obrigatorio: true },
-      { id: "ticketModo", rotulo: "Na folha (só vale para professor)", tipo: "select",
-        opcoes: [{ valor: "DESCONTA", rotulo: "Descontar da folha (padrão do professor)" }, { valor: "SOMA", rotulo: "Somar, como colaborador" }] }
+      { id: "ticketModo", rotulo: "Na folha (só vale para colaborador)", tipo: "select",
+        opcoes: [{ valor: "DESCONTA", rotulo: "Descontar da folha (padrão do colaborador)" }, { valor: "SOMA", rotulo: "Somar, como colaborador" }] }
     ],
     valores: { ticketModo: "DESCONTA" },
     rotuloSalvar: "Conceder",
@@ -1936,9 +1932,9 @@ T.CAMPOS_MOVIMENTO = function (f) {
         dica: "Substituição pontual — não multiplica pelas semanas." },
       { id: "aulasNoturnas", rotulo: "Aulas noturnas", tipo: "numero", min: 0 },
       { fimSecao: true },
-      { secao: "Faltas do professor" },
+      { secao: "Faltas do colaborador" },
       { id: "aulasNaoDadas", rotulo: "Aulas não ministradas", tipo: "numero", min: 0, par: true,
-        dica: "Falta do professor na apuração por semanas fixas." },
+        dica: "Falta do colaborador na apuração por semanas fixas." },
       { id: "semanasFalta", rotulo: "Semanas com falta injustificada", tipo: "numero", min: 0,
         dica: "Cada semana derruba o DSR daquela semana." },
       { fimSecao: true },
@@ -1971,7 +1967,7 @@ T.CAMPOS_MOVIMENTO = function (f) {
     // isso é desconto de valor cheio, não um percentual sobre o bruto.
     { secao: "Descontos do mês" },
     { id: "descontoCantina", rotulo: "Cantina", tipo: "moeda", min: 0, par: true },
-    { id: "descontoMaterial", rotulo: "Material escolar", tipo: "moeda", min: 0 },
+    { id: "descontoMaterial", rotulo: "Material hotelr", tipo: "moeda", min: 0 },
     { id: "descontoMensalidade", rotulo: "Mensalidade", tipo: "moeda", min: 0, par: true },
     { id: "descontoPlanoSaude", rotulo: "Plano de saúde", tipo: "moeda", min: 0 },
     { id: "descontoAdiantamento", rotulo: "Adiantamento (vale)", tipo: "moeda", min: 0 },
@@ -1994,10 +1990,10 @@ T.CAMPOS_MOVIMENTO = function (f) {
     // campos o INSS é calculado como se este fosse o único emprego — e sai a
     // menos, com o recolhimento correto sendo responsabilidade da escola.
     { secao: "Outro vínculo empregatício" },
-    { id: "remuneracaoOutrosVinculos", rotulo: "Remuneração em outra escola", tipo: "moeda", min: 0, par: true,
-      dica: "Só se o professor tiver outro emprego CLT no mês." },
+    { id: "remuneracaoOutrosVinculos", rotulo: "Remuneração em outro hotel", tipo: "moeda", min: 0, par: true,
+      dica: "Só se o colaborador tiver outro emprego CLT no mês." },
     { id: "inssOutrosVinculos", rotulo: "INSS já retido lá", tipo: "moeda", min: 0,
-      dica: "Do holerite da outra escola. O teto do INSS é único entre vínculos." },
+      dica: "Do holerite da outro hotel. O teto do INSS é único entre vínculos." },
     { fimSecao: true },
   );
   return campos;
@@ -2208,7 +2204,7 @@ T.telas.folha = function () {
   var ativos = L.ativos();
   if (ativos.length === 0) {
     return T.cabecalho("Folha de Pagamento",
-      "Hora-aula e descontos da escola, com os impostos pela contabilidade.") +
+      "Salários e descontos do hotel, com os impostos pela contabilidade.") +
       U.painelHtml("Prévia por funcionário", "Sem cadastro",
         U.vazioHtml("Nenhum funcionário cadastrado",
           "Cadastre a equipe para ver a prévia de folha de cada um, com memória de cálculo e fundamento legal em cada passo.",
@@ -2305,7 +2301,7 @@ T.telas.folha = function () {
     { r: pj ? "Valor da nota" : "Proventos", v: r.proventos },
     { r: pj ? "Retenções" : "Descontos", v: r.descontos },
     { r: pj ? "Líquido da nota" : "Líquido a receber", v: r.liquido, forte: true },
-    { r: "Custo p/ a escola", v: r.custoEmpregador }
+    { r: "Custo p/ o hotel", v: r.custoEmpregador }
   ].concat((function () {
     // CLT, Ticket e MEI separados: o que é CLT é CLT, o que é MEI é MEI.
     var d = pj ? null : L.divisaoPagamento(f);
@@ -2374,7 +2370,7 @@ T.telas.folha = function () {
   var porCategoria = L.totaisPorCategoria(comp);
   if (porCategoria.length > 1) {
     html += '<div class="painel"><div class="painel-topo"><h2>Por categoria</h2>' +
-      '<span class="contexto">professores e colaboradores somam separado</span></div>' +
+      '<span class="contexto">colaboradores somam separado</span></div>' +
       '<div class="painel-corpo"><div class="cat-grade">' +
       porCategoria.map(function (t) {
         return '<div class="cat-bloco"><div class="cat-nome">' + U.esc(t.nome) +
@@ -2456,7 +2452,7 @@ T.telas.folha = function () {
         return '<span class="num' + (d > 0 ? " v-desconto" : "") + '">' + (d > 0 ? "− " : "") + L.brl(d) + "</span>"; } },
       { rotulo: "Líquido", direita: true, conteudo: function (x) {
         return '<span class="num" style="font-weight:500;color:var(--titulo)">' + L.brl(L.calcular(x).liquido) + "</span>"; } },
-      { rotulo: "Custo p/ escola", direita: true, secundaria: true, conteudo: function (x) {
+      { rotulo: "Custo p/ hotel", direita: true, secundaria: true, conteudo: function (x) {
         return '<span class="num">' + L.brl(L.calcular(x).custoEmpregador) + "</span>"; } },
       { rotulo: "", direita: true, conteudo: function (x) {
         var temDiv = L.calcular(x).avisos.some(function (a) { return a.nivel === "divergencia" && !causasGerais[a.texto]; });

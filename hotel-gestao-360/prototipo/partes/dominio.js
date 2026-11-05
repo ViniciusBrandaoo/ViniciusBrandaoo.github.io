@@ -216,7 +216,7 @@ L.NIVEIS = {
   FINANCEIRO:     { ordem: 2, nome: "Financeiro", aprovaAte: 2000000 },
   RH:             { ordem: 2, nome: "Recursos Humanos", aprovaAte: 1000000 },
   ADMINISTRATIVO: { ordem: 3, nome: "Administrativo", aprovaAte: 500000 },
-  COORDENACAO:    { ordem: 3, nome: "Coordenação", aprovaAte: 200000 },
+  COORDENACAO:    { ordem: 3, nome: "Gerência de Setor", aprovaAte: 200000 },
   GESTOR:         { ordem: 4, nome: "Gestor de equipe", aprovaAte: 100000 },
   SECRETARIA:     { ordem: 5, nome: "Secretaria", aprovaAte: 0 },
   CONSULTA:       { ordem: 6, nome: "Consulta", aprovaAte: 0 }
@@ -499,8 +499,8 @@ L.podeDelegar = function (usuario) {
 L.ACOES_RESERVADAS = {
   "fechar-competencia": "Fechar a competência trava os valores da folha. É decisão final, reservada à Direção.",
   "reabrir-competencia": "Reabrir uma competência fechada desfaz uma decisão já tomada — só a Direção volta atrás.",
-  "gerenciar-acessos": "Conceder ou tirar o acesso de alguém é decisão de quem responde pela escola.",
-  "excluir-funcionario": "Excluir um cadastro apaga o registro de vez, sem volta — só quem decide pela escola faz isso."
+  "gerenciar-acessos": "Conceder ou tirar o acesso de alguém é decisão de quem responde pelo hotel.",
+  "excluir-funcionario": "Excluir um cadastro apaga o registro de vez, sem volta — só quem decide pelo hotel faz isso."
 };
 
 L.podeExecutarReservada = function (acaoId, usuario) {
@@ -708,7 +708,7 @@ L.BLOCOS_PAINEL = [
   { id: "configuracao", grupo: "Painéis", nome: "Configuração inicial",
     descricao: "A trilha do que falta cadastrar. Some sozinha quando tudo estiver pronto." },
   { id: "evolucao", grupo: "Painéis", nome: "Evolução da folha",
-    descricao: "A folha de professores mês a mês, com a variação." }
+    descricao: "A folha de colaboradores mês a mês, com a variação." }
 ];
 
 /**
@@ -1505,7 +1505,7 @@ L.calcularInss = function (base, competencia, outrosVinculos) {
   if (outraRemuneracao > 0) {
     passos.push({
       titulo: "INSS — consolidação de vínculos",
-      formula: "remuneração desta escola + remuneração dos demais vínculos",
+      formula: "remuneração desto hotel + remuneração dos demais vínculos",
       substituicao: L.brl(base) + " + " + L.brl(outraRemuneracao),
       resultado: Math.min(consolidada, tabela.teto),
       fundamento: "Teto único somando os dois empregos"
@@ -1653,7 +1653,7 @@ L.calcularFolha = function (contrato, mov, f) {
   // esta checagem só faz o navegador mostrar o mesmo motivo, não cria um
   // bloqueio novo.
   var categoriaCct = L.categoriaDe(f) === "PROFESSOR" ? "DOCENTE" : "ADMINISTRATIVO";
-  var rotuloCategoria = categoriaCct === "DOCENTE" ? "de professores" : "de colaboradores";
+  var rotuloCategoria = categoriaCct === "DOCENTE" ? "de colaboradores" : "de colaboradores";
   var cctVig = L.cctVigente(categoriaCct, competencia);
   if (!cctVig) {
     avisos.push({ nivel: "divergencia",
@@ -1739,7 +1739,7 @@ L.calcularFolha = function (contrato, mov, f) {
     rubricas.push(prov("101", "Aulas ministradas", referencia, valorAulas));
     memoria.push({ titulo: "Aulas do mês",
       formula: cargas.length > 1
-        ? "Σ(aulas do segmento × hora-aula do segmento) × semanas do mês"
+        ? "Σ(aulas do setor × hora-aula do setor) × semanas do mês"
         : "aulas semanais × semanas do mês × valor da hora-aula",
       substituicao: cargas.map(function (c) {
         return (c.segmento ? c.segmento + " " : "") + c.aulas + " × " + L.brl(c.valorHora);
@@ -1854,7 +1854,7 @@ L.calcularFolha = function (contrato, mov, f) {
     memoria.push({ titulo: "Horas do mês",
       formula: "horas semanais × semanas do mês × valor da hora",
       substituicao: horasSemana + " × " + semanasHorista + " × " + L.brl(contrato.valorHora),
-      resultado: valorHoras, fundamento: "CLT art. 64 — divisor próprio do regime (5 semanas, não as 4,5 do professor)" });
+      resultado: valorHoras, fundamento: "CLT art. 64 — divisor próprio do regime (5 semanas, não as 4,5 do colaborador)" });
 
     var dsrRel = L.fracDe(valorHoras, cct.diasDescansoSemana, cct.diasUteisSemana);
     rubricas.push(prov("052", "DSR sobre horas", cct.diasDescansoSemana + "/" + cct.diasUteisSemana, dsrRel));
@@ -2018,7 +2018,7 @@ L.calcularFolha = function (contrato, mov, f) {
   if ((mov.remuneracaoOutrosVinculos || 0) > 0 && !(mov.inssOutrosVinculos > 0)) {
     avisos.push({ nivel: "atencao",
       texto: "Foi informada remuneração de outro vínculo sem o INSS que aquele empregador reteve. " +
-        "Sem esse valor o desconto sai maior do que o devido — peça o holerite da outra escola." });
+        "Sem esse valor o desconto sai maior do que o devido — peça o holerite da outro hotel." });
   }
   memoria = memoria.concat(inss.passos);
   if (!semImpostos) rubricas.push(neutro("601", "INSS", "base " + L.brl(baseComum), "D", inss.valor));
@@ -2074,7 +2074,7 @@ L.calcularFolha = function (contrato, mov, f) {
     rubricas.push(neutro(String(codigoDesconto++), d.nome, "combinado com a pessoa", "D", d.valor));
   });
   // Descontos do mês lançados no movimento: valor cheio, fora das bases.
-  [["descontoCantina", "Cantina"], ["descontoMaterial", "Material escolar"], ["descontoMensalidade", "Mensalidade"],
+  [["descontoCantina", "Cantina"], ["descontoMaterial", "Material hotelr"], ["descontoMensalidade", "Mensalidade"],
    ["descontoPlanoSaude", "Plano de saúde"], ["descontoAdiantamento", "Adiantamento (vale)"],
    ["descontoRobotica", "Robótica"], ["descontoEmprestimos", "Empréstimos"], ["descontoOutros", "Outros descontos"]].forEach(function (d, i) {
     var nome = d[0] === "descontoOutros" && mov.descontoOutrosObs ? d[1] + " — " + mov.descontoOutrosObs : d[1];
@@ -2264,13 +2264,13 @@ L.calcularPrestador = function (f, competencia) {
   if (sinais.length >= 2) {
     avisos.push({ nivel: "divergencia",
       texto: "Risco alto de reconhecimento de vínculo empregatício: " + sinais.join(", ") +
-        ". Reunidos pessoalidade, habitualidade, subordinação e onerosidade (CLT art. 3º), a contratação como MEI pode ser desconsiderada e a escola responder por todo o passivo trabalhista retroativo. Recomenda-se revisão jurídica do contrato." });
+        ". Reunidos pessoalidade, habitualidade, subordinação e onerosidade (CLT art. 3º), a contratação como MEI pode ser desconsiderada e o hotel responder por todo o passivo trabalhista retroativo. Recomenda-se revisão jurídica do contrato." });
   } else if (sinais.length === 1) {
     avisos.push({ nivel: "atencao",
       texto: "Atenção ao contrato: " + sinais[0] + ". Sinal isolado não caracteriza vínculo, mas convém documentar a autonomia do prestador." });
   }
   avisos.push({ nivel: "info",
-    texto: "Prestador de serviço não gera FGTS, 13º salário, férias nem provisões. O custo da escola é a nota fiscal mais eventuais encargos da contratante." });
+    texto: "Prestador de serviço não gera FGTS, 13º salário, férias nem provisões. O custo do hotel é a nota fiscal mais eventuais encargos da contratante." });
 
   var totalRetencoes = retencoes.reduce(function (a, r) { return a + r.valor; }, 0);
 
@@ -2298,7 +2298,7 @@ L.calcularPrestador = function (f, competencia) {
   // Descontos do mês (Cantina, Plano de saúde...): lançados em "Lançar
   // movimento" só para esta competência — não se repetem no mês seguinte.
   var mov = L.movimentoDe(f.id, comp);
-  [["descontoCantina", "Cantina"], ["descontoMaterial", "Material escolar"], ["descontoMensalidade", "Mensalidade"],
+  [["descontoCantina", "Cantina"], ["descontoMaterial", "Material hotelr"], ["descontoMensalidade", "Mensalidade"],
    ["descontoPlanoSaude", "Plano de saúde"], ["descontoAdiantamento", "Adiantamento (vale)"],
    ["descontoRobotica", "Robótica"], ["descontoEmprestimos", "Empréstimos"], ["descontoOutros", "Outros descontos"]]
     .forEach(function (par) {
@@ -2312,7 +2312,7 @@ L.calcularPrestador = function (f, competencia) {
   if (liquido < 0) {
     avisos.push({ nivel: "divergencia",
       texto: "Os descontos combinados (" + L.brl(totalDescontosFixos) + ") passam do valor da nota (" +
-        L.brl(bruto) + "): o líquido ficaria negativo, ou seja, a pessoa deveria dinheiro à escola no fim do mês. " +
+        L.brl(bruto) + "): o líquido ficaria negativo, ou seja, a pessoa deveria dinheiro ao hotel no fim do mês. " +
         "Confira os descontos lançados ou o valor contratado antes de pagar." });
   }
 
@@ -3229,7 +3229,7 @@ L.totaisPorCategoria = function (competencia) {
   }).filter(function (t) { return t.pessoas > 0; });
 };
 
-L.MODULOS_ENSINO = ["Infantil", "Fundamental 1", "Fundamental 2", "Ensino Médio", "Pré-Vestibular"];
+L.MODULOS_ENSINO = ["Recepção", "Governança", "Alimentos e Bebidas", "Manutenção", "Administrativo"];
 
 /** Em que módulos esta pessoa dá aula, e quantas aulas em cada. */
 L.modulosDe = function (f) {
@@ -3635,7 +3635,7 @@ L.alertas = function () {
     var ajustes = L.ajustesContratoLotacao(L._lotacaoAtual, L.estado.funcionarios);
     if (ajustes.length) {
       lista.push({ nivel: "atencao", destino: "lotacao", alvo: null,
-        titulo: ajustes.length + " professor(es) com aulas da lotação diferentes do contrato",
+        titulo: ajustes.length + " colaborador(es) com aulas da lotação diferentes do contrato",
         detalhe: ajustes.slice(0, 3).map(function (x) { return x.nome; }).join(", ") + (ajustes.length > 3 ? "…" : "") +
           " · a folha paga pelo contrato" });
     }

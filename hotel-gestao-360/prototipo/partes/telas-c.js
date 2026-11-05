@@ -83,14 +83,14 @@ T.ROTULOS_CAMPO_CADASTRO = {
   horasSemanais: "Horas por semana", empresaCodigo: "Empresa pagadora", temTicket: "Recebe Ticket",
   valorTicketCentavos: "Valor do Ticket", ticketSoma: "Ticket soma (em vez de descontar)", temMei: "Recebe parte como MEI",
   valorMeiCentavos: "Valor do MEI", valorCltCentavos: "Valor CLT informado", dataAdmissao: "Data de admissão",
-  cargasPorSegmento: "Carga por segmento",
+  cargasPorSegmento: "Carga por setor",
   aulasExtrasSemanais: "Aula extra / projeto semanal", valorHoraExtra: "Hora-aula da carga extra", aulasExtras: "Aulas extras",
   aulasSubstituicao: "Aulas avulsas", aulasNoturnas: "Aulas noturnas", aulasNaoDadas: "Aulas não dadas",
   semanasFalta: "Semanas de falta", horasExtras50: "Horas extras 50%", horasExtras100: "Horas extras 100%",
   diasFalta: "Dias de falta", horasNoturnas: "Horas noturnas", valeTransporte: "Vale-transporte",
   pensaoModo: "Pensão (modo)", pensaoQuantidade: "Pensão (valor)", remuneracaoOutrosVinculos: "Remuneração em outros vínculos",
   inssOutrosVinculos: "INSS em outros vínculos", descontoOutrosObs: "Observação dos outros descontos",
-  descontoCantina: "Desconto: Cantina", descontoMaterial: "Desconto: Material escolar", descontoMensalidade: "Desconto: Mensalidade",
+  descontoCantina: "Desconto: Cantina", descontoMaterial: "Desconto: Material hotelr", descontoMensalidade: "Desconto: Mensalidade",
   descontoPlanoSaude: "Desconto: Plano de saúde", descontoAdiantamento: "Desconto: Adiantamento (vale)",
   descontoRobotica: "Desconto: Robótica", descontoEmprestimos: "Desconto: Empréstimos", descontoOutros: "Desconto: Outros",
   valorMensalCentavos: "Valor da nota (mensal)", descontosFixos: "Descontos fixos", servico: "Serviço",
@@ -1004,7 +1004,7 @@ T.acoes["novo-documento"] = function () {
   // separados: com o motor de formulário sem suporte a campo condicional,
   // dois campos sempre visíveis (um pra categoria, outro pra pessoa/contrato)
   // ficaria com metade da tela inerte a cada escolha — o oposto de "clean".
-  var opcoesVinculo = [{ valor: "escola", rotulo: "Documento geral da escola" }]
+  var opcoesVinculo = [{ valor: "escola", rotulo: "Documento geral do hotel" }]
     .concat(L.estado.funcionarios.map(function (f) { return { valor: "employees|" + f.id, rotulo: f.nome, detalhe: "Funcionário" }; }))
     .concat(L.estado.fornecedores.map(function (f) { return { valor: "fornecedores|" + f.id, rotulo: f.razaoSocial, detalhe: "Fornecedor" }; }))
     .concat(L.estado.contratos.map(function (c) { return { valor: "contratos|" + c.id, rotulo: c.objeto, detalhe: "Contrato" }; }));
@@ -1203,8 +1203,8 @@ T.relatorioGeralHtml = function () {
     '<div class="barra-ferramentas">' +
       U.seletorRico({
         rotulo: "Categoria", valor: categoriaFiltro,
-        itens: [{ valor: "", rotulo: "Professores e colaboradores" }].concat(
-          Object.keys(L.CATEGORIAS).map(function (c) { return { valor: c, rotulo: L.CATEGORIAS[c].plural }; })),
+        itens: [{ valor: "", rotulo: "Todos" }].concat(
+          Object.keys(L.CATEGORIAS).filter(function (c) { return c !== "PROFESSOR"; }).map(function (c) { return { valor: c, rotulo: L.CATEGORIAS[c].plural }; })),
         atributos: { filtro: "relCategoria" }
       }) +
       U.seletorRico({
@@ -1304,7 +1304,7 @@ T.relatorioGeralHtml = function () {
 
   var colunas = '<div class="rel-cabecalho-colunas rel-linha-resumo forte">' +
     "<span>Empresa" + (tipo !== "EXECUTIVO" ? " / pessoa" : "") + "</span>" +
-    "<span>Proventos</span><span>Descontos</span><span>Líquido</span><span>Custo p/ escola</span></div>";
+    "<span>Proventos</span><span>Descontos</span><span>Líquido</span><span>Custo p/ hotel</span></div>";
 
   var corpo;
 
@@ -1382,7 +1382,7 @@ T.relatorioGeralHtml = function () {
             '<div class="secundario">' + U.esc(f.cargo || "—") + " · " + U.esc(L.grupoPagamentoDe(f)) + "</div></div>" +
             '<div class="rel-pessoa-num">' +
               '<span>Líquido <b class="num">' + L.brl(r.liquido) + "</b></span>" +
-              '<span>Custo p/ escola <b class="num">' + L.brl(r.custoEmpregador) + "</b></span>" +
+              '<span>Custo p/ hotel <b class="num">' + L.brl(r.custoEmpregador) + "</b></span>" +
             "</div></div>" +
           rubricasHtml +
           "</div>";
@@ -1401,7 +1401,7 @@ T.relatorioGeralHtml = function () {
     "<p>" +
       (pessoaFiltro
         ? U.esc((L.buscarPorId("funcionarios", pessoaFiltro) || {}).nome || "—")
-        : (categoriaFiltro ? U.esc(L.CATEGORIAS[categoriaFiltro].plural) : "Professores e colaboradores") + " · " +
+        : (categoriaFiltro ? U.esc(L.CATEGORIAS[categoriaFiltro].plural) : "Colaboradores") + " · " +
           (empresaFiltro ? U.esc(empresaFiltro) : "todas as empresas") + " · " +
           (vinculoFiltro ? U.esc(vinculoFiltro) : "todos os vínculos")) + " · " +
       granTotal.pessoas + " pessoa(s)" +
@@ -1730,7 +1730,7 @@ T.planilhaFolha = function (lista, comp) {
     ["Robótica", function (x) { return /rob[óo]tica/i.test(x.desc); }],
     ["Empréstimos", function (x) { return /empr[ée]stimo/i.test(x.desc); }]
   ];
-  var nomesValores = ["Proventos", "INSS", "IRRF", "Outros descontos", "Total descontos", "Líquido", "FGTS", "Custo p/ escola"]
+  var nomesValores = ["Proventos", "INSS", "IRRF", "Outros descontos", "Total descontos", "Líquido", "FGTS", "Custo p/ hotel"]
     .concat(detalhes.map(function (d) { return d[0]; }), ["Outros", "Aula extra / projeto (R$, já em Proventos)"]);
   var cod = function (d, codigo) { return somaRubricas(d.rubricas, function (x) { return String(x.cod) === codigo; }); };
   var reais = function (c) { return c == null ? "" : Math.round(c) / 100; };
@@ -1814,7 +1814,7 @@ T.planilhaFolha = function (lista, comp) {
   // Resumo: totais por empresa e por categoria. Com os encargos pela
   // contabilidade, FGTS e custo com encargos não existem aqui e saem.
   var titulosResumo = semImpostos ? ["Pessoas", "Proventos", "Descontos", "Líquido"]
-    : ["Pessoas", "Proventos", "Descontos", "Líquido", "FGTS", "Custo p/ escola"];
+    : ["Pessoas", "Proventos", "Descontos", "Líquido", "FGTS", "Custo p/ hotel"];
   var res = [
     { altura: 26, celulas: [{ v: "Resumo — " + mes.charAt(0).toUpperCase() + mes.slice(1), s: 1 }] },
     { celulas: [{ v: todosOficiais ? "Cálculo oficial" : "Prévia — competência não fechada", s: 2 }] },
@@ -1832,7 +1832,7 @@ T.planilhaFolha = function (lista, comp) {
   res.push(linhaResumo("Total", pessoas, 9, 10));
   res.push({ celulas: [] });
   res.push({ celulas: ["Categoria"].concat(titulosResumo).map(function (t) { return { v: t, s: 4 }; }) });
-  [["PROFESSOR", "Professores"], ["COLABORADOR", "Colaboradores"]].forEach(function (c) {
+  [["COLABORADOR", "Colaboradores"]].forEach(function (c) {
     var g = pessoas.filter(function (x) { return L.categoriaDe(x.f) === c[0]; });
     if (g.length) res.push(linhaResumo(c[1], g, 5, 6));
   });
@@ -1952,7 +1952,7 @@ T.telas.relatorios = function () {
   else html += '<p class="relatorios-sem-base">Outros relatórios aparecem aqui quando houver lançamentos de contas, contratos, solicitações ou banco de horas.</p>';
 
   html += '<details class="relatorio-detalhe"><summary>Relatório geral da folha <span>Filtros, rubricas e exportação em PDF</span></summary>' +
-    U.painelHtml("Relatório geral da folha", "Professores e colaboradores por empresa", T.relatorioGeralHtml()) +
+    U.painelHtml("Relatório geral da folha", "Colaboradores por empresa", T.relatorioGeralHtml()) +
     '</details>';
 
   return html;
@@ -2392,8 +2392,8 @@ T.acoes["alternar-impostos-contabilidade"] = function () {
   U.confirmar({
     titulo: ligar ? "Passar impostos e encargos para a contabilidade?" : "Voltar a calcular impostos e encargos aqui?",
     texto: ligar
-      ? "A folha de todos deixa de descontar INSS e IRRF e deixa de lançar FGTS, INSS patronal e provisões. O líquido fica igual ao bruto menos os descontos da escola (cantina, material, mensalidade, plano de saúde, adiantamento, robótica, empréstimos e outros). Mês já fechado não muda."
-      : "A folha volta a descontar INSS e IRRF e a lançar os encargos da escola. Mês já fechado não muda.",
+      ? "A folha de todos deixa de descontar INSS e IRRF e deixa de lançar FGTS, INSS patronal e provisões. O líquido fica igual ao bruto menos os descontos do hotel (cantina, material, mensalidade, plano de saúde, adiantamento, robótica, empréstimos e outros). Mês já fechado não muda."
+      : "A folha volta a descontar INSS e IRRF e a lançar os encargos do hotel. Mês já fechado não muda.",
     rotulo: ligar ? "Passar para a contabilidade" : "Voltar a calcular aqui",
     aoConfirmar: function () {
       var aplicar = function () {
@@ -2445,8 +2445,8 @@ T.telas.tabelas = function () {
     '<div class="painel-corpo"><div class="barra-dado barra-acao" style="grid-template-columns:minmax(0,1fr) auto">' +
     "<div><strong>" + (contabilidade ? "Calculados pela contabilidade" : "Calculados pelo sistema") + "</strong>" +
     '<div class="secundario">' + (contabilidade
-      ? "A folha não desconta INSS e IRRF nem lança encargos da escola."
-      : "A folha desconta INSS e IRRF e lança os encargos da escola.") + "</div></div>" +
+      ? "A folha não desconta INSS e IRRF nem lança encargos do hotel."
+      : "A folha desconta INSS e IRRF e lança os encargos do hotel.") + "</div></div>" +
     (T.temPerfil("DIRECAO")
       ? '<button class="botao miudo" data-acao="alternar-impostos-contabilidade">' +
         (contabilidade ? "Voltar a calcular aqui" : "Passar para a contabilidade") + "</button>" : '<span class="pastilha neutro">só a Direção altera</span>') +
@@ -2459,7 +2459,7 @@ T.telas.tabelas = function () {
     "<div><strong>" + (ocultarDsr ? "Somado nas aulas" : "Linha separada") + "</strong>" +
     '<div class="secundario">' + (ocultarDsr
       ? "O DSR é pago normalmente, mas não aparece como linha própria."
-      : "O DSR aparece em linha própria (sobre aulas, hora-atividade, horas extras).") + "</div></div>" +
+      : "O DSR aparece em linha própria (sobre horas extras e adicionais).") + "</div></div>" +
     (T.temPerfil("DIRECAO")
       ? '<button class="botao miudo" data-acao="alternar-sem-dsr">' +
         (ocultarDsr ? "Mostrar o DSR" : "Esconder o DSR") + "</button>" : '<span class="pastilha neutro">só a Direção altera</span>') +
