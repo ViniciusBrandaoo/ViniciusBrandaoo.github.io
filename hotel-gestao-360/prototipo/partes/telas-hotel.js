@@ -980,7 +980,7 @@
   T.telas.fechamentomes = function () {
     var comp = compSel(), hoje = L.hoje();
     var pend = H.pendenciasDoMes(comp, hoje);
-    var reg = (L.estado.periodos || []).find(function (p) { return p.competencia === comp; }) || {};
+    var reg = (L.estado.fechamentosMes || []).find(function (p) { return p.id === comp; }) || {};
     var st = reg.statusHotel || (pend.length ? "COM_PENDENCIAS" : "ABERTO");
     var passos = ["Receitas de hospedagem", "Recebimentos", "Cartões e depósitos", "Faturamento por empresa", "Notas fiscais", "Boletos", "Cobranças", "Frigobar", "Fornecedores", "Contas fixas", "Contas variáveis", "Fluxo de caixa", "Controle de ponto", "Banco de horas", "Folha de pagamento", "Relatório gerencial", "Pendências", "Submeter à Direção"];
     var feitos = reg.passosHotel || {};
@@ -997,17 +997,29 @@
       (T.temPerfil("DIRECAO") && st === "APROVADO" ? ' <button class="botao primario" data-acao="hotel-status-mes" data-id="FECHADO">Fechar o mês</button>' : "") + "</div>");
     return html;
   };
-  function periodo(comp) {
-    var p = (L.estado.periodos || []).find(function (x) { return x.competencia === comp; });
-    if (!p) { p = { competencia: comp, id: L.id() }; L.estado.periodos.push(p); }
-    return p;
+  // Um registro por competência (id = "AAAA-MM") na área própria do hotel,
+  // que vai para o banco junto com as demais.
+  function gravarMes(comp, mudancas) {
+    if (!Array.isArray(L.estado.fechamentosMes)) L.estado.fechamentosMes = [];
+    var p = L.estado.fechamentosMes.find(function (x) { return x.id === comp; });
+    if (p) return L.atualizar("fechamentosMes", comp, mudancas);
+    return L.criar("fechamentosMes", Object.assign({ id: comp, competencia: comp }, mudancas));
   }
-  T.acoes["hotel-passo-mes"] = function (i) { var p = periodo(compSel()); p.passosHotel = p.passosHotel || {}; p.passosHotel[i] = (L.estado.usuario || {}).nome; L.registrar("periodos", { descricao: "Fechamento " + compSel() + " · etapa " + (Number(i) + 1) }, "ALTERAR"); L.persistir(); T.renderizar(); };
+  T.acoes["hotel-passo-mes"] = function (i) {
+    var comp = compSel();
+    var atual = (L.estado.fechamentosMes || []).find(function (x) { return x.id === comp; }) || {};
+    var passos = Object.assign({}, atual.passosHotel || {});
+    passos[i] = (L.estado.usuario || {}).nome;
+    gravarMes(comp, { passosHotel: passos });
+    T.renderizar();
+  };
   T.acoes["hotel-status-mes"] = function (s) {
     var comp = compSel();
     if (s === "AGUARDANDO_APROVACAO" && H.pendenciasDoMes(comp, L.hoje()).length) return U.avisar("Resolva as pendências antes de submeter.");
-    var p = periodo(comp); p.statusHotel = s; p["hotel" + s + "Por"] = (L.estado.usuario || {}).nome;
-    L.registrar("periodos", { descricao: "Fechamento " + comp + " → " + s }, "ALTERAR"); L.persistir(); T.renderizar();
+    var m = { statusHotel: s }; m["hotel" + s + "Por"] = (L.estado.usuario || {}).nome;
+    if (s === "FECHADO") m.fechado = true;
+    gravarMes(comp, m);
+    T.renderizar();
   };
 
   // ------------------------------------------------------------ cadastros do hotel

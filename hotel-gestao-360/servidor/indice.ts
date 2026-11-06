@@ -52,6 +52,7 @@ import { mesesTrabalhadosNoAno } from "../src/dominio/folha/decimo-terceiro.js";
 import * as validar from "./validacao.js";
 import * as lotacao from "./lotacao.js";
 import * as hotel from "./hotel.js";
+import * as hotelDados from "./hotel-dados.js";
 import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
 import { lerLotacionogramaDeBuffer } from "../src/importacao/lotacionograma.js";
 import * as clipescola from "./conectores/clipescola.js";
@@ -2271,6 +2272,34 @@ app.post<{ Params: { id: string } }>("/api/hotel/importacoes/:id/descartar", asy
   if (!ID_HOTEL.test(req.params.id)) return resp.code(400).send({ erro: "Importação inválida." });
   return hotel.descartar({ userId: s.userId }, req.params.id);
 });
+
+// ---------------------------------------------------------------- hotel: todas as áreas no banco
+//
+// Café, enxoval, frigobar, caixa, cartões, boletos, empresas, contas fixas,
+// relatório diário e ponto. Permissão e travas de fechamento conferidas em
+// servidor/hotel-dados.ts antes de gravar.
+
+app.get("/api/hotel/dados", async (req) => {
+  const s = exigirSessao(req);
+  return hotelDados.carregar(s.perfis);
+});
+
+// O parâmetro se chama `registro` (não `id`): os ids das telas não são UUID,
+// e o hook de preValidation recusa qualquer `:id` que não seja.
+app.put<{ Params: { colecao: string; registro: string }; Body: { dados?: unknown; versao?: number } }>(
+  "/api/hotel/dados/:colecao/:registro", { bodyLimit: 512 * 1024 }, async (req) => {
+    const s = exigirSessao(req);
+    const versao = typeof req.body?.versao === "number" ? req.body.versao : undefined;
+    return hotelDados.gravar({ userId: s.userId }, s.perfis, {
+      colecao: req.params.colecao, id: req.params.registro, dados: req.body?.dados, ...(versao !== undefined ? { versao } : {}),
+    });
+  });
+
+app.delete<{ Params: { colecao: string; registro: string }; Querystring: { motivo?: string } }>(
+  "/api/hotel/dados/:colecao/:registro", async (req) => {
+    const s = exigirSessao(req);
+    return hotelDados.excluir({ userId: s.userId }, s.perfis, req.params.colecao, req.params.registro, String(req.query.motivo ?? ""));
+  });
 
 const PERFIS_LOTACAO = ["DIRECAO", "RH", "COORDENACAO"];
 

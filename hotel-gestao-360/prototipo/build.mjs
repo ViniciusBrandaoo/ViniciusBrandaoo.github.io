@@ -65,6 +65,7 @@ const SCRIPTS = [
   "telas-lotacao.js",
   "telas-c.js",
   "telas-hotel.js",
+  "hotel-sync.js",
 ];
 
 // Carregada como "preload" e só virando folha de estilo depois de baixada:

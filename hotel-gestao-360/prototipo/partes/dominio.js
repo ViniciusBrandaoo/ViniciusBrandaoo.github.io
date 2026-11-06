@@ -793,7 +793,8 @@ L.persistir = function () {
       localStorage.setItem(L.CHAVE, JSON.stringify({
         versao: L.VERSAO_DADOS,
         gravadoEm: new Date().toISOString(),
-        estado: L.estado,
+        // Com o servidor ligado, o que já vive no banco não fica no navegador.
+        estado: typeof L.filtrarParaLocal === "function" ? L.filtrarParaLocal(L.estado) : L.estado,
         preferencias: L.preferencias
       }));
     } catch (e) {
