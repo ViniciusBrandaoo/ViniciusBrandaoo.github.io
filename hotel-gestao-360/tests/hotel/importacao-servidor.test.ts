@@ -119,3 +119,49 @@ describe("cenário 10 — permissões do hotel", () => {
     expect(pode(["AUDITOR"], "importacao.confirmar")).toBe(false);
   });
 });
+
+describe("Relatório de Reservas exportado do DataHotel (CSV com desenho de página)", () => {
+  // Mesmo formato do arquivo real (dados fictícios): título, filtros,
+  // cabeçalho, colunas que mudam de posição entre páginas e rodapé com totais.
+  const REAL = [
+    ";",
+    "Relatório de Reservas;;;;;;;;;;;;;;;;;;",
+    "Período: 01/10/2026 até 01/12/2026;;;;;;;;;;",
+    "Cód. Res.;Check-in;;Check-out;Hóspede;;Apto.;Nº Diárias;Nº Hósp.;;Canal de Venda;;Funcionário;;Situação;Vr. Total;",
+    "",
+    "AAA111111;29/05/2025;;21/10/2026;HOSPEDE UM ;;117;510;1;;Não Informado;; ;;Checked-out;R$ 48.450,00;;;",
+    ";;;;;;;;;;;;;;;;",
+    "BBB222222;01/10/2026;;03/10/2026;HOSPEDE DOIS;;103;2;1;;Booking;;MARIA;;Checked-out;R$ 310,00;",
+    "Emitido em: 06/11/2026;;;;;;;;www.datahotel.com.br;;;;;;;;;Pág. 1/2;;;;;",
+    "CCC333333;;03/11/2026;;;04/11/2026;HOSPEDE TRES;;;112;;1;2;;Não Informado;; ;;Cancelada;R$ 155,00;;;",
+    "3 registro(s);;Total Geral:;;;513;4;;R$ 48.915,00;",
+  ].join("\r\n");
+
+  it("lê pelo conteúdo, mesmo com colunas deslocadas, e confere o rodapé", async () => {
+    const { lerRelatorioReservasDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerRelatorioReservasDataHotel(REAL)!;
+    expect(r.linhas.map((l) => l.codigo)).toEqual(["AAA111111", "BBB222222", "CCC333333"]);
+    expect(r.linhas[1]).toMatchObject({ apartamento: "103", n_diarias: "2", canal_de_venda: "Booking", funcionario: "MARIA", situacao: "Checked-out" });
+    expect(r.linhas[2]).toMatchObject({ checkin: "03/11/2026", checkout: "04/11/2026", n_hosp: "2", situacao: "Cancelada", funcionario: "" });
+    expect(r.conferencia).toEqual({ registros: 3, totalCentavos: 4891500 });
+    expect(conferirTotais(r.linhas, r.conferencia)).toBeNull();
+    const p = preverImportacao("hospedagens", r.colunas, r.linhas, semNada);
+    expect(p.resumo).toMatchObject({ novo: 3, rejeitado: 0 });
+    expect(p.itens[0]?.registro).toMatchObject({ checkin: "2025-05-29", checkoutPrevisto: "2026-10-21", diarias: 510, hospedes: 1, valorTotal: 4845000 });
+  });
+
+  it("total do rodapé que não confere recusa o arquivo inteiro", async () => {
+    const { lerRelatorioReservasDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerRelatorioReservasDataHotel(REAL.replace("R$ 48.915,00", "R$ 49.000,00"))!;
+    const erro = conferirTotais(r.linhas, r.conferencia);
+    expect(erro).toMatch(/não bate/);
+    expect(preverImportacao("hospedagens", r.colunas, r.linhas, semNada, erro).resumo.novo).toBe(0);
+    const faltando = lerRelatorioReservasDataHotel(REAL.replace("3 registro(s)", "4 registro(s)"))!;
+    expect(conferirTotais(faltando.linhas, faltando.conferencia)).toMatch(/4 registro/);
+  });
+
+  it("CSV comum não é confundido com o relatório", async () => {
+    const { lerRelatorioReservasDataHotel } = await import("../../src/dominio/hotel/importacao.js");
+    expect(lerRelatorioReservasDataHotel(CSV_HOSP)).toBeNull();
+  });
+});

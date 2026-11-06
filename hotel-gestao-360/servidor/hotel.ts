@@ -9,7 +9,8 @@
 import type pg from "pg";
 import { consultar, transacao, type Ator } from "./banco.js";
 import {
-  LAYOUTS, lerCsv, lerXlsx, preverImportacao, sha256,
+  LAYOUTS, conferirTotais, lerCsv, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
+  type Conferencia,
   type LinhaBruta, type Registro, type TipoImportacao,
 } from "../src/dominio/hotel/importacao.js";
 
@@ -33,7 +34,8 @@ const COLUNAS: Record<TipoImportacao, { tabela: string; campos: Record<string, s
       adultos: "adultos", criancas: "criancas", valorDiaria: "valor_diaria_centavos",
       consumos: "consumos_centavos", descontos: "descontos_centavos", valorPago: "valor_pago_centavos",
       formaPagamento: "forma_pagamento", empresa: "empresa", cafeIncluido: "cafe_incluido",
-      situacaoOrigem: "situacao_origem",
+      situacaoOrigem: "situacao_origem", hospedes: "total_hospedes", diarias: "diarias",
+      valorTotal: "valor_total_centavos", canalVenda: "canal_venda", funcionario: "funcionario",
     },
   },
   recebimentos: {
@@ -90,7 +92,7 @@ export interface EntradaArquivo {
   periodoFim?: string | null;
 }
 
-async function lerArquivo(nome: string, buffer: Buffer): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[] }> {
+async function lerArquivo(nome: string, buffer: Buffer): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null }> {
   const ehXlsx = /\.xlsx$/i.test(nome) || (buffer[0] === 0x50 && buffer[1] === 0x4b);
   if (ehXlsx) {
     try {
@@ -105,6 +107,9 @@ async function lerArquivo(nome: string, buffer: Buffer): Promise<{ formato: "CSV
   // CSV: tenta UTF-8; se vier com caractere inválido, lê como Latin-1 (Excel brasileiro).
   let texto = buffer.toString("utf8");
   if (texto.includes("�")) texto = buffer.toString("latin1");
+  // Relatório de Reservas exportado do DataHotel: lido pelo conteúdo.
+  const relatorio = lerRelatorioReservasDataHotel(texto);
+  if (relatorio) return { formato: "CSV", ...relatorio };
   return { formato: "CSV", ...lerCsv(texto) };
 }
 
@@ -127,7 +132,8 @@ export async function criarPrevia(ator: Ator, entrada: EntradaArquivo): Promise<
     return "";
   }).filter(Boolean))];
   const atuais = await existentes(null, entrada.tipo, unidadeId, origem, codigos);
-  const previa = preverImportacao(entrada.tipo, lido.colunas, lido.linhas, atuais);
+  const erroArquivo = lido.conferencia !== undefined ? conferirTotais(lido.linhas, lido.conferencia) : null;
+  const previa = preverImportacao(entrada.tipo, lido.colunas, lido.linhas, atuais, erroArquivo);
 
   return transacao(ator, async (db) => {
     const lote = await db.query<{ id: string }>(
@@ -250,6 +256,15 @@ export async function confirmar(ator: Ator, loteId: string): Promise<Record<stri
       cont.atualizado++;
     }
 
+    if (tipo === "hospedagens") {
+      // Situação interna a partir da situação do DataHotel.
+      await db.query(
+        `UPDATE hotel_hospedagens SET situacao = CASE
+            WHEN situacao_origem ILIKE 'cancel%' THEN 'CANCELADA'
+            WHEN situacao_origem ILIKE 'checked-out%' THEN 'ENCERRADA'
+            ELSE 'ATIVA' END
+          WHERE lote_id = $1`, [loteId]);
+    }
     const rej = await db.query<{ n: number }>(
       `SELECT count(*)::int AS n FROM hotel_import_linhas WHERE lote_id = $1 AND situacao = 'REJEITADO'`, [loteId]);
     await db.query(

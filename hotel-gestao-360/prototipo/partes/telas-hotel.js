@@ -501,9 +501,9 @@
 
   if (L.USA_BACKEND) {
     var TIPOS_SRV = {
-      hospedagens: { nome: "Hospedagens / reservas", descr: "Reservas, hóspedes, check-in/out, diárias e valores",
-        colunas: [["Código / reserva", 1], ["Hóspede", 1], ["Apartamento", 1], ["Check-in", 1], ["Check-out", 1], ["Adultos"], ["Crianças"],
-          ["Valor da diária"], ["Consumos"], ["Descontos"], ["Valor pago"], ["Forma de pagamento"], ["Empresa"], ["Café incluído"], ["Situação"]] },
+      hospedagens: { nome: "Hospedagens / reservas", descr: "DataHotel: Hospedagem → Relatório de Reservas → Salvar → Ficheiro CSV",
+        colunas: [["Cód. Res.", 1], ["Hóspede", 1], ["Apto.", 1], ["Check-in", 1], ["Check-out", 1], ["Nº Diárias"], ["Nº Hósp."],
+          ["Canal de Venda"], ["Funcionário"], ["Situação"], ["Vr. Total"]] },
       recebimentos: { nome: "Pagamentos / recebimentos", descr: "Pagamentos por forma, para o fechamento de caixa",
         colunas: [["Código", 1], ["Data", 1], ["Forma de pagamento", 1], ["Valor", 1], ["Desconto"], ["Taxa"], ["Pagador"], ["Apartamento"],
           ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] }

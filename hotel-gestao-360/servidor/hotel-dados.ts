@@ -39,7 +39,8 @@ async function hospedagensImportadas(q: Consulta, unidadeId: string, id?: string
             to_char(checkin,'YYYY-MM-DD') AS checkin, to_char(checkout_previsto,'YYYY-MM-DD') AS checkout,
             to_char(checkout_real,'YYYY-MM-DD') AS checkout_real, adultos, criancas, cafe_incluido,
             valor_diaria_centavos, consumos_centavos, descontos_centavos, valor_pago_centavos,
-            forma_pagamento, situacao_origem, situacao
+            forma_pagamento, situacao_origem, situacao,
+            total_hospedes, diarias, valor_total_centavos, canal_venda, funcionario
        FROM hotel_hospedagens WHERE unidade_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
   const m = new Map<string, Dados>();
   for (const r of rows) {
@@ -50,7 +51,10 @@ async function hospedagensImportadas(q: Consulta, unidadeId: string, id?: string
       adultos: r.adultos, criancas: r.criancas, cafeIncluido: r.cafe_incluido,
       valorDiaria: n(r.valor_diaria_centavos), consumos: n(r.consumos_centavos), descontos: n(r.descontos_centavos),
       valorPago: n(r.valor_pago_centavos), formaPagamento: r.forma_pagamento, situacaoOrigem: r.situacao_origem,
-      status: r.situacao === "CANCELADA" ? "CANCELADA" : undefined,
+      hospedes: r.total_hospedes, diarias: r.diarias, valorTotal: n(r.valor_total_centavos),
+      canalVenda: r.canal_venda, funcionario: r.funcionario,
+      status: r.situacao === "CANCELADA" ? "CANCELADA"
+        : /no.?show/i.test(String(r.situacao_origem ?? "")) ? "NO_SHOW" : undefined,
     }));
   }
   return m;

@@ -33,7 +33,7 @@ export const LAYOUTS: Record<TipoImportacao, Layout> = {
   hospedagens: {
     tipo: "hospedagens",
     nome: "Hospedagens / reservas",
-    versao: "provisorio-1",
+    versao: "datahotel-2023.07-reservas-1",
     codigo: ["codigo", "reserva", "id_reserva", "localizador"],
     campos: {
       hospede: { de: ["hospede", "nome", "nome_hospede"], obrigatorio: true },
@@ -41,8 +41,13 @@ export const LAYOUTS: Record<TipoImportacao, Layout> = {
       checkin: { de: ["checkin", "check_in", "entrada", "data_entrada"], tipo: "data", obrigatorio: true },
       checkoutPrevisto: { de: ["checkout", "check_out", "saida", "data_saida", "checkout_previsto"], tipo: "data", obrigatorio: true },
       checkoutReal: { de: ["checkout_realizado", "saida_realizada"], tipo: "data" },
-      adultos: { de: ["adultos", "qtd_adultos", "pax"], tipo: "inteiro" },
+      adultos: { de: ["adultos", "qtd_adultos"], tipo: "inteiro" },
       criancas: { de: ["criancas", "qtd_criancas", "chd"], tipo: "inteiro" },
+      hospedes: { de: ["n_hosp", "hospedes_qtd", "qtd_hospedes", "pax"], tipo: "inteiro" },
+      diarias: { de: ["n_diarias", "diarias_qtd", "qtd_diarias"], tipo: "inteiro" },
+      valorTotal: { de: ["vr_total", "valor_total"], tipo: "valor" },
+      canalVenda: { de: ["canal_de_venda", "canal"] },
+      funcionario: { de: ["funcionario"] },
       valorDiaria: { de: ["valor_diaria", "diaria", "tarifa"], tipo: "valor" },
       consumos: { de: ["consumos", "extras", "valor_consumos"], tipo: "valor" },
       descontos: { de: ["descontos", "desconto"], tipo: "valor" },
@@ -118,6 +123,71 @@ export function lerCsv(texto: string): { colunas: string[]; linhas: LinhaBruta[]
     return o;
   });
   return { colunas, linhas };
+}
+
+/** Totais do rodapé do relatório, para conferir a leitura. */
+export interface Conferencia {
+  registros: number;
+  totalCentavos: number | null;
+}
+
+const COD_RESERVA = /^[A-Z]{2,4}\d{5,8}$/;
+const DATA_BR = /^\d{2}\/\d{2}\/\d{4}$/;
+
+/**
+ * "Relatório de Reservas" do DataHotel (Hospedagem → Relatório de Reservas →
+ * Pré-Visualizar → Salvar → Ficheiro CSV). O CSV sai com o desenho da página:
+ * título, filtros, cabeçalho repetido e rodapé por página, e as colunas mudam
+ * de posição de uma página para outra. Por isso a leitura é pelo conteúdo:
+ * cada reserva é a linha que começa com o código (ex.: ABC123456) seguido de
+ * duas datas; os demais campos vêm na ordem do relatório.
+ *
+ * Devolve null se o texto não for esse relatório.
+ */
+export function lerRelatorioReservasDataHotel(texto: string): { colunas: string[]; linhas: LinhaBruta[]; conferencia: Conferencia | null } | null {
+  if (!/Relat.rio de Reservas/i.test(texto) || !/C.d\. Res\./.test(texto)) return null;
+  const colunas = ["codigo", "checkin", "checkout", "hospede", "apartamento", "n_diarias", "n_hosp", "canal_de_venda", "funcionario", "situacao", "vr_total"];
+  const linhas: LinhaBruta[] = [];
+  let conferencia: Conferencia | null = null;
+  for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
+    const campos = bruta.split(";").map((s) => s.trim());
+    const rodape = /(\d+)\s+registro\(s\)/.exec(bruta);
+    if (rodape) {
+      const valor = campos.filter((c) => /^R\$/.test(c)).pop();
+      const total = valor ? lerValor(valor) : null;
+      conferencia = { registros: Number(rodape[1]), totalCentavos: typeof total === "number" && !Number.isNaN(total) ? total : null };
+      continue;
+    }
+    const t = campos.filter((c) => c !== "");
+    if (t.length < 7 || !COD_RESERVA.test(t[0]!) || !DATA_BR.test(t[1]!) || !DATA_BR.test(t[2]!)) continue;
+    // código, check-in, check-out, hóspede, apto, diárias, hóspedes, canal, [funcionário], situação, valor
+    const valor = /^R\$/.test(t[t.length - 1]!) ? t[t.length - 1]! : "";
+    const fim = valor ? t.length - 1 : t.length;
+    const situacao = fim - 1 > 7 ? t[fim - 1]! : "";
+    const funcionario = fim - 2 > 7 ? t.slice(8, fim - 1).join(" ") : "";
+    linhas.push({
+      codigo: t[0]!, checkin: t[1]!, checkout: t[2]!, hospede: t[3] ?? "", apartamento: t[4] ?? "",
+      n_diarias: t[5] ?? "", n_hosp: t[6] ?? "", canal_de_venda: t[7] ?? "", funcionario,
+      situacao, vr_total: valor,
+    });
+  }
+  return { colunas, linhas, conferencia };
+}
+
+/** Confere o que foi lido contra o rodapé do relatório. Null = confere. */
+export function conferirTotais(linhas: LinhaBruta[], c: Conferencia | null): string | null {
+  if (!c) return null;
+  if (linhas.length !== c.registros) {
+    return `O relatório diz ${c.registros} registro(s), mas foram lidas ${linhas.length} linha(s). Nada foi importado; exporte de novo ou avise o suporte.`;
+  }
+  if (c.totalCentavos !== null) {
+    const soma = linhas.reduce((s, l) => s + (Number(lerValor(l.vr_total ?? "")) || 0), 0);
+    if (soma !== c.totalCentavos) {
+      const brl = (v: number) => (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      return `A soma lida (${brl(soma)}) não bate com o total do relatório (${brl(c.totalCentavos)}). Nada foi importado.`;
+    }
+  }
+  return null;
 }
 
 /** Primeira aba do .xlsx; cabeçalho na primeira linha não vazia. */
@@ -300,12 +370,14 @@ export function preverImportacao(
   colunas: string[],
   linhas: LinhaBruta[],
   existentes: Map<string, Registro>,
+  /** Erro de estrutura achado na leitura (ex.: total do rodapé não confere). */
+  erroArquivo: string | null = null,
 ): Previa {
   const layout = LAYOUTS[tipo];
   const faltam = colunasFaltantes(layout, colunas);
   const vazio = { total: linhas.length, novo: 0, atualizado: 0, identico: 0, rejeitado: 0 };
-  if (faltam.length) {
-    const msg = `O arquivo não tem as colunas obrigatórias: ${faltam.join("; ")}. Nada foi importado.`;
+  if (faltam.length || erroArquivo) {
+    const msg = erroArquivo ?? `O arquivo não tem as colunas obrigatórias: ${faltam.join("; ")}. Nada foi importado.`;
     return {
       tipo, layoutVersao: layout.versao, erroGeral: msg,
       itens: linhas.map((l, i) => ({

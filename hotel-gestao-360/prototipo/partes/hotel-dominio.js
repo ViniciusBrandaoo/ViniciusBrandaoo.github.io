@@ -307,10 +307,14 @@ H.pernoita = function (h, data) {
 H.diariasDe = function (h) {
   return Math.max(1, H.diasEntre(h.checkin, h.checkoutRealizado || h.checkout));
 };
-/** Valor total = diárias × tarifa + consumos − descontos. Pendente = total − pago. */
+/**
+ * Valor total = diárias × tarifa + consumos − descontos. Pendente = total − pago.
+ * Quando o DataHotel já manda o valor total da reserva (Relatório de
+ * Reservas), ele vale como está: não se recalcula a partir da diária.
+ */
 H.valoresHospedagem = function (h) {
   var diarias = H.diariasDe(h);
-  var hospedagem = diarias * (h.valorDiaria || 0);
+  var hospedagem = typeof h.valorTotal === "number" && !h.valorDiaria ? h.valorTotal : diarias * (h.valorDiaria || 0);
   var total = hospedagem + (h.consumos || 0) - (h.descontos || 0);
   var pago = h.valorPago || 0;
   var pendente = Math.max(0, total - pago);
@@ -361,7 +365,9 @@ H.extratoDiario = function (data) {
 H.listaCafe = function (data) {
   var ontem = H.addDias(data, -1);
   var linhas = L.estado.hospedagens.filter(function (h) { return H.pernoita(h, ontem); }).map(function (h) {
-    var adultos = h.adultos || 1, criancas = h.criancas || 0;
+    // O Relatório de Reservas do DataHotel traz só o total de hóspedes: sem a
+    // separação, todos contam como adultos (a recepção ajusta na lista).
+    var adultos = h.adultos || (h.adultos === undefined && h.criancas === undefined && h.hospedes) || 1, criancas = h.criancas || 0;
     var incluido = h.cafeIncluido !== false;
     return { apartamento: h.apartamento, hospede: h.hospede, adultos: adultos, criancas: criancas,
       incluido: incluido, previstos: incluido ? adultos + criancas : 0, semCafe: incluido ? 0 : adultos + criancas, hospedagemId: h.id };
