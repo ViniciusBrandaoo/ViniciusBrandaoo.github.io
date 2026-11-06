@@ -51,6 +51,8 @@ import { diasAvisoPrevio, projetarData, type TipoRescisao } from "../src/dominio
 import { mesesTrabalhadosNoAno } from "../src/dominio/folha/decimo-terceiro.js";
 import * as validar from "./validacao.js";
 import * as lotacao from "./lotacao.js";
+import * as hotel from "./hotel.js";
+import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
 import { lerLotacionogramaDeBuffer } from "../src/importacao/lotacionograma.js";
 import * as clipescola from "./conectores/clipescola.js";
 import * as easyschool from "./conectores/easyschool.js";
@@ -2211,6 +2213,65 @@ app.post<{ Body: AusenciaEntrada }>("/api/ausencias", async (req, resp) => {
 
 // Planejamento pedagógico (quem dá quantas aulas em cada turma). Não mexe em
 // contrato nem folha, por isso não passa pela aprovação da Direção.
+// ---------------------------------------------------------------- hotel: importação do DataHotel
+//
+// Enviar arquivo → prévia gravada → confirmar ou descartar. A permissão é
+// checada aqui, antes de ler ou gravar (matriz em src/dominio/hotel/permissoes.ts).
+
+const ID_HOTEL = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function exigirAcaoHotel(req: { sessao: Sessao | null }, acao: AcaoHotel): Sessao {
+  return exigirPerfil(req, ...perfisQuePodem(acao));
+}
+
+app.get("/api/hotel/importacoes", async (req) => {
+  exigirAcaoHotel(req, "importacao.ver");
+  return { lotes: await hotel.listarLotes(), ultima: await hotel.ultimaImportacao() };
+});
+
+app.get<{ Params: { id: string }; Querystring: { situacao?: string } }>(
+  "/api/hotel/importacoes/:id/linhas", async (req, resp) => {
+    exigirAcaoHotel(req, "importacao.ver");
+    if (!ID_HOTEL.test(req.params.id)) return resp.code(400).send({ erro: "Importação inválida." });
+    const sit = req.query.situacao;
+    if (sit && !["NOVO", "ATUALIZADO", "IDENTICO", "REJEITADO"].includes(sit)) return resp.code(400).send({ erro: "Situação inválida." });
+    return hotel.linhasDoLote(req.params.id, sit);
+  });
+
+app.post("/api/hotel/importacoes/previa", { bodyLimit: 15 * 1024 * 1024 }, async (req, resp) => {
+  const s = exigirAcaoHotel(req, "importacao.enviar");
+  const campos: Record<string, string> = {};
+  let buffer: Buffer | null = null;
+  let nome = "";
+  for await (const parte of req.parts()) {
+    if (parte.type === "file") {
+      if (parte.fieldname === "arquivo" && !buffer) { buffer = await parte.toBuffer(); nome = parte.filename || "arquivo"; }
+      else parte.file.resume();
+    } else {
+      campos[parte.fieldname] = String(parte.value ?? "");
+    }
+  }
+  const tipo = campos.tipo ?? "";
+  if (!hotel.tipoValido(tipo)) return resp.code(400).send({ erro: "Escolha o tipo de relatório (hospedagens ou recebimentos)." });
+  if (!buffer || !buffer.length) return resp.code(400).send({ erro: "Envie o arquivo exportado do DataHotel (.xlsx ou .csv)." });
+  const data = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  return hotel.criarPrevia({ userId: s.userId }, {
+    tipo, nome, buffer, periodoInicio: data(campos.periodoInicio), periodoFim: data(campos.periodoFim),
+  });
+});
+
+app.post<{ Params: { id: string } }>("/api/hotel/importacoes/:id/confirmar", async (req, resp) => {
+  const s = exigirAcaoHotel(req, "importacao.confirmar");
+  if (!ID_HOTEL.test(req.params.id)) return resp.code(400).send({ erro: "Importação inválida." });
+  return hotel.confirmar({ userId: s.userId }, req.params.id);
+});
+
+app.post<{ Params: { id: string } }>("/api/hotel/importacoes/:id/descartar", async (req, resp) => {
+  const s = exigirAcaoHotel(req, "importacao.enviar");
+  if (!ID_HOTEL.test(req.params.id)) return resp.code(400).send({ erro: "Importação inválida." });
+  return hotel.descartar({ userId: s.userId }, req.params.id);
+});
+
 const PERFIS_LOTACAO = ["DIRECAO", "RH", "COORDENACAO"];
 
 function anoDaRota(v: string): number {

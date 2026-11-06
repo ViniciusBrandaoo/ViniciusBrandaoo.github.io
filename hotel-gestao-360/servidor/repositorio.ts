@@ -3303,10 +3303,11 @@ export async function rescisaoTemDivergencia(id: string): Promise<boolean | null
 // migration nova no estilo da 007, não algo para resolver com INSERT manual
 // aqui e discordar do padrão do resto do sistema.
 
-/** Os únicos valores que o CHECK de `roles.chave` aceita (migration 001). */
+/** Os únicos valores que o CHECK de `roles.chave` aceita (migrations 001 e 032). */
 export const PERFIS_VALIDOS = [
   "DIRECAO", "FINANCEIRO", "RH", "ADMINISTRATIVO",
   "COORDENACAO", "SECRETARIA", "GESTOR", "CONSULTA",
+  "RECEPCAO", "GOVERNANCA", "AUDITOR",
 ] as const;
 export type PerfilAcesso = (typeof PERFIS_VALIDOS)[number];
 
