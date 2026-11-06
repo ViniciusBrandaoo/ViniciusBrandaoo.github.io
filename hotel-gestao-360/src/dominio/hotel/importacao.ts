@@ -278,14 +278,61 @@ export function conferirTotais(linhas: LinhaBruta[], c: Conferencia | null): str
   if (vistas !== c.registros) {
     return `O relatório diz ${c.registros} registro(s), mas foram lidas ${vistas} linha(s). Nada foi importado; exporte de novo ou avise o suporte.`;
   }
-  if (c.totalCentavos !== null) {
-    const soma = linhas.reduce((s, l) => s + (Number(lerValor(l.vr_total ?? "")) || 0), 0);
+  // Com corte de data o total do rodapé inclui linhas descartadas: só a contagem confere.
+  if (c.totalCentavos !== null && vistas === linhas.length) {
+    const soma = linhas.reduce((s, l) => s + (Number(lerValor(l.vr_total ?? l.valor ?? "")) || 0), 0);
     if (soma !== c.totalCentavos) {
       const brl = (v: number) => (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
       return `A soma lida (${brl(soma)}) não bate com o total do relatório (${brl(c.totalCentavos)}). Nada foi importado.`;
     }
   }
   return null;
+}
+
+/**
+ * "Relatório de Contas Recebidas" do DataHotel (Financeiro → Relatório de
+ * Contas Recebidas). Cada recebimento tem o número do lançamento (Lançto),
+ * que é a chave única contra duplicidade, e o rodapé traz "N registro(s)" e
+ * o "Total Geral" para conferir a leitura. Por ter número próprio, é a fonte
+ * preferida de recebimentos (o livro-caixa não tem).
+ */
+export function lerContasRecebidasDataHotel(texto: string, desde?: string | null): { colunas: string[]; linhas: LinhaBruta[]; conferencia: Conferencia | null; ignoradas: { antigas: number } } | null {
+  if (!/Contas Recebidas por/i.test(texto) || !/Lan.to/.test(texto)) return null;
+  const colunas = ["codigo", "data", "descricao", "pagador", "apartamento", "reserva", "forma", "valor"];
+  const linhas: LinhaBruta[] = [];
+  const ignoradas = { antigas: 0 };
+  let conferencia: Conferencia | null = null;
+  let vistas = 0;
+  for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
+    const t = bruta.split(";").map((s) => s.trim()).filter((c) => c !== "");
+    if (/Total Geral/i.test(bruta)) {
+      const reg = /(\d+)\s+registro\(s\)/.exec(bruta);
+      const total = lerValor(t.filter((c) => /^R\$/.test(c)).pop() ?? "");
+      if (reg) conferencia = { registros: Number(reg[1]), totalCentavos: typeof total === "number" && !Number.isNaN(total) ? total : null, vistas: 0 };
+      continue;
+    }
+    if (t.length < 7 || !/^\d{4,7}$/.test(t[0]!) || !DATA_BR.test(t[1]!)) continue;
+    const valorTxt = [...t].reverse().find((c) => /^R\$/.test(c));
+    const forma = t.find((c) => FORMA_CAIXA.test(c));
+    const datas = t.filter((c) => DATA_BR.test(c));
+    if (!valorTxt || !forma || datas.length < 2) continue;
+    vistas++;
+    // datas: emissão, data de pagamento, vencimento (nesta ordem na linha)
+    const dataPgto = datas[1]!;
+    const iForma = t.indexOf(forma);
+    const descricao = t.slice(2, iForma).join(" ").replace(/\s+/g, " ").trim();
+    const data = lerData(dataPgto);
+    if (typeof data !== "string") continue;
+    if (desde && data < desde) { ignoradas.antigas++; continue; }
+    const uh = /\bUH\s*(\d+)\s*(.*)$/i.exec(descricao);
+    const reserva = /(?:COD\.?\s*RESERVA:?|HOSPEDAGEM:?)\s*([A-Z]{2,4}\d{5,8})/i.exec(descricao);
+    linhas.push({
+      codigo: `LR${t[0]}`, data: dataPgto, descricao, pagador: uh?.[2]?.trim() ?? "", apartamento: uh?.[1] ?? "",
+      reserva: reserva?.[1] ?? "", forma, valor: valorTxt,
+    });
+  }
+  if (conferencia) conferencia.vistas = vistas;
+  return { colunas, linhas, conferencia, ignoradas };
 }
 
 /** Primeira aba do .xlsx; cabeçalho na primeira linha não vazia. */

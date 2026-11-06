@@ -504,7 +504,7 @@
       hospedagens: { nome: "Hospedagens / reservas", descr: "DataHotel: Hospedagem → Relatório de Reservas, com 'Exibir extrato resumido' → Salvar → Ficheiro CSV",
         colunas: [["Cód. Res.", 1], ["Hóspede", 1], ["Apto.", 1], ["Check-in", 1], ["Check-out", 1], ["Nº Diárias"], ["Nº Hósp."],
           ["Canal de Venda"], ["Funcionário"], ["Situação"], ["Vr. Total"]] },
-      recebimentos: { nome: "Pagamentos / recebimentos", descr: "DataHotel: Financeiro → Resumo de Movimentação por Caixa → Salvar → Ficheiro CSV. Informe o início do período no envio para ignorar o que for mais antigo.",
+      recebimentos: { nome: "Pagamentos / recebimentos", descr: "DataHotel: Financeiro → Relatório de Contas Recebidas → Salvar → Ficheiro CSV (recomendado: cada pagamento tem número de lançamento). O Resumo de Movimentação por Caixa também é aceito, mas use só um dos dois.",
         colunas: [["Código", 1], ["Data", 1], ["Forma de pagamento", 1], ["Valor", 1], ["Desconto"], ["Taxa"], ["Pagador"], ["Apartamento"],
           ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] }
     };

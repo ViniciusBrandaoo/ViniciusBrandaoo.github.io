@@ -240,3 +240,44 @@ describe("Reservas com extrato e livro-caixa do DataHotel", () => {
     expect(conferirTotais(r.linhas, r.conferencia)).toMatch(/9|lidas/);
   });
 });
+
+describe("Contas Recebidas do DataHotel (número de lançamento como chave)", () => {
+  const RECEBIDAS = [
+    "Contas Recebidas por Cliente;;;;",
+    "Lançto;Emissão;Descrição/Doc.;;;;Forma de Pagamento;;Tipo de Receita;;Caixa/Banco;Data Pgto;;;Vencimento;;Valor;",
+    ";64009;;26/10/2026;;VENDA 22064 22064;;;;;CARTÃO DE DÉBITO;;;RECEITA DE VENDA;;;CAIXA;;27/10/2026;;;;;27/10/2026;;;R$ 9,00;;",
+    "FULANO DE TAL;",
+    "64091;04/11/2026;Recebimento uh 106 fulano de tal;CARTÃO DE CRÉDITO;RECEITA DE HOSPEDAGEM;CAIXA;04/11/2026;04/11/2026;R$ 135,00;",
+    "Total:;R$ 135,00;",
+    "64092;04/11/2026;HOSPEDAGEM: FRJ262760 - HÓSPEDE: BELTRANO;FATURAR EMPRESA(CONVÊNIO);RECEITA DE HOSPEDAGEM;CAIXA;05/11/2026;05/11/2026;R$ 215,00;",
+    "1 registro(s);",
+    "3 registro(s);Total Geral:;R$ 359,00;",
+    "Emitido em: 06/11/2026;www.datahotel.com.br;Pág. 1/1;",
+  ].join("\r\n");
+
+  it("usa o número do lançamento como código e a data de pagamento como data", async () => {
+    const { lerContasRecebidasDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerContasRecebidasDataHotel(RECEBIDAS)!;
+    expect(r.linhas.map((l) => l.codigo)).toEqual(["LR64009", "LR64091", "LR64092"]);
+    expect(r.linhas[0]).toMatchObject({ data: "27/10/2026", forma: "CARTÃO DE DÉBITO", valor: "R$ 9,00" });
+    expect(r.linhas[1]).toMatchObject({ apartamento: "106", pagador: "fulano de tal" });
+    expect(r.linhas[2]).toMatchObject({ reserva: "FRJ262760", forma: expect.stringMatching(/^FATURAR/) });
+    expect(r.conferencia).toEqual({ registros: 3, totalCentavos: 35900, vistas: 3 });
+    expect(conferirTotais(r.linhas, r.conferencia)).toBeNull();
+    const p = preverImportacao("recebimentos", r.colunas, r.linhas, semNada);
+    expect(p.resumo).toMatchObject({ novo: 3, rejeitado: 0 });
+    expect(p.itens[2]?.registro).toMatchObject({ forma: "FATURADO", bruto: 21500, data: "2026-11-05" });
+  });
+
+  it("total do rodapé diferente da soma recusa o arquivo", async () => {
+    const { lerContasRecebidasDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerContasRecebidasDataHotel(RECEBIDAS.replace("R$ 359,00", "R$ 360,00"))!;
+    expect(conferirTotais(r.linhas, r.conferencia)).toMatch(/não bate/);
+  });
+
+  it("o mesmo recebimento não é confundido entre os dois relatórios de caixa", async () => {
+    const { lerContasRecebidasDataHotel, lerMovimentoCaixaDataHotel } = await import("../../src/dominio/hotel/importacao.js");
+    expect(lerMovimentoCaixaDataHotel(RECEBIDAS)).toBeNull();
+    expect(lerContasRecebidasDataHotel(CSV_HOSP)).toBeNull();
+  });
+});

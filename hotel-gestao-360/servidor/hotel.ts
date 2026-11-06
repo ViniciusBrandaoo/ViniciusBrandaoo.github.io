@@ -9,7 +9,7 @@
 import type pg from "pg";
 import { consultar, transacao, type Ator } from "./banco.js";
 import {
-  LAYOUTS, conferirTotais, lerCsv, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
+  LAYOUTS, conferirTotais, lerCsv, lerContasRecebidasDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
   type Conferencia,
   type LinhaBruta, type Registro, type TipoImportacao,
 } from "../src/dominio/hotel/importacao.js";
@@ -93,7 +93,7 @@ export interface EntradaArquivo {
   periodoFim?: string | null;
 }
 
-async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null }> {
+async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null; familia?: "LR" | "CX" }> {
   const ehXlsx = /\.xlsx$/i.test(nome) || (buffer[0] === 0x50 && buffer[1] === 0x4b);
   if (ehXlsx) {
     try {
@@ -109,8 +109,10 @@ async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): 
   let texto = buffer.toString("utf8");
   if (texto.includes("�")) texto = buffer.toString("latin1");
   // Relatório de Reservas exportado do DataHotel: lido pelo conteúdo.
+  const recebidas = lerContasRecebidasDataHotel(texto, desde);
+  if (recebidas) return { formato: "CSV", ...recebidas, familia: "LR" as const };
   const caixa = lerMovimentoCaixaDataHotel(texto, desde);
-  if (caixa) return { formato: "CSV", ...caixa };
+  if (caixa) return { formato: "CSV", ...caixa, familia: "CX" as const };
   const relatorio = lerRelatorioReservasDataHotel(texto);
   if (relatorio) return { formato: "CSV", ...relatorio };
   return { formato: "CSV", ...lerCsv(texto) };
@@ -135,6 +137,19 @@ export async function criarPrevia(ator: Ator, entrada: EntradaArquivo): Promise<
     return "";
   }).filter(Boolean))];
   const atuais = await existentes(null, entrada.tipo, unidadeId, origem, codigos);
+  // O mesmo pagamento aparece em dois relatórios (Contas Recebidas e livro-caixa) com
+  // chaves diferentes: importar os dois contaria o dinheiro duas vezes.
+  if (lido.familia) {
+    const outra = lido.familia === "LR" ? "CX" : "LR";
+    const ja = await consultar<{ n: number }>(
+      `SELECT count(*)::int AS n FROM hotel_recebimentos WHERE unidade_id = $1 AND origem = $2 AND codigo_origem LIKE $3`,
+      [unidadeId, origem, `${outra}%`]);
+    if ((ja[0]?.n ?? 0) > 0) {
+      const nome = lido.familia === "LR" ? "Contas Recebidas" : "Movimentação de Caixa";
+      const jaNome = lido.familia === "LR" ? "Movimentação de Caixa" : "Contas Recebidas";
+      throw erro(409, `Os recebimentos já foram importados pelo relatório "${jaNome}". Importar também o "${nome}" contaria os mesmos pagamentos duas vezes. Use só um dos dois.`);
+    }
+  }
   const erroArquivo = lido.conferencia !== undefined ? conferirTotais(lido.linhas, lido.conferencia) : null;
   const previa = preverImportacao(entrada.tipo, lido.colunas, lido.linhas, atuais, erroArquivo);
 
