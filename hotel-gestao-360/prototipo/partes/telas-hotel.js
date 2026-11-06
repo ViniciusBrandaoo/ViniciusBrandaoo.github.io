@@ -427,14 +427,37 @@
   // ------------------------------------------------------------ importações
 
   T._previa = null;
+  var ROTULO_CAMPO = { codigo: "Código / reserva", hospede: "Hóspede", apartamento: "Apartamento", checkin: "Check-in", checkout: "Check-out",
+    checkoutRealizado: "Check-out realizado", adultos: "Adultos", criancas: "Crianças", valorDiaria: "Valor da diária", consumos: "Consumos",
+    descontos: "Descontos", valorPago: "Valor pago", formaPagamento: "Forma de pagamento", empresa: "Empresa", cafeIncluido: "Café incluído",
+    status: "Situação", data: "Data", descricao: "Descrição", pagador: "Pagador", reserva: "Reserva", forma: "Forma de pagamento",
+    valorBruto: "Valor", desconto: "Desconto", taxa: "Taxa", codigoTransacao: "NSU / transação", bandeira: "Bandeira", operadora: "Operadora",
+    parcelas: "Parcelas", produto: "Produto", quantidade: "Quantidade", valorUnitario: "Valor unitário" };
   T.telas.importacoes = function () {
-    var html = T.cabecalho("Importações DataHotel", "Arquivo exportado do DataHotel (CSV; planilha Excel: Salvar como → CSV). Nada é gravado antes da sua confirmação.");
-    html += '<div class="painel" style="padding:18px 20px"><div class="par" style="gap:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">' +
-      '<label class="campo"><span>Tipo de dado</span><select id="imp-tipo">' + Object.keys(H.LAYOUTS).map(function (k) { return '<option value="' + k + '"' + (T.filtros.impTipo === k ? " selected" : "") + ">" + H.LAYOUTS[k].nome + "</option>"; }).join("") + "</select></label>" +
-      '<label class="campo"><span>Origem</span><select id="imp-origem"><option value="DATAHOTEL">DataHotel (relatório exportado)</option><option value="ADQUIRENTE">Adquirente de cartão</option><option value="BANCO">Extrato bancário</option><option value="PLANILHA">Planilha interna</option></select></label>' +
-      '<label class="campo"><span>Arquivo CSV</span><input type="file" id="imp-arquivo" accept=".csv,text/csv"></label></div>' +
-      '<p class="secundario">Colunas reconhecidas para "' + H.LAYOUTS[T.filtros.impTipo || "hospedagens"].nome + '": ' + Object.keys(H.LAYOUTS[T.filtros.impTipo || "hospedagens"].campos).concat(["codigo"]).join(", ") +
-      '. O código original + a origem identificam cada registro: reimportar não duplica, e campo vazio no arquivo não apaga o que foi complementado aqui.</p></div>';
+    var tipoAtual = T.filtros.impTipo || "hospedagens";
+    var origemAtual = T.filtros.impOrigem || "DATAHOTEL";
+    // Trocou o tipo ou a origem: a prévia anterior não vale mais.
+    if (T._previa && (T._previa.tipo !== tipoAtual || T._previa.origem !== origemAtual)) T._previa = null;
+    var DESCR = { hospedagens: "Reservas, hóspedes, check-in/out, diárias e valores", recebimentos: "Pagamentos por forma, para o fechamento de caixa", frigobar: "Consumos lançados por apartamento" };
+    var html = T.cabecalho("Importações DataHotel", "Envie o relatório exportado do DataHotel. Você confere a prévia antes de qualquer gravação.");
+    html += '<div class="painel imp-painel">' +
+      '<div class="imp-passo"><span class="imp-num">1</span><div class="imp-passo-corpo"><h3>O que você vai importar</h3><div class="imp-tipos">' +
+      Object.keys(H.LAYOUTS).map(function (k) {
+        return '<button type="button" class="imp-tipo' + (k === tipoAtual ? " ativo" : "") + '" data-filtro-aba="impTipo" data-valor="' + k + '"><strong>' + U.esc(H.LAYOUTS[k].nome) + "</strong><span>" + U.esc(DESCR[k] || "") + "</span></button>";
+      }).join("") + "</div></div></div>" +
+      '<div class="imp-passo"><span class="imp-num">2</span><div class="imp-passo-corpo"><h3>De onde vem o arquivo</h3>' +
+      U.seletorRico({ rotulo: "Origem do arquivo", valor: origemAtual, atributos: { filtro: "impOrigem" }, itens: [
+        { valor: "DATAHOTEL", rotulo: "DataHotel (relatório exportado)" }, { valor: "ADQUIRENTE", rotulo: "Adquirente de cartão" },
+        { valor: "BANCO", rotulo: "Extrato bancário" }, { valor: "PLANILHA", rotulo: "Planilha interna" }] }) + "</div></div>" +
+      '<div class="imp-passo"><span class="imp-num">3</span><div class="imp-passo-corpo"><h3>Arquivo</h3>' +
+      '<label class="imp-drop" id="imp-drop"><input type="file" id="imp-arquivo" accept=".csv,text/csv">' + U.iconeSvg("documentos", 26) +
+      '<span class="imp-drop-titulo">Arraste o arquivo CSV aqui ou <u>clique para escolher</u></span>' +
+      '<span class="imp-drop-dica">No Excel: Arquivo → Salvar como → CSV (separado por ponto e vírgula)</span></label>' +
+      '<div class="imp-colunas"><span class="imp-colunas-rotulo">Colunas reconhecidas</span>' +
+      ["codigo"].concat(Object.keys(H.LAYOUTS[tipoAtual].campos)).map(function (c) {
+        var obr = c === "codigo" || H.LAYOUTS[tipoAtual].campos[c].obrigatorio;
+        return '<span class="imp-chip' + (obr ? " obrig" : "") + '">' + U.esc(ROTULO_CAMPO[c] || c) + "</span>";
+      }).join("") + '</div><p class="imp-nota">Em destaque, as obrigatórias. O código original + a origem identificam cada registro: reimportar não duplica, e campo vazio no arquivo não apaga o que foi complementado aqui.</p></div></div></div>';
     var p = T._previa;
     if (p) {
       html += kpis([
@@ -919,22 +942,27 @@
         T.renderizar();
       });
     });
-    var tipo = U.el("imp-tipo"), arq = U.el("imp-arquivo"), origem = U.el("imp-origem");
-    if (tipo) tipo.addEventListener("change", function () { T.filtros.impTipo = tipo.value; T._previa = null; T.renderizar(); });
-    if (arq) arq.addEventListener("change", function () {
-      var file = arq.files && arq.files[0]; if (!file) return;
+    var arq = U.el("imp-arquivo"), drop = U.el("imp-drop");
+    function lerArquivo(file) {
+      if (!file) return;
       if (!/\.csv$/i.test(file.name)) { U.avisar("Envie CSV. No Excel: Arquivo → Salvar como → CSV (separado por ponto e vírgula)."); return; }
       var leitor = new FileReader();
       leitor.onload = function () {
         try {
           var linhas = H.lerCsv(leitor.result);
           if (!linhas.length) return U.avisar("O arquivo está vazio.");
-          T._previa = H.preverImportacao(tipo.value, origem.value, linhas);
+          T._previa = H.preverImportacao(T.filtros.impTipo || "hospedagens", T.filtros.impOrigem || "DATAHOTEL", linhas);
           T._previa.arquivo = file.name;
           T.renderizar();
         } catch (e) { U.avisar(e.message || "Não foi possível ler o arquivo."); }
       };
       leitor.readAsText(file, "utf-8");
-    });
+    }
+    if (arq) arq.addEventListener("change", function () { lerArquivo(arq.files && arq.files[0]); });
+    if (drop) {
+      ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("sobre"); }); });
+      ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("sobre"); }); });
+      drop.addEventListener("drop", function (e) { lerArquivo(e.dataTransfer.files && e.dataTransfer.files[0]); });
+    }
   };
 })();
