@@ -165,3 +165,78 @@ describe("Relatório de Reservas exportado do DataHotel (CSV com desenho de pág
     expect(lerRelatorioReservasDataHotel(CSV_HOSP)).toBeNull();
   });
 });
+
+describe("Reservas com extrato e livro-caixa do DataHotel", () => {
+  const EXTRATO = [
+    "Relatório de Reservas;;;;;;",
+    "Cód. Res.;Check-in;;Check-out;Hóspede;;;;Apto.;;Nº Diárias;Nº Hósp.;;;;Canal de Venda;;Funcionário;;Situação;Vr. Total;",
+    "AAA111111;01/11/2026;;03/11/2026;HOSPEDE UM;;;;101;;2;1;;;;Não Informado;; ;;Checked-out;R$ 300,00;",
+    "Tipo Conta;;;Valor;;;",
+    "DIÁRIA;;;R$ 300,00;;;",
+    "CONSUMO;;;R$ 6,00;;;",
+    "RECEBIMENTO;;;R$ 306,00;;;",
+    "BBB222222;02/11/2026;;03/11/2026;HOSPEDE DOIS;;;;102;;1;1;;;;Booking;; ;;Checked-in;R$ 135,00;",
+    "Pág. 1/2;;;",
+    "DIÁRIA;;;R$ 135,00;;;",
+    "2 registro(s);;Total Geral:;;3;2;;R$ 435,00;",
+    "Resumo do Extrato de Hospedagem (Sintético);",
+    "DIÁRIA;R$ 435,00;",
+    "CONSUMO;R$ 6,00;",
+  ].join("\r\n");
+
+  it("soma diária, consumo e recebimento de cada reserva (inclusive depois de quebra de página) e ignora o resumo final", async () => {
+    const { lerRelatorioReservasDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerRelatorioReservasDataHotel(EXTRATO)!;
+    expect(r.linhas[0]).toMatchObject({ diarias_lancadas: "300,00", consumos: "6,00", valor_pago: "306,00" });
+    // BBB: a diária veio depois da quebra de página; sem recebimento vale zero
+    expect(r.linhas[1]).toMatchObject({ diarias_lancadas: "135,00", consumos: "0,00", valor_pago: "0,00" });
+    expect(conferirTotais(r.linhas, r.conferencia)).toBeNull();
+    const p = preverImportacao("hospedagens", r.colunas, r.linhas, semNada);
+    expect(p.itens[0]?.registro).toMatchObject({ diariasLancadas: 30000, consumos: 600, valorPago: 30600, valorTotal: 30000 });
+  });
+
+  const CAIXA = [
+    "Resumo por Movimentação de Caixa;;;;",
+    "Caixa: 1365 Data Abertura: 16/10/2026 14:00:21 Data Fechamento: 26/10/2026 09:45:51;;;",
+    ";;16/10/2026;;;;;SALDO DE CAIXA (FUNDO DE CAIXA - 1364);;;DINHEIRO;;;R$ 100,00;;;C;;",
+    ";;20/10/2026;;;;;VENDA 100;;;CARTÃO DE DÉBITO;;;R$ 6,00;;;C;;",
+    ";;26/10/2026;;;;;PAGAMENTO UH 105 FULANO DE TAL;;;PIX OUTRANSFERENCIADIRETO EM CONTACORRENTE;;;R$ 215,00;;;C;;",
+    ";;26/10/2026;;;;;FECHAMENTO DE CAIXA;;;CARTÃO DE DÉBITO;;;R$ 6,00;;;D;;",
+    "4 registro(s);;;",
+    "Caixa: 1366 Data Abertura: 26/10/2026 09:45:55 Data Fechamento: 05/11/2026 15:59:44;;;",
+    ";;27/10/2026;;;;;CHECK-OUT COD. RESERVA: ABC123456;;;CARTÃO DE CRÉDITO;;;R$ 300,00;;;C;;",
+    ";;27/10/2026;;;;;VENDA 101;;;DINHEIRO;;;R$ 3,00;;;C;;",
+    ";;27/10/2026;;;;;VENDA 101;;;DINHEIRO;;;R$ 3,00;;;C;;",
+    ";;27/10/2026;;;;;SANGRIA DE CAIXA - diárias;;;DINHEIRO;;;R$ 5,00;;;D;;",
+    "4 registro(s);;;",
+  ].join("\r\n");
+
+  it("livro-caixa: só entradas de pagamento viram recebimento; fundo, sangria e fechamento ficam de fora", async () => {
+    const { lerMovimentoCaixaDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerMovimentoCaixaDataHotel(CAIXA)!;
+    expect(r.ignoradas).toEqual({ fundo: 1, saidas: 2, antigas: 0 });
+    expect(r.linhas).toHaveLength(5);
+    expect(r.linhas[1]).toMatchObject({ apartamento: "105", pagador: "FULANO DE TAL", forma: expect.stringMatching(/^PIX/) });
+    expect(r.linhas[2]).toMatchObject({ reserva: "ABC123456", forma: "CARTÃO DE CRÉDITO" });
+    // duas vendas idênticas no mesmo dia continuam sendo dois recebimentos (código com ordem)
+    expect(r.linhas[3]!.codigo).not.toBe(r.linhas[4]!.codigo);
+    expect(conferirTotais(r.linhas, r.conferencia)).toBeNull();
+    const p = preverImportacao("recebimentos", r.colunas, r.linhas, semNada);
+    expect(p.resumo).toMatchObject({ novo: 5, rejeitado: 0 });
+    expect(p.itens[1]?.registro).toMatchObject({ forma: "PIX", bruto: 21500, data: "2026-10-26" });
+  });
+
+  it("corte de data: o que for mais antigo não entra, mas ainda conta para conferir o rodapé", async () => {
+    const { lerMovimentoCaixaDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerMovimentoCaixaDataHotel(CAIXA, "2026-10-26")!;
+    expect(r.ignoradas.antigas).toBe(1);
+    expect(r.linhas).toHaveLength(4);
+    expect(conferirTotais(r.linhas, r.conferencia)).toBeNull();
+  });
+
+  it("rodapé que não confere recusa o arquivo", async () => {
+    const { lerMovimentoCaixaDataHotel, conferirTotais } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerMovimentoCaixaDataHotel(CAIXA.replace("4 registro(s);;;\r\nCaixa: 1366", "9 registro(s);;;\r\nCaixa: 1366"))!;
+    expect(conferirTotais(r.linhas, r.conferencia)).toMatch(/9|lidas/);
+  });
+});

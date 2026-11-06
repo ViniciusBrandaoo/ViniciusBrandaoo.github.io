@@ -9,7 +9,7 @@
 import type pg from "pg";
 import { consultar, transacao, type Ator } from "./banco.js";
 import {
-  LAYOUTS, conferirTotais, lerCsv, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
+  LAYOUTS, conferirTotais, lerCsv, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
   type Conferencia,
   type LinhaBruta, type Registro, type TipoImportacao,
 } from "../src/dominio/hotel/importacao.js";
@@ -36,6 +36,7 @@ const COLUNAS: Record<TipoImportacao, { tabela: string; campos: Record<string, s
       formaPagamento: "forma_pagamento", empresa: "empresa", cafeIncluido: "cafe_incluido",
       situacaoOrigem: "situacao_origem", hospedes: "total_hospedes", diarias: "diarias",
       valorTotal: "valor_total_centavos", canalVenda: "canal_venda", funcionario: "funcionario",
+      diariasLancadas: "diarias_lancadas_centavos",
     },
   },
   recebimentos: {
@@ -92,7 +93,7 @@ export interface EntradaArquivo {
   periodoFim?: string | null;
 }
 
-async function lerArquivo(nome: string, buffer: Buffer): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null }> {
+async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null }> {
   const ehXlsx = /\.xlsx$/i.test(nome) || (buffer[0] === 0x50 && buffer[1] === 0x4b);
   if (ehXlsx) {
     try {
@@ -108,6 +109,8 @@ async function lerArquivo(nome: string, buffer: Buffer): Promise<{ formato: "CSV
   let texto = buffer.toString("utf8");
   if (texto.includes("�")) texto = buffer.toString("latin1");
   // Relatório de Reservas exportado do DataHotel: lido pelo conteúdo.
+  const caixa = lerMovimentoCaixaDataHotel(texto, desde);
+  if (caixa) return { formato: "CSV", ...caixa };
   const relatorio = lerRelatorioReservasDataHotel(texto);
   if (relatorio) return { formato: "CSV", ...relatorio };
   return { formato: "CSV", ...lerCsv(texto) };
@@ -126,7 +129,7 @@ export async function criarPrevia(ator: Ator, entrada: EntradaArquivo): Promise<
   if (jaConfirmado[0]) {
     throw erro(409, `Este mesmo arquivo já foi importado em ${jaConfirmado[0].confirmado_em}. Nada foi alterado.`);
   }
-  const lido = await lerArquivo(entrada.nome, entrada.buffer);
+  const lido = await lerArquivo(entrada.nome, entrada.buffer, entrada.periodoInicio ?? null);
   const codigos = [...new Set(lido.linhas.map((l) => {
     for (const c of LAYOUTS[entrada.tipo].codigo) if (l[c]) return l[c].trim();
     return "";

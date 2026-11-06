@@ -314,7 +314,9 @@ H.diariasDe = function (h) {
  */
 H.valoresHospedagem = function (h) {
   var diarias = H.diariasDe(h);
-  var hospedagem = typeof h.valorTotal === "number" && !h.valorDiaria ? h.valorTotal : diarias * (h.valorDiaria || 0);
+  // Prioridade: a diária que o extrato do DataHotel lançou > o total da reserva > tarifa × diárias.
+  var hospedagem = typeof h.diariasLancadas === "number" ? h.diariasLancadas
+    : typeof h.valorTotal === "number" && !h.valorDiaria ? h.valorTotal : diarias * (h.valorDiaria || 0);
   var total = hospedagem + (h.consumos || 0) - (h.descontos || 0);
   var pago = h.valorPago || 0;
   var pendente = Math.max(0, total - pago);

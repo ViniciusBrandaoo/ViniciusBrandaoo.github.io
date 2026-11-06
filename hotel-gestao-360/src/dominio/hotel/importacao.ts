@@ -46,6 +46,7 @@ export const LAYOUTS: Record<TipoImportacao, Layout> = {
       hospedes: { de: ["n_hosp", "hospedes_qtd", "qtd_hospedes", "pax"], tipo: "inteiro" },
       diarias: { de: ["n_diarias", "diarias_qtd", "qtd_diarias"], tipo: "inteiro" },
       valorTotal: { de: ["vr_total", "valor_total"], tipo: "valor" },
+      diariasLancadas: { de: ["diarias_lancadas"], tipo: "valor" },
       canalVenda: { de: ["canal_de_venda", "canal"] },
       funcionario: { de: ["funcionario"] },
       valorDiaria: { de: ["valor_diaria", "diaria", "tarifa"], tipo: "valor" },
@@ -129,6 +130,8 @@ export function lerCsv(texto: string): { colunas: string[]; linhas: LinhaBruta[]
 export interface Conferencia {
   registros: number;
   totalCentavos: number | null;
+  /** Linhas vistas no arquivo (inclusive as descartadas pelo corte de data). Padrão: as linhas lidas. */
+  vistas?: number;
 }
 
 const COD_RESERVA = /^[A-Z]{2,4}\d{5,8}$/;
@@ -149,13 +152,29 @@ export function lerRelatorioReservasDataHotel(texto: string): { colunas: string[
   const colunas = ["codigo", "checkin", "checkout", "hospede", "apartamento", "n_diarias", "n_hosp", "canal_de_venda", "funcionario", "situacao", "vr_total"];
   const linhas: LinhaBruta[] = [];
   let conferencia: Conferencia | null = null;
+  // Extrato ("Exibir extrato resumido"): abaixo de cada reserva vêm linhas DIÁRIA, CONSUMO e RECEBIMENTO.
+  const extrato = new Map<LinhaBruta, { diaria: number; consumo: number; recebido: number }>();
+  let atual: LinhaBruta | null = null;
   for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
     const campos = bruta.split(";").map((s) => s.trim());
+    const lancamento = /^(DI.RIA|CONSUMO|RECEBIMENTO)$/i.exec(campos.find((c) => c !== "") ?? "");
+    if (lancamento && atual) {
+      const v = lerValor(campos.filter((c) => /^R\$/.test(c)).pop() ?? "");
+      const acc = extrato.get(atual) ?? { diaria: 0, consumo: 0, recebido: 0 };
+      if (typeof v === "number" && !Number.isNaN(v)) {
+        const tipo = lancamento[1]!.toUpperCase();
+        if (tipo === "CONSUMO") acc.consumo += v; else if (tipo === "RECEBIMENTO") acc.recebido += v; else acc.diaria += v;
+      }
+      extrato.set(atual, acc);
+      continue;
+    }
     const rodape = /(\d+)\s+registro\(s\)/.exec(bruta);
     if (rodape) {
       const valor = campos.filter((c) => /^R\$/.test(c)).pop();
       const total = valor ? lerValor(valor) : null;
       conferencia = { registros: Number(rodape[1]), totalCentavos: typeof total === "number" && !Number.isNaN(total) ? total : null };
+      // Depois do rodapé vem um resumo de totais por tipo: não pertence a nenhuma reserva.
+      atual = null;
       continue;
     }
     const t = campos.filter((c) => c !== "");
@@ -165,20 +184,99 @@ export function lerRelatorioReservasDataHotel(texto: string): { colunas: string[
     const fim = valor ? t.length - 1 : t.length;
     const situacao = fim - 1 > 7 ? t[fim - 1]! : "";
     const funcionario = fim - 2 > 7 ? t.slice(8, fim - 1).join(" ") : "";
-    linhas.push({
+    atual = {
       codigo: t[0]!, checkin: t[1]!, checkout: t[2]!, hospede: t[3] ?? "", apartamento: t[4] ?? "",
       n_diarias: t[5] ?? "", n_hosp: t[6] ?? "", canal_de_venda: t[7] ?? "", funcionario,
       situacao, vr_total: valor,
-    });
+    };
+    linhas.push(atual);
+  }
+  if (extrato.size) {
+    // Com extrato, o que não aparece vale zero (não é "não informado").
+    const brl = (c: number) => (c / 100).toFixed(2).replace(".", ",");
+    for (const l of linhas) {
+      const e = extrato.get(l) ?? { diaria: 0, consumo: 0, recebido: 0 };
+      l.diarias_lancadas = brl(e.diaria); l.consumos = brl(e.consumo); l.valor_pago = brl(e.recebido);
+    }
+    colunas.push("diarias_lancadas", "consumos", "valor_pago");
   }
   return { colunas, linhas, conferencia };
+}
+
+const FORMA_CAIXA = /^(DINHEIRO|CART.O DE CR.DITO|CART.O DE D.BITO|PIX.*|FATURAR.*|FURO.*)$/i;
+
+/**
+ * "Resumo por Movimentação de Caixa" do DataHotel (Financeiro → Resumo de
+ * Movimentação por Caixa). Para cada sessão de caixa traz o livro-caixa:
+ * data, descrição, forma, valor e C (entrada) ou D (saída/fechamento).
+ * Viram recebimentos só as entradas C de pagamento (venda balcão, pagamento
+ * de estadia, check-out). Ficam de fora: o fundo de caixa (saldo inicial) e as
+ * saídas D (sangria e fechamento do caixa).
+ *
+ * `desde` (AAAA-MM-DD) descarta o que for mais antigo: uma sessão de caixa
+ * pode começar antes do período pedido. O rodapé de cada sessão ("N
+ * registro(s)") confere com as linhas vistas, descartadas ou não.
+ */
+export function lerMovimentoCaixaDataHotel(texto: string, desde?: string | null): {
+  colunas: string[]; linhas: LinhaBruta[]; conferencia: Conferencia | null;
+  ignoradas: { fundo: number; saidas: number; antigas: number };
+} | null {
+  if (!/Resumo por Movimenta..o de Caixa/i.test(texto)) return null;
+  const colunas = ["codigo", "data", "descricao", "pagador", "apartamento", "reserva", "forma", "valor"];
+  const linhas: LinhaBruta[] = [];
+  const ignoradas = { fundo: 0, saidas: 0, antigas: 0 };
+  const ordinais = new Map<string, number>();
+  let caixa = "";
+  let vistasSessao = 0;
+  let registros = 0;
+  let vistas = 0;
+  let achouRodape = false;
+  let esperaRodape = false;
+  const fecharSessao = () => { vistas += vistasSessao; vistasSessao = 0; esperaRodape = false; };
+  for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
+    const cx = /^Caixa:\s*(\d+)/.exec(bruta.trim());
+    if (cx) { fecharSessao(); caixa = cx[1]!; esperaRodape = true; continue; }
+    const t = bruta.split(";").map((s) => s.trim()).filter((c) => c !== "");
+    const rodape = /^(\d+)\s+registro\(s\)$/.exec(t[0] ?? "");
+    // O rodapé do livro-caixa é o primeiro "N registro(s)" sozinho na linha depois das datas.
+    if (rodape && t.length === 1 && vistasSessao > 0 && esperaRodape) {
+      registros += Number(rodape[1]); esperaRodape = false; achouRodape = true; continue;
+    }
+    if (!t.length || !DATA_BR.test(t[0]!)) continue;
+    const sentido = t[t.length - 1];
+    const valorTxt = t.find((c) => /^R\$/.test(c));
+    const forma = t.find((c) => FORMA_CAIXA.test(c));
+    if ((sentido !== "C" && sentido !== "D") || !valorTxt || !forma) continue;
+    vistasSessao++;
+    const descricao = t.slice(1).filter((c) => c !== forma && c !== valorTxt && c !== sentido).join(" ").replace(/\s+/g, " ").trim();
+    if (sentido === "D") { ignoradas.saidas++; continue; }
+    if (/SALDO DE CAIXA|FUNDO DE CAIXA/i.test(descricao)) { ignoradas.fundo++; continue; }
+    const data = lerData(t[0]!);
+    if (typeof data !== "string") continue;
+    if (desde && data < desde) { ignoradas.antigas++; continue; }
+    const valor = lerValor(valorTxt);
+    if (typeof valor !== "number" || Number.isNaN(valor)) continue;
+    const uh = /\bUH\s*(\d+)\s*(.*)$/i.exec(descricao);
+    const reserva = /COD\.?\s*RESERVA:?\s*([A-Z0-9]+)/i.exec(descricao);
+    // Sem número único no relatório: caixa + data + forma + valor + descrição + ordem entre iguais.
+    const base = `${caixa}-${data.replace(/-/g, "")}-${normalizarForma(forma)}-${valor}-${sha256(Buffer.from(descricao)).slice(0, 8)}`;
+    const n = (ordinais.get(base) ?? 0) + 1;
+    ordinais.set(base, n);
+    linhas.push({
+      codigo: `CX${base}-${n}`, data: t[0]!, descricao, pagador: uh?.[2]?.trim() ?? "", apartamento: uh?.[1] ?? "",
+      reserva: reserva?.[1] ?? "", forma, valor: valorTxt,
+    });
+  }
+  fecharSessao();
+  return { colunas, linhas, conferencia: achouRodape ? { registros, totalCentavos: null, vistas } : null, ignoradas };
 }
 
 /** Confere o que foi lido contra o rodapé do relatório. Null = confere. */
 export function conferirTotais(linhas: LinhaBruta[], c: Conferencia | null): string | null {
   if (!c) return null;
-  if (linhas.length !== c.registros) {
-    return `O relatório diz ${c.registros} registro(s), mas foram lidas ${linhas.length} linha(s). Nada foi importado; exporte de novo ou avise o suporte.`;
+  const vistas = c.vistas ?? linhas.length;
+  if (vistas !== c.registros) {
+    return `O relatório diz ${c.registros} registro(s), mas foram lidas ${vistas} linha(s). Nada foi importado; exporte de novo ou avise o suporte.`;
   }
   if (c.totalCentavos !== null) {
     const soma = linhas.reduce((s, l) => s + (Number(lerValor(l.vr_total ?? "")) || 0), 0);

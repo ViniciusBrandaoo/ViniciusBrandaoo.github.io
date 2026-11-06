@@ -501,10 +501,10 @@
 
   if (L.USA_BACKEND) {
     var TIPOS_SRV = {
-      hospedagens: { nome: "Hospedagens / reservas", descr: "DataHotel: Hospedagem → Relatório de Reservas → Salvar → Ficheiro CSV",
+      hospedagens: { nome: "Hospedagens / reservas", descr: "DataHotel: Hospedagem → Relatório de Reservas, com 'Exibir extrato resumido' → Salvar → Ficheiro CSV",
         colunas: [["Cód. Res.", 1], ["Hóspede", 1], ["Apto.", 1], ["Check-in", 1], ["Check-out", 1], ["Nº Diárias"], ["Nº Hósp."],
           ["Canal de Venda"], ["Funcionário"], ["Situação"], ["Vr. Total"]] },
-      recebimentos: { nome: "Pagamentos / recebimentos", descr: "Pagamentos por forma, para o fechamento de caixa",
+      recebimentos: { nome: "Pagamentos / recebimentos", descr: "DataHotel: Financeiro → Resumo de Movimentação por Caixa → Salvar → Ficheiro CSV. Informe o início do período no envio para ignorar o que for mais antigo.",
         colunas: [["Código", 1], ["Data", 1], ["Forma de pagamento", 1], ["Valor", 1], ["Desconto"], ["Taxa"], ["Pagador"], ["Apartamento"],
           ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] }
     };
@@ -533,7 +533,10 @@
       if (file.size > 15 * 1024 * 1024) { U.avisar("Arquivo maior que 15 MB. Exporte um período menor."); return; }
       var tipo = T.filtros.impTipo === "recebimentos" ? "recebimentos" : "hospedagens";
       T._impSrv.enviando = true; T._impSrv.previa = null; T.renderizar();
-      L.api.enviarArquivo("/api/hotel/importacoes/previa", { tipo: tipo, arquivo: file }).then(function (p) {
+      var campoDesde = U.el("imp-desde");
+      var desde = campoDesde ? campoDesde.value : (T._impDesde || "");
+      T._impDesde = desde;
+      L.api.enviarArquivo("/api/hotel/importacoes/previa", { tipo: tipo, arquivo: file, periodoInicio: desde || null }).then(function (p) {
         p.arquivo = file.name; T._impSrv.previa = p;
       }).catch(function (e) {
         U.avisar(e.message || "Não foi possível ler o arquivo.");
@@ -557,6 +560,8 @@
             (ult ? "Última importação: " + U.esc(dataHora(ult)) : "Ainda não importado") + "</span></button>";
         }).join("") + "</div></div></div>" +
         '<div class="imp-passo"><span class="imp-num">2</span><div class="imp-passo-corpo"><h3>Arquivo</h3>' +
+        '<p class="secundario" style="margin:0 0 10px"><label>Ignorar o que for anterior a <input type="date" id="imp-desde" value="' + U.esc(T._impDesde || "") + '"' + (st.enviando ? " disabled" : "") + '></label> ' +
+        '<span class="secundario">(vale para o livro-caixa; deixe em branco para importar tudo)</span></p>' +
         '<label class="imp-drop" id="imp-drop"><input type="file" id="imp-arquivo" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"' + (st.enviando ? " disabled" : "") + ">" +
         U.iconeSvg("documentos", 26) +
         '<span class="imp-drop-titulo">' + (st.enviando ? "Lendo o arquivo…" : "Arraste o arquivo aqui ou <u>clique para escolher</u>") + "</span>" +
