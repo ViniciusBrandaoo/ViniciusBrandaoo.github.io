@@ -493,6 +493,152 @@
   };
   T.acoes["hotel-imp-cancelar"] = function () { T._previa = null; T.renderizar(); };
 
+  // ------------------------------------------------------------ importações com servidor
+  //
+  // Com o servidor ligado (L.USA_BACKEND), a prévia, a confirmação e o
+  // histórico vêm de /api/hotel/importacoes e ficam no banco. O arquivo vai
+  // inteiro para o servidor (.xlsx ou .csv); nada é calculado só aqui.
+
+  if (L.USA_BACKEND) {
+    var TIPOS_SRV = {
+      hospedagens: { nome: "Hospedagens / reservas", descr: "Reservas, hóspedes, check-in/out, diárias e valores",
+        colunas: [["Código / reserva", 1], ["Hóspede", 1], ["Apartamento", 1], ["Check-in", 1], ["Check-out", 1], ["Adultos"], ["Crianças"],
+          ["Valor da diária"], ["Consumos"], ["Descontos"], ["Valor pago"], ["Forma de pagamento"], ["Empresa"], ["Café incluído"], ["Situação"]] },
+      recebimentos: { nome: "Pagamentos / recebimentos", descr: "Pagamentos por forma, para o fechamento de caixa",
+        colunas: [["Código", 1], ["Data", 1], ["Forma de pagamento", 1], ["Valor", 1], ["Desconto"], ["Taxa"], ["Pagador"], ["Apartamento"],
+          ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] }
+    };
+    var ROT_SIT = { NOVO: ["info", "Novo"], ATUALIZADO: ["atencao", "Atualizado"], IDENTICO: ["neutro", "Já existia"], REJEITADO: ["critico", "Recusado"] };
+    var ROT_LOTE = { PREVIA: ["atencao", "Aguardando confirmação"], CONFIRMADO: ["ok", "Confirmado"], DESCARTADO: ["neutro", "Descartado"] };
+    T._impSrv = { previa: null, hist: null, ultima: null, carregando: false, enviando: false, erroHist: null };
+
+    var carregarHistorico = function () {
+      if (T._impSrv.carregando) return;
+      T._impSrv.carregando = true;
+      L.api.get("/api/hotel/importacoes").then(function (r) {
+        T._impSrv.hist = r.lotes || []; T._impSrv.ultima = r.ultima || {}; T._impSrv.erroHist = null;
+      }).catch(function (e) {
+        T._impSrv.hist = []; T._impSrv.erroHist = e.message || "Não foi possível carregar o histórico.";
+      }).then(function () {
+        T._impSrv.carregando = false;
+        if (T.atual === "importacoes") T.renderizar();
+      });
+    };
+
+    var dataHora = function (iso) { return iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—"; };
+
+    T._impSrvEnviar = function (file) {
+      if (!file) return;
+      if (!/\.(csv|xlsx)$/i.test(file.name)) { U.avisar("Envie o relatório em .xlsx (Excel) ou .csv."); return; }
+      if (file.size > 15 * 1024 * 1024) { U.avisar("Arquivo maior que 15 MB. Exporte um período menor."); return; }
+      var tipo = T.filtros.impTipo === "recebimentos" ? "recebimentos" : "hospedagens";
+      T._impSrv.enviando = true; T._impSrv.previa = null; T.renderizar();
+      L.api.enviarArquivo("/api/hotel/importacoes/previa", { tipo: tipo, arquivo: file }).then(function (p) {
+        p.arquivo = file.name; T._impSrv.previa = p;
+      }).catch(function (e) {
+        U.avisar(e.message || "Não foi possível ler o arquivo.");
+      }).then(function () {
+        T._impSrv.enviando = false; T._impSrv.hist = null; T.renderizar();
+      });
+    };
+
+    T.telas.importacoes = function () {
+      var st = T._impSrv;
+      if (st.hist === null) carregarHistorico();
+      var tipoAtual = T.filtros.impTipo === "recebimentos" ? "recebimentos" : "hospedagens";
+      if (st.previa && st.previa.tipo !== tipoAtual) st.previa = null;
+      var html = T.cabecalho("Importações DataHotel", "Envie o relatório exportado do DataHotel. Você confere a prévia antes de qualquer gravação no banco.");
+      html += '<div class="painel imp-painel">' +
+        '<div class="imp-passo"><span class="imp-num">1</span><div class="imp-passo-corpo"><h3>O que você vai importar</h3><div class="imp-tipos">' +
+        Object.keys(TIPOS_SRV).map(function (k) {
+          var ult = st.ultima && st.ultima[k];
+          return '<button type="button" class="imp-tipo' + (k === tipoAtual ? " ativo" : "") + '" data-filtro-aba="impTipo" data-valor="' + k + '"><strong>' +
+            U.esc(TIPOS_SRV[k].nome) + "</strong><span>" + U.esc(TIPOS_SRV[k].descr) + "</span><span>" +
+            (ult ? "Última importação: " + U.esc(dataHora(ult)) : "Ainda não importado") + "</span></button>";
+        }).join("") + "</div></div></div>" +
+        '<div class="imp-passo"><span class="imp-num">2</span><div class="imp-passo-corpo"><h3>Arquivo</h3>' +
+        '<label class="imp-drop" id="imp-drop"><input type="file" id="imp-arquivo" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"' + (st.enviando ? " disabled" : "") + ">" +
+        U.iconeSvg("documentos", 26) +
+        '<span class="imp-drop-titulo">' + (st.enviando ? "Lendo o arquivo…" : "Arraste o arquivo aqui ou <u>clique para escolher</u>") + "</span>" +
+        '<span class="imp-drop-dica">Excel (.xlsx) ou CSV, como sai do DataHotel. Até 15 MB.</span></label>' +
+        '<div class="imp-colunas"><span class="imp-colunas-rotulo">Colunas reconhecidas</span>' +
+        TIPOS_SRV[tipoAtual].colunas.map(function (c) { return '<span class="imp-chip' + (c[1] ? " obrig" : "") + '">' + U.esc(c[0]) + "</span>"; }).join("") +
+        '</div><p class="imp-nota">Em destaque, as obrigatórias. Se faltar uma delas, o arquivo inteiro é recusado. O código do DataHotel identifica cada registro: importar de novo não duplica, e o mesmo arquivo não entra duas vezes.</p></div></div></div>';
+
+      var p = st.previa;
+      if (p) {
+        var r = p.resumo;
+        if (p.erroGeral) {
+          html += '<div class="painel" style="padding:16px 20px;border-left:4px solid #c0392b"><strong>Arquivo recusado.</strong> ' + U.esc(p.erroGeral) +
+            '<div style="margin-top:10px"><button class="botao" data-acao="hotel-imp-srv-descartar">Fechar</button></div></div>';
+        } else {
+          html += kpis([
+            { rotulo: "Novos", valor: String(r.novo), nota: "serão criados" },
+            { rotulo: "Atualizados", valor: String(r.atualizado), nota: "só os campos que mudaram" },
+            { rotulo: "Já existiam", valor: String(r.identico), nota: "nada muda" },
+            { rotulo: "Recusados", valor: String(r.rejeitado), nota: "não entram", tom: r.rejeitado ? "critico" : "" }
+          ]);
+          var linhas = [];
+          (p.rejeitadas || []).forEach(function (x) { linhas.push({ linha: x.linha, codigo: x.codigo, sit: "REJEITADO", det: x.problemas.join(" ") }); });
+          (p.atualizadas || []).forEach(function (x) { linhas.push({ linha: x.linha, codigo: x.codigo, sit: "ATUALIZADO", det: "muda: " + x.campos.join(", ") }); });
+          (p.amostraNovas || []).forEach(function (x) {
+            var g = x.registro || {};
+            var br = function (iso) { return iso ? String(iso).split("-").reverse().join("/") : ""; };
+            linhas.push({ linha: x.linha, codigo: x.codigo, sit: "NOVO", det: [g.hospede, g.apartamento, g.pagador, br(g.checkin), br(g.data)].filter(Boolean).join(" · ") });
+          });
+          linhas.sort(function (a, b) { return a.linha - b.linha; });
+          var podeConfirmar = r.novo + r.atualizado > 0;
+          html += U.painelHtml("Prévia · " + U.esc(p.arquivo || ""), r.total + " linha(s) · " + U.esc(p.formato || "") +
+            (r.novo > 20 ? " · mostrando 20 das novas" : ""), U.tabelaHtml([
+            { rotulo: "Linha", conteudo: function (i) { return i.linha; } },
+            { rotulo: "Código", conteudo: function (i) { return U.esc(i.codigo || "—"); } },
+            { rotulo: "Situação", conteudo: function (i) { var t = ROT_SIT[i.sit]; return pastilha(t[0], t[1]); } },
+            { rotulo: "Detalhe", conteudo: function (i) { return U.esc(i.det || ""); } }
+          ], linhas, { tituloVazio: "Nada novo neste arquivo", textoVazio: "Todas as linhas já estavam no sistema, iguais." }) +
+            '<div style="padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap"><button class="botao primario" data-acao="hotel-imp-srv-confirmar"' + (podeConfirmar ? "" : " disabled") + ">Confirmar importação</button>" +
+            '<button class="botao" data-acao="hotel-imp-srv-descartar">Descartar</button>' +
+            (r.rejeitado ? '<span class="secundario" style="align-self:center">As linhas recusadas ficam guardadas no histórico e não entram.</span>' : "") + "</div>");
+        }
+      }
+
+      var hist = st.hist || [];
+      var corpo;
+      if (st.hist === null) corpo = '<p style="padding:16px 20px" class="secundario">Carregando…</p>';
+      else if (st.erroHist) corpo = '<p style="padding:16px 20px">' + U.esc(st.erroHist) + "</p>";
+      else corpo = U.tabelaHtml([
+        { rotulo: "Quando", conteudo: function (i) { return U.esc(dataHora(i.criadoEm)) + '<div class="secundario">' + U.esc(i.criadoPor || "—") + "</div>"; } },
+        { rotulo: "Dado", conteudo: function (i) { return U.esc((TIPOS_SRV[i.tipo] || {}).nome || i.tipo) + '<div class="secundario">' + U.esc(i.arquivo) + " · " + U.esc(i.formato) + "</div>"; } },
+        { rotulo: "Registros", conteudo: function (i) {
+          return i.total + " lidos · " + i.novo + " novos · " + i.atualizado + " atualizados · " + i.identico + " já existiam · " + i.rejeitado + " recusados" +
+            (i.erroGeral ? '<div class="secundario">' + U.esc(i.erroGeral) + "</div>" : "");
+        } },
+        { rotulo: "Situação", direita: true, conteudo: function (i) {
+          var t = ROT_LOTE[i.situacao] || ["neutro", i.situacao];
+          return pastilha(t[0], t[1]) + (i.confirmadoPor ? '<div class="secundario">' + U.esc(i.confirmadoPor) + "</div>" : "");
+        } }
+      ], hist, { tituloVazio: "Nenhuma importação ainda" });
+      html += U.painelHtml("Histórico de importações", "", corpo);
+      return html;
+    };
+
+    T.acoes["hotel-imp-srv-confirmar"] = function () {
+      var p = T._impSrv.previa;
+      if (!p || T._impSrv.enviando) return;
+      T._impSrv.enviando = true;
+      L.api.post("/api/hotel/importacoes/" + p.loteId + "/confirmar").then(function (r) {
+        T._impSrv.previa = null;
+        U.avisar("Importação confirmada: " + r.novo + " novos, " + r.atualizado + " atualizados" + (r.rejeitado ? ", " + r.rejeitado + " recusados." : "."));
+      }).catch(function (e) { U.avisar(e.message || "Não foi possível confirmar."); })
+        .then(function () { T._impSrv.enviando = false; T._impSrv.hist = null; T.renderizar(); });
+    };
+    T.acoes["hotel-imp-srv-descartar"] = function () {
+      var p = T._impSrv.previa;
+      if (!p) return;
+      L.api.post("/api/hotel/importacoes/" + p.loteId + "/descartar").catch(function () { /* prévia com erro já não pode ser confirmada */ })
+        .then(function () { T._impSrv.previa = null; T._impSrv.hist = null; T.renderizar(); });
+    };
+  }
+
   // ------------------------------------------------------------ caixa
 
   T.telas.caixa = function () {
@@ -945,6 +1091,7 @@
     var arq = U.el("imp-arquivo"), drop = U.el("imp-drop");
     function lerArquivo(file) {
       if (!file) return;
+      if (L.USA_BACKEND) return T._impSrvEnviar(file);
       if (!/\.csv$/i.test(file.name)) { U.avisar("Envie CSV. No Excel: Arquivo → Salvar como → CSV (separado por ponto e vírgula)."); return; }
       var leitor = new FileReader();
       leitor.onload = function () {
