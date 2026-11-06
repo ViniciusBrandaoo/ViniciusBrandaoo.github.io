@@ -2177,6 +2177,33 @@ div.dash-vencimento:hover { background: transparent; }
 .recado-painel .botao { flex-shrink: 0; }
 @media (max-width: 600px) { .recado-painel { flex-direction: column; } .recado-painel .botao { width: 100%; } }
 
+/* Telas do hotel. Status: verde regular · âmbar atenção · vermelho problema · azul informação. */
+.pastilha.atencao { background: var(--ambar-fundo); color: var(--ambar); }
+:root { --azul-info: #1F5FA8; --azul-info-fundo: #E3EEFA; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; } }
+:root[data-theme="dark"] { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; }
+.pastilha.info { background: var(--azul-info-fundo); color: var(--azul-info); }
+.grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grade-2 { grid-template-columns: 1fr; } }
+.hotel-filtro { font: inherit; padding: 6px 10px; border: 1px solid var(--borda); border-radius: 8px; background: var(--superficie); color: var(--tinta); }
+.cal-grade { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 0 20px 18px; }
+.cal-cab { font-size: var(--t-0); color: var(--tinta-media); text-align: center; padding: 4px 0; }
+.cal-dia { min-height: 78px; border: 1px solid var(--borda); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; font-size: var(--t-0); background: var(--superficie); }
+.cal-dia.vazio { border: 0; background: transparent; }
+.cal-dia.ok { border-color: var(--verde); background: var(--verde-fundo); }
+.cal-dia.atencao { border-color: var(--ambar); background: var(--ambar-fundo); }
+.cal-dia.critico { border-color: var(--vermelho); background: var(--vermelho-fundo); }
+.cal-n { font-weight: 600; }
+.cal-v { font-weight: 600; }
+.cal-q, .cal-s { color: var(--tinta-media); }
+.cal-s.neg { color: var(--vermelho); font-weight: 600; }
+@media (max-width: 760px) { .cal-dia { min-height: 56px; padding: 4px; } .cal-q, .cal-s { display: none; } }
+@media print {
+  .lateral, nav, .topo, .barra-ferramentas, .cabecalho-acoes, button { display: none !important; }
+  body, .conteudo, #conteudo { background: #fff !important; color: #000 !important; }
+  .painel { break-inside: avoid; box-shadow: none !important; }
+}
+
 </style>
 
 <!-- ============================================================ ACESSO -->
@@ -6251,6 +6278,967 @@ L.ajustesContratoLotacao = function (dados, funcionarios) {
     })
     .filter(function (a) { return Math.abs(a.diferenca) >= 0.5 || a.segmentos.length; });
 };
+
+/* ============================================================================
+   Domínio do hotel: regras puras, sem tela.
+
+   Tudo em centavos (inteiro) e data ISO (AAAA-MM-DD), como o resto do
+   domínio. Nenhuma função aqui toca no DOM: a tela só desenha o que sai
+   daqui, e os testes em `tests/prototipo/hotel.test.ts` carregam este
+   arquivo de verdade.
+
+   Princípio que atravessa o arquivo inteiro: FATURADO não é RECEBIDO,
+   VENDIDO NO CARTÃO não é DEPOSITADO, BOLETO EMITIDO não é PAGO. Cada uma
+   dessas coisas vive em campo próprio e só vira "dinheiro" com a
+   confirmação correspondente.
+   ========================================================================== */
+
+// ---------------------------------------------------------------- coleções
+
+// Entram no estado ANTES de `L.restaurar` (que só sobrescreve chaves que o
+// dado salvo traz): quem já tinha o sistema aberto ganha as coleções novas
+// vazias, sem perder nada do que já estava lá.
+[
+  "apartamentos", "hospedagens", "empresas", "importacoes",
+  "cafeAjustes", "enxovalItens", "enxovalMovimentos",
+  "frigobarProdutos", "frigobarConsumos",
+  "recebimentos", "fechamentosCaixa", "transacoesCartao", "boletos",
+  "notasFiscais", "cobrancas", "contasRecorrentes", "contasBancarias",
+  "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto"
+].forEach(function (c) { if (!Array.isArray(L.estado[c])) L.estado[c] = []; });
+
+L.hotel = {};
+var H = L.hotel;
+
+/** Configuração operacional. Tudo que é regra do hotel e não da lei mora aqui. */
+L.estado.configHotel = L.estado.configHotel || {
+  nome: "Hotel",
+  // Taxa de ocupação: apartamento bloqueado (manutenção, uso interno) sai do
+  // denominador — não está à venda, não pode baixar a taxa.
+  ocupacaoExcluiBloqueados: true,
+  cafeHorario: "06:30–10:00",
+  // Criança até esta idade não conta como adulto no café (quando o DataHotel
+  // traz a idade). Configurável: cada hotel tem a sua política.
+  cafeIdadeCrianca: 12,
+  alertasVencimentoDias: [7, 3, 1, 0],
+  saldoInicialCaixa: 0
+};
+
+H.FORMAS = {
+  DINHEIRO: { nome: "Dinheiro", entraNoCaixa: true, liquidaNaHora: true },
+  CREDITO: { nome: "Cartão de crédito", entraNoCaixa: false, liquidaNaHora: false },
+  DEBITO: { nome: "Cartão de débito", entraNoCaixa: false, liquidaNaHora: false },
+  PIX: { nome: "Pix / transferência", entraNoCaixa: false, liquidaNaHora: true },
+  FATURADO: { nome: "Faturado para empresa", entraNoCaixa: false, liquidaNaHora: false },
+  BOLETO: { nome: "Boleto bancário", entraNoCaixa: false, liquidaNaHora: false },
+  OUTRO: { nome: "Outra modalidade", entraNoCaixa: false, liquidaNaHora: false }
+};
+
+H.ITENS_ENXOVAL_PADRAO = ["Toalha de rosto", "Toalha de banho", "Lençol", "Fronha", "Cobertor"];
+H.LOCAIS_ENXOVAL = {
+  ROUPARIA: "Rouparia", APARTAMENTOS: "Apartamentos", LAVANDERIA: "Lavanderia",
+  RESERVA: "Estoque de reserva", INDISPONIVEL: "Itens indisponíveis"
+};
+
+// ---------------------------------------------------------------- datas
+
+H.addDias = function (iso, n) {
+  var d = new Date(iso + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+H.diasEntre = function (a, b) {
+  return Math.round((new Date(b + "T12:00:00Z") - new Date(a + "T12:00:00Z")) / 86400000);
+};
+/** Dias reais do mês (28, 29, 30 ou 31), não "30 por convenção". */
+H.diasDoMes = function (competencia) {
+  var p = competencia.split("-").map(Number);
+  return new Date(Date.UTC(p[0], p[1], 0)).getUTCDate();
+};
+H.noMes = function (iso, competencia) { return !!iso && iso.slice(0, 7) === competencia; };
+H.dataValida = function (s) {
+  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  var d = new Date(s + "T12:00:00Z");
+  // 31/02 vira 03/03 no Date: a volta tem de bater com a ida.
+  return !isNaN(d) && d.toISOString().slice(0, 10) === s;
+};
+
+// ---------------------------------------------------------------- importação
+//
+// Enquanto o acesso oficial ao DataHotel (API ou exportação documentada) não
+// estiver confirmado, a porta de entrada é arquivo exportado (CSV, ou Excel
+// salvo como CSV). A chave de cada registro é ORIGEM + CÓDIGO ORIGINAL: é o
+// que impede importar a mesma reserva duas vezes e o que permite atualizar
+// sem duplicar.
+
+/** CSV com `;` ou `,`, aspas e cabeçalho. Devolve objetos por coluna. */
+H.lerCsv = function (texto) {
+  var linhas = String(texto || "").replace(/^﻿/, "").split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+  if (!linhas.length) return [];
+  var sep = (linhas[0].split(";").length >= linhas[0].split(",").length) ? ";" : ",";
+  function quebrar(l) {
+    var out = [], atual = "", aspas = false;
+    for (var i = 0; i < l.length; i++) {
+      var ch = l[i];
+      if (ch === '"') { if (aspas && l[i + 1] === '"') { atual += '"'; i++; } else aspas = !aspas; }
+      else if (ch === sep && !aspas) { out.push(atual); atual = ""; }
+      else atual += ch;
+    }
+    out.push(atual);
+    return out.map(function (s) { return s.trim(); });
+  }
+  var cab = quebrar(linhas[0]).map(function (c) {
+    return c.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+  });
+  return linhas.slice(1).map(function (l) {
+    var v = quebrar(l), o = {};
+    cab.forEach(function (c, i) { o[c] = v[i] === undefined ? "" : v[i]; });
+    return o;
+  });
+};
+
+/** "1.234,56" / "1234.56" / "R$ 10" → centavos. Vazio → null (não zero!). */
+H.lerValor = function (s) {
+  if (s === undefined || s === null) return null;
+  var t = String(s).replace(/[R$\s]/g, "");
+  if (t === "") return null;
+  if (t.indexOf(",") !== -1) t = t.replace(/\./g, "").replace(",", ".");
+  var n = Number(t);
+  return isNaN(n) ? NaN : Math.round(n * 100);
+};
+/** "31/12/2026" ou "2026-12-31" → ISO. Vazio → null. */
+H.lerData = function (s) {
+  if (!s) return null;
+  var m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(s).trim());
+  var iso = m ? m[3] + "-" + m[2] + "-" + m[1] : String(s).trim().slice(0, 10);
+  return H.dataValida(iso) ? iso : NaN;
+};
+
+/**
+ * Layouts aceitos. Cada campo diz de qual coluna vem (aceita apelidos, porque
+ * o nome da coluna no relatório exportado ainda não foi confirmado) e de que
+ * tipo é. Quando o layout real do DataHotel for conhecido, é aqui — e só
+ * aqui — que se ajusta.
+ */
+H.LAYOUTS = {
+  hospedagens: {
+    nome: "Hospedagens / reservas", colecao: "hospedagens",
+    codigo: ["codigo", "reserva", "id_reserva", "localizador"],
+    campos: {
+      hospede: { de: ["hospede", "nome", "nome_hospede"], obrigatorio: true },
+      apartamento: { de: ["apartamento", "apto", "uh", "quarto"], obrigatorio: true },
+      checkin: { de: ["checkin", "check_in", "entrada", "data_entrada"], tipo: "data", obrigatorio: true },
+      checkout: { de: ["checkout", "check_out", "saida", "data_saida", "checkout_previsto"], tipo: "data", obrigatorio: true },
+      checkoutRealizado: { de: ["checkout_realizado", "saida_realizada"], tipo: "data" },
+      adultos: { de: ["adultos", "qtd_adultos", "pax"], tipo: "inteiro" },
+      criancas: { de: ["criancas", "qtd_criancas", "chd"], tipo: "inteiro" },
+      valorDiaria: { de: ["valor_diaria", "diaria", "tarifa"], tipo: "valor" },
+      consumos: { de: ["consumos", "extras", "valor_consumos"], tipo: "valor" },
+      descontos: { de: ["descontos", "desconto"], tipo: "valor" },
+      valorPago: { de: ["valor_pago", "pago"], tipo: "valor" },
+      formaPagamento: { de: ["forma_pagamento", "pagamento", "forma"] },
+      empresa: { de: ["empresa", "empresa_pagadora", "cnpj_empresa"] },
+      cafeIncluido: { de: ["cafe", "cafe_incluido", "cafe_da_manha"], tipo: "booleano" },
+      status: { de: ["status", "situacao"] }
+    }
+  },
+  recebimentos: {
+    nome: "Pagamentos / recebimentos", colecao: "recebimentos",
+    codigo: ["codigo", "id", "id_pagamento", "documento"],
+    campos: {
+      data: { de: ["data", "data_operacao", "data_pagamento"], tipo: "data", obrigatorio: true },
+      descricao: { de: ["descricao", "historico"] },
+      pagador: { de: ["hospede", "empresa", "pagador", "cliente"] },
+      apartamento: { de: ["apartamento", "apto", "uh", "referencia"] },
+      reserva: { de: ["reserva", "localizador", "codigo_reserva"] },
+      forma: { de: ["forma", "forma_pagamento", "modalidade"], obrigatorio: true },
+      valorBruto: { de: ["valor", "valor_bruto"], tipo: "valor", obrigatorio: true },
+      desconto: { de: ["desconto"], tipo: "valor" },
+      taxa: { de: ["taxa", "taxa_financeira"], tipo: "valor" },
+      codigoTransacao: { de: ["nsu", "codigo_transacao", "autorizacao"] },
+      bandeira: { de: ["bandeira"] }, operadora: { de: ["operadora", "adquirente"] },
+      parcelas: { de: ["parcelas", "parcelamento"], tipo: "inteiro" }
+    }
+  },
+  frigobar: {
+    nome: "Consumos de frigobar", colecao: "frigobarConsumos",
+    codigo: ["codigo", "id", "lancamento"],
+    campos: {
+      data: { de: ["data"], tipo: "data", obrigatorio: true },
+      apartamento: { de: ["apartamento", "apto", "uh"], obrigatorio: true },
+      produto: { de: ["produto", "item", "descricao"], obrigatorio: true },
+      quantidade: { de: ["quantidade", "qtd"], tipo: "inteiro", obrigatorio: true },
+      valorUnitario: { de: ["valor_unitario", "preco", "valor"], tipo: "valor" },
+      reserva: { de: ["reserva", "localizador"] }
+    }
+  }
+};
+
+H.normalizarForma = function (s) {
+  var t = String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  if (!t) return null;
+  if (/dinheiro|especie/.test(t)) return "DINHEIRO";
+  if (/debito/.test(t)) return "DEBITO";
+  if (/credito|cartao/.test(t)) return "CREDITO";
+  if (/pix|transf|ted|doc/.test(t)) return "PIX";
+  if (/boleto/.test(t)) return "BOLETO";
+  if (/fatur|empresa|faturado/.test(t)) return "FATURADO";
+  return "OUTRO";
+};
+
+function pegar(linha, nomes) {
+  for (var i = 0; i < nomes.length; i++) if (linha[nomes[i]] !== undefined) return linha[nomes[i]];
+  return undefined;
+}
+
+/** Converte uma linha bruta no registro do layout, com a lista de problemas. */
+H.converterLinha = function (layout, linha) {
+  var reg = {}, problemas = [];
+  var codigo = pegar(linha, layout.codigo);
+  if (!codigo) problemas.push("Sem código original (a linha não teria como ser reconhecida numa próxima importação).");
+  reg.codigoOrigem = codigo || null;
+  Object.keys(layout.campos).forEach(function (k) {
+    var c = layout.campos[k], bruto = pegar(linha, c.de);
+    var vazio = bruto === undefined || String(bruto).trim() === "";
+    if (vazio) {
+      if (c.obrigatorio) problemas.push("Campo obrigatório vazio: " + k + ".");
+      return; // vazio NÃO vira campo: não apaga o que já existe internamente.
+    }
+    var v = bruto;
+    if (c.tipo === "data") { v = H.lerData(bruto); if (Number.isNaN(v)) { problemas.push("Data inválida em " + k + ": " + bruto); return; } }
+    else if (c.tipo === "valor") { v = H.lerValor(bruto); if (Number.isNaN(v)) { problemas.push("Valor inválido em " + k + ": " + bruto); return; } if (v < 0) { problemas.push("Valor negativo em " + k + "."); return; } }
+    else if (c.tipo === "inteiro") { v = parseInt(bruto, 10); if (isNaN(v) || v < 0) { problemas.push("Número inválido em " + k + ": " + bruto); return; } }
+    else if (c.tipo === "booleano") { v = /^(s|sim|1|true|x|incluido|incluso)$/i.test(String(bruto).trim()); }
+    reg[k] = v;
+  });
+  if (reg.forma !== undefined) reg.forma = H.normalizarForma(reg.forma);
+  if (reg.formaPagamento !== undefined) reg.formaPagamento = H.normalizarForma(reg.formaPagamento);
+  if (reg.checkin && reg.checkout && reg.checkout < reg.checkin) problemas.push("Check-out antes do check-in.");
+  return { registro: reg, problemas: problemas };
+};
+
+/**
+ * Pré-visualização: classifica cada linha SEM gravar nada.
+ *   novo        — código ainda não existe para esta origem
+ *   atualizado  — já existe e algum campo mudou
+ *   duplicado   — já existe e nada mudou (ou repetido dentro do próprio arquivo)
+ *   inconsistente — não passou na validação; não entra
+ */
+H.preverImportacao = function (tipo, origem, linhas) {
+  var layout = H.LAYOUTS[tipo];
+  if (!layout) throw new Error("Tipo de importação desconhecido: " + tipo);
+  var existentes = L.estado[layout.colecao];
+  var vistos = {};
+  var itens = linhas.map(function (linha, i) {
+    var c = H.converterLinha(layout, linha);
+    var item = { linha: i + 2, registro: c.registro, problemas: c.problemas };
+    if (c.problemas.length) { item.situacao = "inconsistente"; return item; }
+    var chave = origem + "|" + c.registro.codigoOrigem;
+    if (vistos[chave]) { item.situacao = "duplicado"; item.problemas = ["Repetido no próprio arquivo (linha " + vistos[chave] + ")."]; return item; }
+    vistos[chave] = item.linha;
+    var atual = existentes.find(function (r) { return r.origem === origem && r.codigoOrigem === c.registro.codigoOrigem; });
+    if (!atual) { item.situacao = "novo"; return item; }
+    item.alvoId = atual.id;
+    var mudou = Object.keys(c.registro).filter(function (k) { return JSON.stringify(atual[k]) !== JSON.stringify(c.registro[k]); });
+    item.situacao = mudou.length ? "atualizado" : "duplicado";
+    item.camposAlterados = mudou;
+    return item;
+  });
+  var resumo = { total: itens.length, novo: 0, atualizado: 0, duplicado: 0, inconsistente: 0 };
+  itens.forEach(function (it) { resumo[it.situacao]++; });
+  return { tipo: tipo, origem: origem, itens: itens, resumo: resumo };
+};
+
+/**
+ * Aplica uma prévia. Atualização faz MERGE: só os campos que vieram no
+ * arquivo mudam; tudo que foi complementado aqui dentro (observações,
+ * conferência, ajustes) fica. Nada é apagado por vir em branco.
+ */
+H.aplicarImportacao = function (previa, meta) {
+  var layout = H.LAYOUTS[previa.tipo];
+  var agora = new Date().toISOString();
+  previa.itens.forEach(function (it) {
+    if (it.situacao === "novo") {
+      L.criar(layout.colecao, Object.assign({ origem: previa.origem, importadoEm: agora }, it.registro));
+    } else if (it.situacao === "atualizado") {
+      L.atualizar(layout.colecao, it.alvoId, Object.assign({ atualizadoPelaImportacaoEm: agora }, it.registro));
+    }
+  });
+  var u = L.estado.usuario || {};
+  return L.criar("importacoes", {
+    tipo: previa.tipo, origem: previa.origem,
+    arquivo: (meta && meta.arquivo) || "", formato: (meta && meta.formato) || "CSV",
+    periodoInicio: (meta && meta.periodoInicio) || null, periodoFim: (meta && meta.periodoFim) || null,
+    resumo: previa.resumo,
+    erros: previa.itens.filter(function (i) { return i.situacao === "inconsistente"; })
+      .map(function (i) { return { linha: i.linha, problemas: i.problemas }; }),
+    status: previa.resumo.inconsistente ? "CONCLUIDA_COM_PENDENCIAS" : "CONCLUIDA",
+    usuario: u.nome || u.email || "—", em: agora
+  });
+};
+
+// ---------------------------------------------------------------- hospedagem
+
+/** Está no hotel na noite de `data`? (Entrou até `data` e sai depois dela.) */
+H.pernoita = function (h, data) {
+  if (h.status === "CANCELADA" || h.status === "NO_SHOW") return false;
+  var saida = h.checkoutRealizado || h.checkout;
+  return h.checkin <= data && saida > data;
+};
+H.diariasDe = function (h) {
+  return Math.max(1, H.diasEntre(h.checkin, h.checkoutRealizado || h.checkout));
+};
+/** Valor total = diárias × tarifa + consumos − descontos. Pendente = total − pago. */
+H.valoresHospedagem = function (h) {
+  var diarias = H.diariasDe(h);
+  var hospedagem = diarias * (h.valorDiaria || 0);
+  var total = hospedagem + (h.consumos || 0) - (h.descontos || 0);
+  var pago = h.valorPago || 0;
+  var pendente = Math.max(0, total - pago);
+  var situacao = total === 0 ? "SEM_VALOR" : pendente === 0 ? "QUITADA"
+    : (h.formaPagamento === "FATURADO" || h.empresa) ? "FATURAR" : "PENDENTE";
+  return { diarias: diarias, valorHospedagem: hospedagem, total: total, pago: pago, pendente: pendente, situacao: situacao };
+};
+
+H.ocupacao = function (data) {
+  var cfg = L.estado.configHotel;
+  var aptos = L.estado.apartamentos.filter(function (a) { return a.ativo !== false; });
+  var bloqueados = aptos.filter(function (a) { return a.bloqueado; });
+  var hs = L.estado.hospedagens;
+  var presentes = hs.filter(function (h) { return H.pernoita(h, data); });
+  var ocupadosSet = {};
+  presentes.forEach(function (h) { ocupadosSet[h.apartamento] = true; });
+  var ocupados = Object.keys(ocupadosSet).length;
+  var vendaveis = cfg.ocupacaoExcluiBloqueados ? aptos.length - bloqueados.length : aptos.length;
+  return {
+    data: data,
+    total: aptos.length,
+    bloqueados: bloqueados.length,
+    ocupados: ocupados,
+    disponiveis: Math.max(0, aptos.length - bloqueados.length - ocupados),
+    hospedes: presentes.reduce(function (a, h) { return a + (h.adultos || 1) + (h.criancas || 0); }, 0),
+    entradas: hs.filter(function (h) { return h.checkin === data && h.status !== "CANCELADA"; }).length,
+    saidas: hs.filter(function (h) { return (h.checkoutRealizado || h.checkout) === data && h.status !== "CANCELADA"; }).length,
+    permanencias: presentes.filter(function (h) { return h.checkin < data; }).length,
+    taxa: vendaveis > 0 ? ocupados / vendaveis : 0
+  };
+};
+
+/** Extrato do dia: quem pernoita OU sai nesta data. */
+H.extratoDiario = function (data) {
+  return L.estado.hospedagens
+    .filter(function (h) { return H.pernoita(h, data) || (h.checkoutRealizado || h.checkout) === data; })
+    .map(function (h) { return Object.assign({ hospedagem: h }, H.valoresHospedagem(h)); })
+    .sort(function (a, b) { return String(a.hospedagem.apartamento).localeCompare(String(b.hospedagem.apartamento), "pt-BR", { numeric: true }); });
+};
+
+// ---------------------------------------------------------------- café da manhã
+
+/**
+ * Quem toma café em `data` é quem PERNOITOU na noite anterior (entrou antes
+ * e sai hoje ou depois). Ajuste manual (extra autorizado, correção) é
+ * registro à parte, com justificativa: o dado de origem não é tocado.
+ */
+H.listaCafe = function (data) {
+  var ontem = H.addDias(data, -1);
+  var linhas = L.estado.hospedagens.filter(function (h) { return H.pernoita(h, ontem); }).map(function (h) {
+    var adultos = h.adultos || 1, criancas = h.criancas || 0;
+    var incluido = h.cafeIncluido !== false;
+    return { apartamento: h.apartamento, hospede: h.hospede, adultos: adultos, criancas: criancas,
+      incluido: incluido, previstos: incluido ? adultos + criancas : 0, semCafe: incluido ? 0 : adultos + criancas, hospedagemId: h.id };
+  });
+  var ajustes = L.estado.cafeAjustes.filter(function (a) { return a.data === data; });
+  var extras = ajustes.reduce(function (s, a) { return s + (a.quantidade || 0); }, 0);
+  linhas.sort(function (a, b) { return String(a.apartamento).localeCompare(String(b.apartamento), "pt-BR", { numeric: true }); });
+  var soma = function (k) { return linhas.reduce(function (s, l) { return s + l[k]; }, 0); };
+  return {
+    data: data, linhas: linhas, ajustes: ajustes,
+    adultos: soma("adultos"), criancas: soma("criancas"),
+    comCafe: soma("previstos"), semCafe: soma("semCafe"), extras: extras,
+    totalPrevisto: soma("previstos") + extras,
+    atendidos: (L.estado.cafeAjustes.find(function (a) { return a.data === data && a.tipo === "ATENDIDOS"; }) || {}).atendidos
+  };
+};
+
+// ---------------------------------------------------------------- enxoval
+//
+// Estoque final = estoque inicial + entradas − saídas definitivas.
+// Transferência (rouparia → apartamento → lavanderia → rouparia) só muda o
+// LUGAR: o total não se mexe. Saída definitiva é dano, extravio ou descarte.
+
+H.TIPOS_MOV_ENXOVAL = {
+  INICIAL: { nome: "Estoque inicial", efeito: "entrada" },
+  COMPRA: { nome: "Entrada / compra", efeito: "entrada" },
+  TRANSFERENCIA: { nome: "Transferência entre locais", efeito: "transferencia" },
+  DANO: { nome: "Danificado", efeito: "saida" },
+  EXTRAVIO: { nome: "Extraviado", efeito: "saida" },
+  DESCARTE: { nome: "Descartado", efeito: "saida" },
+  INVENTARIO: { nome: "Ajuste de inventário", efeito: "ajuste" }
+};
+
+H.validarMovEnxoval = function (m) {
+  var p = [];
+  var t = H.TIPOS_MOV_ENXOVAL[m.tipo];
+  if (!t) p.push("Tipo de movimentação inválido.");
+  if (!m.itemId) p.push("Escolha o item.");
+  if (!(m.quantidade > 0) && m.tipo !== "INVENTARIO") p.push("Quantidade deve ser maior que zero.");
+  if (t && t.efeito === "transferencia") {
+    if (!m.de || !m.para) p.push("Transferência precisa de origem e destino.");
+    else if (m.de === m.para) p.push("Origem e destino iguais.");
+  }
+  if (t && t.efeito === "entrada" && !m.para) p.push("Informe o local de entrada.");
+  if (t && t.efeito === "saida" && !m.de) p.push("Informe de onde saiu.");
+  if (t && t.efeito === "transferencia" && m.de && H.saldoEnxoval(m.itemId, m.data)[m.de] < m.quantidade) p.push("Não há essa quantidade em " + H.LOCAIS_ENXOVAL[m.de] + ".");
+  return p;
+};
+
+/** Saldo por local até `ate` (inclusive). */
+H.saldoEnxoval = function (itemId, ate) {
+  var s = {};
+  Object.keys(H.LOCAIS_ENXOVAL).forEach(function (k) { s[k] = 0; });
+  L.estado.enxovalMovimentos.filter(function (m) { return m.itemId === itemId && (!ate || m.data <= ate); })
+    .sort(function (a, b) { return a.data.localeCompare(b.data); })
+    .forEach(function (m) {
+      var ef = (H.TIPOS_MOV_ENXOVAL[m.tipo] || {}).efeito;
+      if (ef === "entrada") s[m.para] += m.quantidade;
+      else if (ef === "saida") s[m.de] -= m.quantidade;
+      else if (ef === "transferencia") { s[m.de] -= m.quantidade; s[m.para] += m.quantidade; }
+      else if (ef === "ajuste") s[m.local] = m.contado;
+    });
+  return s;
+};
+
+H.resumoEnxoval = function (itemId, inicio, fim) {
+  var movs = L.estado.enxovalMovimentos.filter(function (m) { return m.itemId === itemId && m.data >= inicio && m.data <= fim; });
+  var soma = function (f) { return movs.filter(f).reduce(function (a, m) { return a + m.quantidade; }, 0); };
+  var antes = H.saldoEnxoval(itemId, H.addDias(inicio, -1));
+  var depois = H.saldoEnxoval(itemId, fim);
+  var total = function (s) { return Object.keys(s).filter(function (k) { return k !== "INDISPONIVEL"; }).reduce(function (a, k) { return a + s[k]; }, 0); };
+  var item = L.buscarPorId("enxovalItens", itemId) || {};
+  var r = {
+    inicial: total(antes), final: total(depois), porLocal: depois,
+    entradas: soma(function (m) { return (H.TIPOS_MOV_ENXOVAL[m.tipo] || {}).efeito === "entrada"; }),
+    entreguesApartamentos: soma(function (m) { return m.tipo === "TRANSFERENCIA" && m.para === "APARTAMENTOS"; }),
+    recolhidos: soma(function (m) { return m.tipo === "TRANSFERENCIA" && m.de === "APARTAMENTOS"; }),
+    enviadosLavanderia: soma(function (m) { return m.tipo === "TRANSFERENCIA" && m.para === "LAVANDERIA"; }),
+    recebidosLavanderia: soma(function (m) { return m.tipo === "TRANSFERENCIA" && m.de === "LAVANDERIA"; }),
+    danificados: soma(function (m) { return m.tipo === "DANO"; }),
+    extraviados: soma(function (m) { return m.tipo === "EXTRAVIO"; }),
+    descartados: soma(function (m) { return m.tipo === "DESCARTE"; }),
+    minimo: item.minimo || 0
+  };
+  r.perdas = r.danificados + r.extraviados + r.descartados;
+  r.disponivel = depois.ROUPARIA + depois.RESERVA;
+  r.pendenteLavanderia = depois.LAVANDERIA;
+  return r;
+};
+
+H.alertasEnxoval = function (hoje) {
+  var out = [];
+  var inicioMes = hoje.slice(0, 8) + "01";
+  L.estado.enxovalItens.filter(function (i) { return i.ativo !== false; }).forEach(function (i) {
+    var r = H.resumoEnxoval(i.id, inicioMes, hoje);
+    if (i.minimo && r.disponivel < i.minimo) out.push({ nivel: "critico", texto: i.nome + ": disponível (" + r.disponivel + ") abaixo do mínimo (" + i.minimo + ")." });
+    var limitePerda = i.perdaMaximaMes || Math.ceil(r.inicial * 0.05);
+    if (r.perdas > 0 && r.perdas > limitePerda) out.push({ nivel: "atencao", texto: i.nome + ": " + r.perdas + " perdas no mês (limite " + limitePerda + ")." });
+    var velhosNaLavanderia = L.estado.enxovalMovimentos.some(function (m) {
+      return m.itemId === i.id && m.tipo === "TRANSFERENCIA" && m.para === "LAVANDERIA" && H.diasEntre(m.data, hoje) > 3;
+    });
+    if (r.pendenteLavanderia > 0 && velhosNaLavanderia) out.push({ nivel: "atencao", texto: i.nome + ": " + r.pendenteLavanderia + " na lavanderia há mais de 3 dias." });
+    var saldo = H.saldoEnxoval(i.id, hoje);
+    Object.keys(saldo).forEach(function (k) { if (saldo[k] < 0) out.push({ nivel: "critico", texto: i.nome + ": saldo negativo em " + H.LOCAIS_ENXOVAL[k] + " — divergência de inventário." }); });
+  });
+  return out;
+};
+
+/** Lista diária de governança: o que arrumar e quanto repor. */
+H.listaGovernanca = function (data) {
+  var hs = L.estado.hospedagens;
+  var ocupados = hs.filter(function (h) { return H.pernoita(h, data); });
+  var saidas = hs.filter(function (h) { return (h.checkoutRealizado || h.checkout) === data && h.status !== "CANCELADA"; });
+  var entradas = hs.filter(function (h) { return h.checkin === data && h.status !== "CANCELADA"; });
+  var aptos = {};
+  function marcar(apto, tipo) { aptos[apto] = aptos[apto] || { apartamento: apto, tarefas: [] }; aptos[apto].tarefas.push(tipo); }
+  ocupados.filter(function (h) { return h.checkin < data; }).forEach(function (h) { marcar(h.apartamento, "Arrumação (permanência)"); });
+  saidas.forEach(function (h) { marcar(h.apartamento, "Limpeza de saída"); });
+  entradas.forEach(function (h) { marcar(h.apartamento, "Preparar para entrada"); });
+  var lista = Object.keys(aptos).map(function (k) { return aptos[k]; })
+    .sort(function (a, b) { return String(a.apartamento).localeCompare(String(b.apartamento), "pt-BR", { numeric: true }); });
+  // Reposição: padrão por tipologia × apartamentos com troca de enxoval.
+  var reposicao = {};
+  lista.forEach(function (l) {
+    var apto = L.estado.apartamentos.find(function (a) { return String(a.numero) === String(l.apartamento); }) || {};
+    var padrao = apto.padraoEnxoval || {};
+    Object.keys(padrao).forEach(function (itemId) { reposicao[itemId] = (reposicao[itemId] || 0) + padrao[itemId]; });
+  });
+  return { data: data, apartamentos: lista, ocupados: ocupados.length, saidas: saidas.length, entradas: entradas.length, reposicao: reposicao };
+};
+
+// ---------------------------------------------------------------- frigobar
+
+H.produtoPorNome = function (nome) {
+  var n = String(nome || "").toLowerCase().trim();
+  return L.estado.frigobarProdutos.find(function (p) { return p.nome.toLowerCase() === n || String(p.codigo || "").toLowerCase() === n; });
+};
+/** Valor do consumo = quantidade × preço de venda (o do registro, senão o do cadastro). */
+H.valorConsumo = function (c) {
+  var p = c.produtoId ? L.buscarPorId("frigobarProdutos", c.produtoId) : H.produtoPorNome(c.produto);
+  var unit = c.valorUnitario != null ? c.valorUnitario : (p ? p.precoVenda : 0);
+  return { unitario: unit, total: unit * (c.quantidade || 0), custo: (p ? p.custo || 0 : 0) * (c.quantidade || 0), produto: p };
+};
+
+function agrupar(lista, chave) {
+  var g = {};
+  lista.forEach(function (x) { var k = chave(x); (g[k] = g[k] || []).push(x); });
+  return g;
+}
+
+H.frigobarDia = function (data) {
+  var cs = L.estado.frigobarConsumos.filter(function (c) { return c.data === data && c.status !== "CANCELADO"; });
+  var porProduto = agrupar(cs, function (c) { var v = H.valorConsumo(c); return v.produto ? v.produto.nome : c.produto; });
+  var porApto = agrupar(cs, function (c) { return c.apartamento; });
+  var linha = function (k, l) {
+    return { chave: k, quantidade: l.reduce(function (a, c) { return a + c.quantidade; }, 0),
+      valor: l.reduce(function (a, c) { return a + H.valorConsumo(c).total; }, 0) };
+  };
+  return {
+    data: data,
+    produtos: Object.keys(porProduto).map(function (k) { return linha(k, porProduto[k]); }),
+    apartamentos: Object.keys(porApto).map(function (k) { return linha(k, porApto[k]); }),
+    total: cs.reduce(function (a, c) { return a + H.valorConsumo(c).total; }, 0)
+  };
+};
+
+/**
+ * Fechamento mensal = soma dos dias reais do mês (28/29/30/31). A receita
+ * conta UMA vez: consumo marcado `jaNoDataHotel` entra no relatório de
+ * produto, mas é sinalizado para a receita não ser lançada de novo fora da
+ * conta do hóspede.
+ */
+H.frigobarMes = function (competencia) {
+  var dias = H.diasDoMes(competencia);
+  var evolucao = [];
+  for (var d = 1; d <= dias; d++) {
+    var iso = competencia + "-" + String(d).padStart(2, "0");
+    evolucao.push({ data: iso, valor: H.frigobarDia(iso).total });
+  }
+  var cs = L.estado.frigobarConsumos.filter(function (c) { return H.noMes(c.data, competencia) && c.status !== "CANCELADO"; });
+  var porProduto = agrupar(cs, function (c) { var v = H.valorConsumo(c); return v.produto ? v.produto.nome : c.produto; });
+  var produtos = Object.keys(porProduto).map(function (k) {
+    var l = porProduto[k];
+    var qtd = l.reduce(function (a, c) { return a + c.quantidade; }, 0);
+    var receita = l.reduce(function (a, c) { return a + H.valorConsumo(c).total; }, 0);
+    var custo = l.reduce(function (a, c) { return a + H.valorConsumo(c).custo; }, 0);
+    return { produto: k, quantidade: qtd, precoMedio: qtd ? Math.round(receita / qtd) : 0, receita: receita, custo: custo, margem: receita - custo };
+  }).sort(function (a, b) { return b.receita - a.receita; });
+  var porApto = agrupar(cs, function (c) { return c.apartamento; });
+  return {
+    competencia: competencia, dias: dias, evolucao: evolucao, produtos: produtos,
+    apartamentos: Object.keys(porApto).map(function (k) { return { apartamento: k, valor: porApto[k].reduce(function (a, c) { return a + H.valorConsumo(c).total; }, 0) }; }),
+    receita: evolucao.reduce(function (a, e) { return a + e.valor; }, 0),
+    custo: produtos.reduce(function (a, p) { return a + p.custo; }, 0),
+    receitaJaNoDataHotel: cs.filter(function (c) { return c.jaNoDataHotel || c.origem; }).reduce(function (a, c) { return a + H.valorConsumo(c).total; }, 0)
+  };
+};
+
+/** Consumo registrado aqui que não aparece cobrado na conta do hóspede. */
+H.frigobarNaoCobrado = function (competencia) {
+  return L.estado.frigobarConsumos.filter(function (c) {
+    return H.noMes(c.data, competencia) && c.status !== "CANCELADO" && !c.cobrado && !c.jaNoDataHotel && !c.origem;
+  });
+};
+
+// ---------------------------------------------------------------- recebimentos e caixa
+
+/** Líquido = bruto − desconto − taxa. Nunca negativo. */
+H.liquido = function (r) { return Math.max(0, (r.valorBruto || 0) - (r.desconto || 0) - (r.taxa || 0)); };
+
+/**
+ * Situação de um recebimento. Dinheiro e Pix liquidam na hora; cartão só é
+ * "recebido" quando o depósito é conciliado; faturado/boleto só quando o
+ * pagamento é confirmado (baixa do boleto).
+ */
+H.situacaoRecebimento = function (r) {
+  if (r.status === "CANCELADO" || r.status === "ESTORNADO") return r.status;
+  if (r.conciliadoEm) return "CONCILIADO";
+  if (r.recebidoEm) return "RECEBIDO";
+  var f = H.FORMAS[r.forma] || H.FORMAS.OUTRO;
+  return f.liquidaNaHora ? "RECEBIDO" : "A_RECEBER";
+};
+
+/**
+ * Fechamento do dia. Três números que NUNCA se misturam:
+ *   faturado  — tudo que foi vendido/lançado no dia (receita reconhecida)
+ *   recebido  — o que de fato entrou (dinheiro, pix, cartão conciliado, boleto baixado)
+ *   aReceber  — faturado − recebido (cartão a depositar, faturado, boleto aberto)
+ * E o CAIXA físico só olha dinheiro:
+ *   saldo final = saldo inicial + entradas em dinheiro − saídas em dinheiro
+ */
+H.fechamentoDia = function (data) {
+  var rs = L.estado.recebimentos.filter(function (r) { return r.data === data && r.status !== "CANCELADO" && r.tipo !== "SAIDA_CAIXA"; });
+  var porForma = {};
+  Object.keys(H.FORMAS).forEach(function (k) { porForma[k] = { faturado: 0, recebido: 0, aReceber: 0, qtd: 0 }; });
+  rs.forEach(function (r) {
+    var f = porForma[r.forma] || porForma.OUTRO;
+    var v = H.liquido(r);
+    var sit = H.situacaoRecebimento(r);
+    f.qtd++;
+    f.faturado += v;
+    if (sit === "RECEBIDO" || sit === "CONCILIADO") f.recebido += v; else if (sit !== "ESTORNADO") f.aReceber += v;
+  });
+  var totais = Object.keys(porForma).reduce(function (a, k) {
+    a.faturado += porForma[k].faturado; a.recebido += porForma[k].recebido; a.aReceber += porForma[k].aReceber; return a;
+  }, { faturado: 0, recebido: 0, aReceber: 0 });
+  var anterior = L.estado.fechamentosCaixa.filter(function (f) { return f.data < data && f.status === "FECHADO"; })
+    .sort(function (a, b) { return b.data.localeCompare(a.data); })[0];
+  var saldoInicial = anterior ? anterior.saldoConferido : (L.estado.configHotel.saldoInicialCaixa || 0);
+  var saidas = L.estado.recebimentos.filter(function (r) { return r.data === data && r.tipo === "SAIDA_CAIXA" && r.status !== "CANCELADO"; })
+    .reduce(function (a, r) { return a + (r.valorBruto || 0); }, 0);
+  var entradasDinheiro = porForma.DINHEIRO.recebido;
+  var existente = L.estado.fechamentosCaixa.find(function (f) { return f.data === data; });
+  return {
+    data: data, porForma: porForma, totais: totais,
+    saldoInicial: saldoInicial, entradasDinheiro: entradasDinheiro, saidasDinheiro: saidas,
+    saldoCalculado: saldoInicial + entradasDinheiro - saidas,
+    fechamento: existente || null
+  };
+};
+
+/** Fechar exige: diferença zero, OU justificativa + aprovação de quem pode. */
+H.validarFechamentoCaixa = function (calc, saldoConferido, justificativa, aprovador) {
+  var dif = saldoConferido - calc.saldoCalculado;
+  var p = [];
+  if (calc.fechamento && calc.fechamento.status === "FECHADO") p.push("Este dia já está fechado; correção exige reabertura justificada.");
+  if (dif !== 0 && !String(justificativa || "").trim()) p.push("Há diferença de caixa: escreva a justificativa.");
+  if (dif !== 0 && !aprovador) p.push("Diferença de caixa precisa de autorização da Direção ou do Financeiro responsável.");
+  return { diferenca: dif, problemas: p };
+};
+
+// ---------------------------------------------------------------- cartões
+
+H.STATUS_CARTAO = ["A_RECEBER", "RECEBIDO", "CONCILIADO", "PARCIAL", "DIVERGENTE", "ATRASADO", "CANCELADO"];
+
+/** Conciliação: esperado (bruto − taxa) contra o depositado. */
+H.conciliarCartao = function (t, hoje) {
+  if (t.status === "CANCELADO" || t.status === "ESTORNADO") return { status: "CANCELADO", diferenca: 0, esperado: 0 };
+  var esperado = (t.valorVenda || 0) - (t.taxa || 0) - (t.antecipacao || 0);
+  if (t.valorDepositado == null) {
+    var atrasado = t.dataPrevista && hoje && t.dataPrevista < hoje;
+    return { status: atrasado ? "ATRASADO" : "A_RECEBER", diferenca: null, esperado: esperado };
+  }
+  var dif = t.valorDepositado - esperado;
+  var status = dif === 0 ? "CONCILIADO" : (t.valorDepositado > 0 && t.valorDepositado < esperado ? "PARCIAL" : "DIVERGENTE");
+  return { status: status, diferenca: dif, esperado: esperado };
+};
+
+// ---------------------------------------------------------------- boletos
+
+H.statusBoleto = function (b, hoje) {
+  if (b.status === "CANCELADO") return "CANCELADO";
+  var pago = b.valorPago || 0;
+  var devido = (b.valor || 0) + (b.juros || 0) + (b.multa || 0) - (b.desconto || 0);
+  if (pago >= devido && pago > 0) return "PAGO";
+  if (pago > 0) return "PARCIAL";
+  if (b.vencimento < hoje) return "VENCIDO";
+  if (H.diasEntre(hoje, b.vencimento) <= 7) return "A_VENCER";
+  return "EMITIDO";
+};
+H.saldoBoleto = function (b) {
+  return Math.max(0, (b.valor || 0) + (b.juros || 0) + (b.multa || 0) - (b.desconto || 0) - (b.valorPago || 0));
+};
+
+/**
+ * Baixa de boleto: registra o pagamento NO BOLETO e gera o recebimento
+ * vinculado — uma vez só. Rodar duas vezes não cria um segundo recebimento
+ * (evita a dupla contagem faturado + boleto pago).
+ */
+H.baixarBoleto = function (boletoId, pagamento) {
+  var b = L.buscarPorId("boletos", boletoId);
+  if (!b) throw new Error("Boleto não encontrado.");
+  if (!(pagamento.valor > 0)) throw new Error("Informe o valor pago.");
+  if (!H.dataValida(pagamento.data)) throw new Error("Informe a data do pagamento.");
+  var ja = L.estado.recebimentos.find(function (r) { return r.boletoId === boletoId && r.data === pagamento.data && r.valorBruto === pagamento.valor; });
+  if (ja) return ja;
+  L.atualizar("boletos", boletoId, {
+    valorPago: (b.valorPago || 0) + pagamento.valor, dataPagamento: pagamento.data,
+    juros: pagamento.juros != null ? pagamento.juros : b.juros, multa: pagamento.multa != null ? pagamento.multa : b.multa,
+    comprovante: pagamento.comprovante || b.comprovante
+  });
+  // O recebimento do boleto liquida o faturado que já existia: não é receita nova.
+  return L.criar("recebimentos", {
+    data: pagamento.data, forma: "BOLETO", valorBruto: pagamento.valor, pagador: b.empresaNome || "",
+    descricao: "Baixa do boleto " + (b.documento || ""), boletoId: boletoId, recebidoEm: pagamento.data,
+    liquidaFaturado: true
+  });
+};
+
+// ---------------------------------------------------------------- empresas
+
+/** Hospedagens da empresa no mês (pela data de saída) e o saldo a faturar. */
+H.consolidarEmpresa = function (empresaId, competencia) {
+  var e = L.buscarPorId("empresas", empresaId);
+  if (!e) return null;
+  var chaves = [e.id, e.razaoSocial, e.nomeFantasia, e.cnpj].filter(Boolean).map(function (s) { return String(s).toLowerCase(); });
+  var hs = L.estado.hospedagens.filter(function (h) {
+    return h.empresa && chaves.indexOf(String(h.empresa).toLowerCase()) !== -1 && H.noMes(h.checkoutRealizado || h.checkout, competencia);
+  }).map(function (h) { return Object.assign({ hospedagem: h }, H.valoresHospedagem(h)); });
+  var total = hs.reduce(function (a, x) { return a + x.total; }, 0);
+  var jaPago = hs.reduce(function (a, x) { return a + x.pago; }, 0);
+  var notas = L.estado.notasFiscais.filter(function (n) { return n.empresaId === empresaId && n.competencia === competencia && n.status !== "CANCELADA"; });
+  var jaFaturado = notas.reduce(function (a, n) { return a + n.valor; }, 0);
+  return { empresa: e, competencia: competencia, hospedagens: hs, total: total, jaPagoNaHospedagem: jaPago,
+    jaFaturado: jaFaturado, saldoAFaturar: Math.max(0, total - jaPago - jaFaturado), notas: notas };
+};
+
+// ---------------------------------------------------------------- contas recorrentes
+
+/**
+ * Gera as PREVISÕES do mês para cada conta recorrente — nunca pagamento.
+ * Idempotente: rodar de novo não duplica (chave recorrenciaId + competência).
+ */
+H.gerarRecorrentes = function (competencia) {
+  var criadas = [];
+  var dias = H.diasDoMes(competencia);
+  L.estado.contasRecorrentes.filter(function (r) { return r.ativa !== false; }).forEach(function (r) {
+    if (r.inicio && competencia < r.inicio.slice(0, 7)) return;
+    if (r.fim && competencia > r.fim.slice(0, 7)) return;
+    var datas = [];
+    if (r.periodicidade === "SEMANAL") {
+      for (var d = 1; d <= dias; d++) {
+        var iso = competencia + "-" + String(d).padStart(2, "0");
+        if (new Date(iso + "T12:00:00Z").getUTCDay() === (r.diaSemana || 1)) datas.push(iso);
+      }
+    } else if (r.periodicidade === "ANUAL") {
+      if (Number(competencia.slice(5, 7)) === (r.mes || 1)) datas.push(competencia + "-" + String(Math.min(r.dia || 1, dias)).padStart(2, "0"));
+    } else if (r.periodicidade === "PERSONALIZADA") {
+      var meses = (Number(competencia.slice(0, 4)) * 12 + Number(competencia.slice(5, 7))) - (Number((r.inicio || competencia).slice(0, 4)) * 12 + Number((r.inicio || competencia).slice(5, 7)));
+      if (meses % (r.aCadaMeses || 1) === 0) datas.push(competencia + "-" + String(Math.min(r.dia || 1, dias)).padStart(2, "0"));
+    } else {
+      datas.push(competencia + "-" + String(Math.min(r.dia || 1, dias)).padStart(2, "0"));
+    }
+    datas.forEach(function (venc) {
+      var ja = L.estado.contas.some(function (c) { return c.recorrenciaId === r.id && c.vencimento === venc; });
+      if (ja) return;
+      criadas.push(L.criar("contas", {
+        descricao: r.descricao, categoria: r.categoria || "Despesas fixas", fornecedorId: r.fornecedorId || "",
+        valor: r.valorPrevisto, valorPrevisto: r.valorPrevisto, competencia: competencia, vencimento: venc,
+        status: "RASCUNHO", recorrenciaId: r.id, tipoConta: r.tipoConta || "FIXA", previsao: true
+      }));
+    });
+  });
+  return criadas;
+};
+
+/** Em que marco de alerta a conta está hoje (7, 3, 1, 0 dias ou vencida). Um por marco. */
+H.marcoAlerta = function (vencimento, hoje) {
+  var d = H.diasEntre(hoje, vencimento);
+  if (d < 0) return "VENCIDA";
+  var marcos = L.estado.configHotel.alertasVencimentoDias || [7, 3, 1, 0];
+  return marcos.indexOf(d) !== -1 ? "D-" + d : null;
+};
+
+// ---------------------------------------------------------------- fluxo de caixa
+
+/**
+ * Realizado: só o que foi efetivamente recebido/pago (com data efetiva).
+ * Previsto: recebimentos ainda a receber e contas em aberto pela data
+ * esperada. Conta a receber NUNCA entra no saldo realizado.
+ */
+H.fluxoCaixa = function (inicio, fim, saldoInicial) {
+  var dias = [];
+  for (var d = inicio; d <= fim; d = H.addDias(d, 1)) dias.push(d);
+  var real = saldoInicial || 0, proj = saldoInicial || 0;
+  var linhas = dias.map(function (dia) {
+    var entR = L.estado.recebimentos.filter(function (r) {
+      var sit = H.situacaoRecebimento(r);
+      return r.tipo !== "SAIDA_CAIXA" && (sit === "RECEBIDO" || sit === "CONCILIADO") && (r.recebidoEm || r.conciliadoEm || r.data) === dia;
+    }).reduce(function (a, r) { return a + H.liquido(r); }, 0);
+    var entP = L.estado.recebimentos.filter(function (r) {
+      return r.tipo !== "SAIDA_CAIXA" && H.situacaoRecebimento(r) === "A_RECEBER" && (r.previstoPara || r.data) === dia;
+    }).reduce(function (a, r) { return a + H.liquido(r); }, 0)
+      + L.estado.boletos.filter(function (b) { return b.status !== "CANCELADO" && b.vencimento === dia; })
+        .reduce(function (a, b) { return a + H.saldoBoleto(b); }, 0);
+    var saiR = L.estado.contas.filter(function (c) { return c.status === "PAGO" && (c.dataPagamento || c.pagoEm || "").slice(0, 10) === dia; })
+      .reduce(function (a, c) { return a + (c.valorPago || c.valor); }, 0)
+      + L.estado.recebimentos.filter(function (r) { return r.tipo === "SAIDA_CAIXA" && r.data === dia && r.status !== "CANCELADO"; })
+        .reduce(function (a, r) { return a + (r.valorBruto || 0); }, 0);
+    var saiP = L.estado.contas.filter(function (c) { return c.status !== "PAGO" && c.status !== "CANCELADO" && c.vencimento === dia; })
+      .reduce(function (a, c) { return a + c.valor; }, 0);
+    real += entR - saiR;
+    proj += entR - saiR + entP - saiP;
+    return { data: dia, entradas: entR, saidas: saiR, recebimentosPrevistos: entP, pagamentosPrevistos: saiP, saldoRealizado: real, saldoProjetado: proj, insuficiente: proj < 0 };
+  });
+  return { linhas: linhas, saldoFinalRealizado: real, saldoFinalProjetado: proj, diasInsuficientes: linhas.filter(function (l) { return l.insuficiente; }).map(function (l) { return l.data; }) };
+};
+
+// ---------------------------------------------------------------- ponto e diárias
+
+function minutos(hhmm) {
+  if (!hhmm) return null;
+  var p = String(hhmm).split(":").map(Number);
+  return p[0] * 60 + (p[1] || 0);
+}
+/** Horas trabalhadas = (saída − entrada) − (fim − início do intervalo). Vira a noite se preciso. */
+H.minutosTrabalhados = function (m) {
+  var e = minutos(m.entrada), s = minutos(m.saida);
+  if (e == null || s == null) return 0;
+  if (s < e) s += 24 * 60;
+  var intervalo = 0;
+  var ii = minutos(m.inicioIntervalo), fi = minutos(m.fimIntervalo);
+  if (ii != null && fi != null) { if (fi < ii) fi += 24 * 60; intervalo = fi - ii; }
+  return Math.max(0, s - e - intervalo);
+};
+/** A marcação vale com o ajuste aprovado mais recente; a original nunca é alterada. */
+H.marcacaoEfetiva = function (m) {
+  var ajustes = L.estado.ajustesPonto.filter(function (a) { return a.marcacaoId === m.id && a.status === "APROVADO"; })
+    .sort(function (a, b) { return String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)); });
+  return ajustes.length ? Object.assign({}, m, ajustes[0].novos) : m;
+};
+H.diaDePonto = function (m, jornadaMin) {
+  var ef = H.marcacaoEfetiva(m);
+  var trab = H.minutosTrabalhados(ef);
+  var falta = ef.falta ? jornadaMin : 0;
+  var dif = ef.falta ? -jornadaMin : trab - jornadaMin;
+  return { trabalhados: trab, previstos: jornadaMin, diferenca: dif, extras: Math.max(0, dif), atraso: dif < 0 && !ef.falta ? -dif : 0, falta: falta, ajustado: ef !== m };
+};
+
+/**
+ * Saldo final = saldo inicial + créditos válidos − horas compensadas − ajustes de débito.
+ * Hora extra marcada para PAGAMENTO não entra no banco (não conta duas vezes).
+ */
+H.bancoDeHoras = function (dados) {
+  var creditos = (dados.creditos || []).filter(function (c) { return c.destino !== "PAGAMENTO" && c.aprovado !== false; })
+    .reduce(function (a, c) { return a + c.minutos; }, 0);
+  var compensadas = (dados.compensacoes || []).reduce(function (a, c) { return a + c.minutos; }, 0);
+  var debitos = (dados.debitos || []).reduce(function (a, c) { return a + c.minutos; }, 0);
+  return { saldoInicial: dados.saldoInicial || 0, creditos: creditos, compensadas: compensadas, debitos: debitos,
+    saldoFinal: (dados.saldoInicial || 0) + creditos - compensadas - debitos,
+    pagaveis: (dados.creditos || []).filter(function (c) { return c.destino === "PAGAMENTO"; }).reduce(function (a, c) { return a + c.minutos; }, 0) };
+};
+
+/** Valor base = diárias válidas × valor contratado; pendente = base + ajustes − adiantamentos − pagos. */
+H.fechamentoDiarias = function (funcionarioId, competencia) {
+  var ds = L.estado.diarias.filter(function (d) { return d.funcionarioId === funcionarioId && H.noMes(d.data, competencia) && d.status !== "CANCELADA"; });
+  var qtd = ds.reduce(function (a, d) { return a + (d.quantidade || 1); }, 0);
+  var base = ds.reduce(function (a, d) { return a + (d.quantidade || 1) * (d.valorUnitario || 0); }, 0);
+  var ajustes = ds.reduce(function (a, d) { return a + (d.ajuste || 0); }, 0);
+  var adiant = ds.reduce(function (a, d) { return a + (d.adiantamento || 0); }, 0);
+  var pagos = ds.reduce(function (a, d) { return a + (d.pago || 0); }, 0);
+  return { quantidade: qtd, base: base, ajustes: ajustes, adiantamentos: adiant, pagos: pagos,
+    pendente: Math.max(0, base + ajustes - adiant - pagos), dias: ds };
+};
+
+// ---------------------------------------------------------------- fechamento mensal
+
+H.STATUS_FECHAMENTO_MES = ["ABERTO", "EM_CONFERENCIA", "COM_PENDENCIAS", "AGUARDANDO_APROVACAO", "APROVADO", "FECHADO"];
+
+/** Pendências que impedem submeter o mês à Direção. */
+H.pendenciasDoMes = function (competencia, hoje) {
+  var p = [];
+  var dias = H.diasDoMes(competencia);
+  var ultimo = competencia + "-" + String(dias).padStart(2, "0");
+  var limite = ultimo < hoje ? ultimo : H.addDias(hoje, -1);
+  for (var d = competencia + "-01"; d <= limite; d = H.addDias(d, 1)) {
+    var temMov = L.estado.recebimentos.some(function (r) { return r.data === d; });
+    var f = L.estado.fechamentosCaixa.find(function (x) { return x.data === d; });
+    if (temMov && (!f || f.status !== "FECHADO")) p.push({ tipo: "caixa", texto: "Caixa de " + d.split("-").reverse().join("/") + " não fechado." });
+  }
+  L.estado.transacoesCartao.filter(function (t) { return H.noMes(t.dataVenda, competencia); }).forEach(function (t) {
+    var c = H.conciliarCartao(t, hoje);
+    if (c.status === "DIVERGENTE" || c.status === "ATRASADO") p.push({ tipo: "cartao", texto: "Cartão " + (t.codigoTransacao || "") + ": " + c.status.toLowerCase() + "." });
+  });
+  H.frigobarNaoCobrado(competencia).forEach(function (c) { p.push({ tipo: "frigobar", texto: "Frigobar apto " + c.apartamento + " (" + c.data + ") sem cobrança." }); });
+  L.estado.boletos.filter(function (b) { return H.statusBoleto(b, hoje) === "VENCIDO"; }).forEach(function (b) {
+    p.push({ tipo: "boleto", texto: "Boleto " + (b.documento || "") + " vencido (" + (b.empresaNome || "") + ")." });
+  });
+  return p;
+};
+
+// ---------------------------------------------------------------- exportação
+
+/** CSV pronto para abrir no Excel (separador `;`, BOM, centavos → reais com vírgula). */
+H.paraCsv = function (cabecalho, linhas) {
+  var esc = function (v) {
+    if (v == null) return "";
+    var s = String(v);
+    return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  return "﻿" + [cabecalho].concat(linhas).map(function (l) { return l.map(esc).join(";"); }).join("\r\n");
+};
+H.reaisCsv = function (c) { return c == null ? "" : (c / 100).toFixed(2).replace(".", ","); };
+
+// ---------------------------------------------------------------- invariantes e auditoria
+
+Object.assign(L.INVARIANTES, {
+  hospedagens: function (h) {
+    var p = [];
+    if (!h.apartamento) p.push("Informe o apartamento.");
+    if (!H.dataValida(h.checkin) || !H.dataValida(h.checkout)) p.push("Informe check-in e check-out.");
+    else if (h.checkout < h.checkin) p.push("O check-out não pode ser antes do check-in.");
+    return p;
+  },
+  recebimentos: function (r) {
+    var p = [];
+    if (!(r.valorBruto > 0)) p.push("O valor precisa ser maior que zero.");
+    if (!H.dataValida(r.data)) p.push("Informe a data da operação.");
+    if (r.tipo !== "SAIDA_CAIXA" && !H.FORMAS[r.forma]) p.push("Forma de pagamento inválida.");
+    if ((r.desconto || 0) + (r.taxa || 0) > (r.valorBruto || 0)) p.push("Desconto + taxa maiores que o valor bruto.");
+    return p;
+  },
+  frigobarConsumos: function (c) {
+    var p = [];
+    if (!(c.quantidade > 0)) p.push("Quantidade deve ser maior que zero.");
+    if (!c.apartamento) p.push("Informe o apartamento.");
+    if (!H.dataValida(c.data)) p.push("Informe a data.");
+    return p;
+  },
+  enxovalMovimentos: function (m) { return H.validarMovEnxoval(m); },
+  boletos: function (b) {
+    var p = [];
+    if (!(b.valor > 0)) p.push("O valor do boleto precisa ser maior que zero.");
+    if (!H.dataValida(b.vencimento)) p.push("Informe o vencimento.");
+    return p;
+  },
+  transacoesCartao: function (t) {
+    var p = [];
+    if (!(t.valorVenda > 0)) p.push("Informe o valor da venda.");
+    if (!H.dataValida(t.dataVenda)) p.push("Informe a data da venda.");
+    return p;
+  },
+  diarias: function (d) {
+    var p = [];
+    if (!d.funcionarioId) p.push("Escolha o colaborador.");
+    if (!(d.valorUnitario > 0)) p.push("Informe o valor da diária.");
+    if (!H.dataValida(d.data)) p.push("Informe a data trabalhada.");
+    return p;
+  }
+});
+
+// Correção em dado financeiro preserva o valor anterior: a trilha passa a
+// guardar, campo a campo, o que era e o que ficou. Embrulha `L.atualizar`
+// uma vez só, para todas as coleções.
+(function () {
+  var original = L.atualizar;
+  L.atualizar = function (colecao, id, mudancas) {
+    var alvo = (L.estado[colecao] || []).find(function (r) { return r.id === id; });
+    var antes = {};
+    if (alvo) Object.keys(mudancas).forEach(function (k) {
+      if (k !== "justificativa" && JSON.stringify(alvo[k]) !== JSON.stringify(mudancas[k])) antes[k] = alvo[k] === undefined ? null : alvo[k];
+    });
+    if (alvo && L.INVARIANTES[colecao]) {
+      var problemas = L.INVARIANTES[colecao](Object.assign({}, alvo, mudancas));
+      if (problemas.length) throw new Error(problemas.join(" "));
+    }
+    var r = original.apply(this, arguments);
+    var ultima = L.estado.auditoria[0];
+    if (r && ultima && ultima.entidade === colecao) {
+      ultima.antes = antes;
+      ultima.depois = Object.keys(antes).reduce(function (o, k) { o[k] = mudancas[k]; return o; }, {});
+      if (mudancas.justificativa) ultima.justificativa = mudancas.justificativa;
+    }
+    return r;
+  };
+})();
 
 /* ============================================================================
    Cliente HTTP mínimo para o servidor real (`servidor/indice.ts`).
@@ -15274,6 +16262,947 @@ T.acoes["conferir-cct"] = function (id, alvo) {
   // Ponto de inspeção: permite conferir números e estado pelo console do
   // navegador sem abrir o código. Útil para auditar a folha contra a planilha.
   window.Hotel = { dominio: L, telas: T, interface: U };
+})();
+
+/* ============================================================================
+   Telas do hotel. Só desenham o que `hotel-dominio.js` calcula.
+   Carregado depois de telas-c.js: estende menu, perfis, dashboard e eventos.
+   ========================================================================== */
+
+(function () {
+  var H = L.hotel;
+
+  // ------------------------------------------------------------ menu e perfis
+
+  var NOVOS = [
+    { grupo: "Hotel", chave: "hospedagem", nome: "Hospedagem do Dia", icone: "documentos" },
+    { grupo: "Hotel", chave: "cafe", nome: "Café da Manhã", icone: "ferias" },
+    { grupo: "Hotel", chave: "governanca", nome: "Governança e Enxoval", icone: "operacao" },
+    { grupo: "Hotel", chave: "frigobar", nome: "Frigobar", icone: "fatia" },
+    { grupo: "Hotel", chave: "importacoes", nome: "Importações DataHotel", icone: "relatorios" },
+    { grupo: "Financeiro", chave: "caixa", nome: "Fechamento de Caixa", icone: "fechamento" },
+    { grupo: "Financeiro", chave: "cartoes", nome: "Cartões e Depósitos", icone: "contas" },
+    { grupo: "Financeiro", chave: "boletos", nome: "Boletos e Notas Fiscais", icone: "contratos" },
+    { grupo: "Financeiro", chave: "empresas", nome: "Faturamento de Empresas", icone: "fornecedores" },
+    { grupo: "Financeiro", chave: "recorrentes", nome: "Contas Fixas e Calendário", icone: "ferias" },
+    { grupo: "Financeiro", chave: "fluxo", nome: "Fluxo de Caixa", icone: "relatorios" },
+    { grupo: "Pessoas", chave: "ponto", nome: "Ponto e Diárias", icone: "banco" },
+    { grupo: "Operação", chave: "fechamentomes", nome: "Fechamento do Mês", icone: "fechamento" },
+    { grupo: "Configuração", chave: "hotelconfig", nome: "Cadastros do Hotel", noMenuLateral: true, icone: "configuracoes" }
+  ];
+  // "Hotel" abre o menu: é o que a operação usa todo dia.
+  var pos = T.MODULOS.findIndex(function (m) { return m.grupo === "Pessoas"; });
+  NOVOS.filter(function (m) { return m.grupo === "Hotel"; }).reverse().forEach(function (m) { T.MODULOS.splice(pos, 0, m); });
+  NOVOS.filter(function (m) { return m.grupo !== "Hotel"; }).forEach(function (m) {
+    var ultimo = -1;
+    T.MODULOS.forEach(function (x, i) { if (x.grupo === m.grupo) ultimo = i; });
+    T.MODULOS.splice(ultimo + 1, 0, m);
+  });
+  NOVOS.forEach(function (m) {
+    T.ICONES_MODULO[m.chave] = m.icone;
+    if (m.chave !== "hotelconfig") T.MODULOS_DELEGAVEIS.push(m);
+  });
+  T.GRUPOS_ACORDEAO.unshift("Hotel");
+  T.ICONES_CATEGORIA.Hotel = "hotel";
+  U.ICONES.hotel = '<path d="M3 19.5v-12M3 15h18v4.5M21 15v-3.5a2.5 2.5 0 0 0-2.5-2.5H11v6"/><circle cx="7" cy="11.5" r="1.8"/>';
+
+  function addMod(perfil, chaves) { var p = T.PERFIS[perfil]; if (p && p.modulos !== "*") chaves.forEach(function (c) { if (p.modulos.indexOf(c) === -1) p.modulos.push(c); }); }
+  addMod("FINANCEIRO", ["hospedagem", "caixa", "cartoes", "boletos", "empresas", "recorrentes", "fluxo", "frigobar", "importacoes", "fechamentomes"]);
+  addMod("RH", ["ponto"]);
+  addMod("ADMINISTRATIVO", ["recorrentes"]);
+  addMod("GESTOR", ["ponto"]);
+  T.PERFIS.RECEPCAO = { nome: "Recepção", resumo: "Hospedagens, café, frigobar e fechamento operacional do caixa.",
+    modulos: ["dashboard", "hospedagem", "cafe", "frigobar", "caixa", "importacoes", "solicitacoes"] };
+  T.PERFIS.GOVERNANCA = { nome: "Governança", resumo: "Lista de apartamentos, enxoval, lavanderia e reposição.",
+    modulos: ["dashboard", "governanca", "cafe", "solicitacoes"] };
+  T.PERFIS.SECRETARIA.nome = "Recepção (documentos)";
+  // Recursos Humanos não vê caixa nem empresa; Recepção não vê salário nem
+  // banco de horas: a separação vem do perfil, não da boa vontade da tela.
+
+  // ------------------------------------------------------------ utilidades
+
+  T.filtros.dataHotel = T.filtros.dataHotel || L.hoje();
+  function dataSel() { return T.filtros.dataHotel || L.hoje(); }
+  function compSel() { return (T.filtros.mesHotel || dataSel().slice(0, 7)); }
+  function brl(c) { return c == null ? "—" : L.brl(c); }
+  function pct(x) { return (x * 100).toFixed(1).replace(".", ",") + "%"; }
+  function horas(min) { var s = min < 0 ? "−" : ""; min = Math.abs(min); return s + Math.floor(min / 60) + "h" + String(min % 60).padStart(2, "0"); }
+  function pastilha(tom, txt) { return '<span class="pastilha ' + tom + '">' + U.esc(txt) + "</span>"; }
+  // Verde regular · amarelo atenção · vermelho problema · azul informação.
+  var TOM = { CONCILIADO: "ok", RECEBIDO: "ok", PAGO: "ok", QUITADA: "ok", FECHADO: "ok", CONCLUIDA: "ok", APROVADO: "ok",
+    A_RECEBER: "info", EMITIDO: "info", A_VENCER: "atencao", FATURAR: "info", PENDENTE: "atencao", PARCIAL: "atencao",
+    ABERTO: "info", EM_CONFERENCIA: "atencao", AGUARDANDO_APROVACAO: "atencao", COM_PENDENCIAS: "atencao", CONCLUIDA_COM_PENDENCIAS: "atencao",
+    DIVERGENTE: "critico", ATRASADO: "critico", VENCIDO: "critico", CANCELADO: "neutro", ESTORNADO: "neutro", SEM_VALOR: "neutro" };
+  var ROT = { A_RECEBER: "A receber", A_VENCER: "A vencer", PARCIAL: "Parcial", CONCLUIDA_COM_PENDENCIAS: "Com pendências",
+    EM_CONFERENCIA: "Em conferência", COM_PENDENCIAS: "Com pendências", AGUARDANDO_APROVACAO: "Aguardando aprovação", FATURAR: "A faturar" };
+  function status(s) { return pastilha(TOM[s] || "neutro", ROT[s] || (s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, " "))); }
+
+  function barraData(comMes) {
+    return '<div class="barra-ferramentas"><span class="filtro-rotulo">' + (comMes ? "Mês" : "Data") + "</span>" +
+      (comMes
+        ? '<input type="month" class="hotel-filtro" data-chave="mesHotel" value="' + compSel() + '">'
+        : '<input type="date" class="hotel-filtro" data-chave="dataHotel" value="' + dataSel() + '">') +
+      '<span class="direita"><button class="botao miudo" data-acao="hotel-exportar">Exportar Excel</button> ' +
+      '<button class="botao miudo" data-acao="hotel-imprimir">PDF / imprimir</button></span></div>';
+  }
+  // O que "Exportar Excel" baixa é o que a tela registrou neste render.
+  T._export = null;
+  function exportavel(nome, cab, linhas) { T._export = { nome: nome, cab: cab, linhas: linhas }; }
+  function kpis(lista) { return '<div class="grade-kpi">' + lista.map(U.kpiHtml).join("") + "</div>"; }
+  function vazio(t, x, a) { return U.vazioHtml(t, x, a); }
+  function origemTag(r) { return r && r.origem ? '<div class="secundario">origem: ' + U.esc(r.origem) + (r.codigoOrigem ? " · " + U.esc(r.codigoOrigem) : "") + "</div>" : ""; }
+  function opcoesFormas() { return Object.keys(H.FORMAS).map(function (k) { return { valor: k, rotulo: H.FORMAS[k].nome }; }); }
+  function podeFinanceiro() { return T.temPerfil("DIRECAO", "FINANCEIRO"); }
+
+  // ------------------------------------------------------------ formulários genéricos
+
+  var FORMS = {
+    apartamentos: { titulo: "Apartamento", campos: [
+      { id: "numero", rotulo: "Número", obrigatorio: true, par: true }, { id: "tipologia", rotulo: "Tipologia", dicaCampo: "Standard, Luxo…" },
+      { id: "capacidade", rotulo: "Capacidade (pessoas)", tipo: "numero", par: true },
+      { id: "bloqueado", rotulo: "Situação", tipo: "select", opcoes: [{ valor: "", rotulo: "À venda" }, { valor: "1", rotulo: "Bloqueado (manutenção / uso interno)" }] }],
+      ler: function (v) { v.bloqueado = !!v.bloqueado; return v; } },
+    hospedagens: { titulo: "Hospedagem (lançamento interno)", campos: [
+      { id: "hospede", rotulo: "Hóspede", obrigatorio: true }, { id: "apartamento", rotulo: "Apartamento", obrigatorio: true, par: true },
+      { id: "empresa", rotulo: "Empresa pagadora (se faturado)" },
+      { id: "checkin", rotulo: "Check-in", tipo: "data", obrigatorio: true, par: true }, { id: "checkout", rotulo: "Check-out previsto", tipo: "data", obrigatorio: true },
+      { id: "checkoutRealizado", rotulo: "Check-out realizado", tipo: "data", par: true }, { id: "status", rotulo: "Situação", tipo: "select", opcoes: ["CONFIRMADA", "HOSPEDADO", "ENCERRADA", "CANCELADA", "NO_SHOW"] },
+      { id: "adultos", rotulo: "Adultos", tipo: "numero", par: true }, { id: "criancas", rotulo: "Crianças", tipo: "numero" },
+      { id: "valorDiaria", rotulo: "Valor da diária", tipo: "moeda", par: true }, { id: "consumos", rotulo: "Consumos adicionais", tipo: "moeda" },
+      { id: "descontos", rotulo: "Descontos", tipo: "moeda", par: true }, { id: "valorPago", rotulo: "Valor pago", tipo: "moeda" },
+      { id: "formaPagamento", rotulo: "Forma de pagamento", tipo: "select", opcoes: [{ valor: "", rotulo: "—" }].concat(opcoesFormas()), par: true },
+      { id: "cafeIncluido", rotulo: "Café da manhã", tipo: "select", opcoes: [{ valor: "1", rotulo: "Incluído" }, { valor: "", rotulo: "Não incluído" }] },
+      { id: "observacaoInterna", rotulo: "Observação interna", tipo: "textarea" }],
+      ler: function (v) { v.cafeIncluido = !!v.cafeIncluido; if (!v.checkoutRealizado) delete v.checkoutRealizado; return v; } },
+    cafeAjustes: { titulo: "Ajuste do café (extra autorizado)", campos: [
+      { id: "data", rotulo: "Data", tipo: "data", obrigatorio: true, par: true }, { id: "quantidade", rotulo: "Pessoas a mais (ou a menos)", tipo: "numero", obrigatorio: true },
+      { id: "apartamento", rotulo: "Apartamento / referência" }, { id: "justificativa", rotulo: "Justificativa", tipo: "textarea", obrigatorio: true }] },
+    enxovalItens: { titulo: "Item de enxoval", campos: [
+      { id: "nome", rotulo: "Item", obrigatorio: true }, { id: "minimo", rotulo: "Quantidade mínima desejada", tipo: "numero", par: true },
+      { id: "perdaMaximaMes", rotulo: "Perda máxima aceitável no mês", tipo: "numero" }] },
+    frigobarProdutos: { titulo: "Produto do frigobar", campos: [
+      { id: "codigo", rotulo: "Código", par: true }, { id: "nome", rotulo: "Nome", obrigatorio: true }, { id: "categoria", rotulo: "Categoria", par: true },
+      { id: "situacao", rotulo: "Situação", tipo: "select", opcoes: ["ATIVO", "INATIVO"] },
+      { id: "custo", rotulo: "Custo de aquisição", tipo: "moeda", par: true }, { id: "precoVenda", rotulo: "Preço de venda", tipo: "moeda", obrigatorio: true },
+      { id: "estoque", rotulo: "Estoque", tipo: "numero", par: true }, { id: "estoqueMinimo", rotulo: "Estoque mínimo", tipo: "numero" }] },
+    frigobarConsumos: { titulo: "Consumo de frigobar", campos: function () { return [
+      { id: "data", rotulo: "Data", tipo: "data", obrigatorio: true, par: true }, { id: "apartamento", rotulo: "Apartamento", obrigatorio: true },
+      { id: "produtoId", rotulo: "Produto", tipo: "select", obrigatorio: true, opcoes: L.estado.frigobarProdutos.filter(function (p) { return p.situacao !== "INATIVO"; }).map(function (p) { return { valor: p.id, rotulo: p.nome + " · " + L.brl(p.precoVenda) }; }) },
+      { id: "quantidade", rotulo: "Quantidade", tipo: "numero", obrigatorio: true, par: true },
+      { id: "cobrado", rotulo: "Cobrança", tipo: "select", opcoes: [{ valor: "", rotulo: "Ainda não lançado na conta" }, { valor: "1", rotulo: "Já lançado na conta do hóspede" }] }]; },
+      ler: function (v) { v.cobrado = !!v.cobrado; v.registradoPor = (L.estado.usuario || {}).nome; return v; } },
+    recebimentos: { titulo: "Movimentação de caixa / recebimento", campos: [
+      { id: "data", rotulo: "Data da operação", tipo: "data", obrigatorio: true, par: true },
+      { id: "tipo", rotulo: "Tipo", tipo: "select", opcoes: [{ valor: "", rotulo: "Entrada / recebimento" }, { valor: "SAIDA_CAIXA", rotulo: "Saída do caixa (dinheiro)" }] },
+      { id: "forma", rotulo: "Forma de pagamento", tipo: "select", opcoes: opcoesFormas(), par: true }, { id: "pagador", rotulo: "Hóspede ou empresa" },
+      { id: "apartamento", rotulo: "Apartamento / referência", par: true }, { id: "descricao", rotulo: "Descrição" },
+      { id: "valorBruto", rotulo: "Valor bruto", tipo: "moeda", obrigatorio: true, par: true }, { id: "desconto", rotulo: "Desconto", tipo: "moeda" },
+      { id: "taxa", rotulo: "Taxa financeira", tipo: "moeda", par: true }, { id: "previstoPara", rotulo: "Recebimento previsto para", tipo: "data" },
+      { id: "codigoTransacao", rotulo: "Código da transação / NSU", par: true }, { id: "contaFinanceira", rotulo: "Conta financeira" }],
+      ler: function (v) { if (!v.tipo) delete v.tipo; if (!v.previstoPara) delete v.previstoPara; return v; } },
+    transacoesCartao: { titulo: "Venda no cartão", campos: [
+      { id: "dataVenda", rotulo: "Data da venda", tipo: "data", obrigatorio: true, par: true }, { id: "modalidade", rotulo: "Modalidade", tipo: "select", opcoes: ["CREDITO", "DEBITO"] },
+      { id: "operadora", rotulo: "Operadora", par: true }, { id: "bandeira", rotulo: "Bandeira" },
+      { id: "parcelas", rotulo: "Parcelas", tipo: "numero", par: true }, { id: "codigoTransacao", rotulo: "Código da transação" },
+      { id: "valorVenda", rotulo: "Valor da venda", tipo: "moeda", obrigatorio: true, par: true }, { id: "taxa", rotulo: "Taxa cobrada", tipo: "moeda" },
+      { id: "antecipacao", rotulo: "Custo de antecipação", tipo: "moeda", par: true }, { id: "dataPrevista", rotulo: "Recebimento previsto", tipo: "data" }] },
+    boletos: { titulo: "Boleto a receber", campos: function () { return [
+      { id: "empresaId", rotulo: "Empresa", tipo: "select", opcoes: [{ valor: "", rotulo: "—" }].concat(L.estado.empresas.map(function (e) { return { valor: e.id, rotulo: e.nomeFantasia || e.razaoSocial }; })) },
+      { id: "documento", rotulo: "Documento / nosso número", par: true }, { id: "emissao", rotulo: "Emissão", tipo: "data" },
+      { id: "vencimento", rotulo: "Vencimento", tipo: "data", obrigatorio: true, par: true }, { id: "valor", rotulo: "Valor", tipo: "moeda", obrigatorio: true },
+      { id: "notaFiscal", rotulo: "Nota fiscal vinculada" }]; },
+      ler: function (v) { var e = L.buscarPorId("empresas", v.empresaId); v.empresaNome = e ? (e.nomeFantasia || e.razaoSocial) : ""; return v; } },
+    empresas: { titulo: "Empresa cliente", campos: [
+      { id: "razaoSocial", rotulo: "Razão social", obrigatorio: true }, { id: "nomeFantasia", rotulo: "Nome fantasia (como aparece no DataHotel)", par: true }, { id: "cnpj", rotulo: "CNPJ" },
+      { id: "endereco", rotulo: "Endereço" }, { id: "emailFinanceiro", rotulo: "E-mail financeiro", par: true }, { id: "telefone", rotulo: "Telefone / WhatsApp" },
+      { id: "responsavel", rotulo: "Responsável financeiro", par: true }, { id: "prazoDias", rotulo: "Prazo de pagamento (dias)", tipo: "numero" },
+      { id: "formaCobranca", rotulo: "Forma de cobrança", tipo: "select", opcoes: ["BOLETO", "PIX", "TRANSFERENCIA"], par: true }, { id: "condicoes", rotulo: "Condições comerciais" },
+      { id: "observacoes", rotulo: "Observações", tipo: "textarea" }] },
+    notasFiscais: { titulo: "Nota fiscal (emitida fora do sistema)", campos: function () { return [
+      { id: "empresaId", rotulo: "Empresa", tipo: "select", obrigatorio: true, opcoes: L.estado.empresas.map(function (e) { return { valor: e.id, rotulo: e.nomeFantasia || e.razaoSocial }; }) },
+      { id: "numero", rotulo: "Número", obrigatorio: true, par: true }, { id: "serie", rotulo: "Série" },
+      { id: "emissao", rotulo: "Emissão", tipo: "data", obrigatorio: true, par: true }, { id: "competencia", rotulo: "Competência", dicaCampo: "AAAA-MM", obrigatorio: true },
+      { id: "valor", rotulo: "Valor", tipo: "moeda", obrigatorio: true, par: true }, { id: "servico", rotulo: "Serviço" },
+      { id: "status", rotulo: "Situação", tipo: "select", opcoes: ["EMITIDA", "CANCELADA", "SUBSTITUIDA"] }]; } },
+    contasRecorrentes: { titulo: "Conta recorrente", campos: function () { return [
+      { id: "descricao", rotulo: "Descrição", obrigatorio: true }, { id: "tipoConta", rotulo: "Tipo", tipo: "select", opcoes: ["FIXA", "VARIAVEL"], par: true },
+      { id: "categoria", rotulo: "Categoria", tipo: "select", opcoes: T.CATEGORIAS },
+      { id: "fornecedorId", rotulo: "Fornecedor", tipo: "select", opcoes: [{ valor: "", rotulo: "—" }].concat(L.estado.fornecedores.map(function (f) { return { valor: f.id, rotulo: f.razaoSocial }; })) },
+      { id: "valorPrevisto", rotulo: "Valor previsto", tipo: "moeda", obrigatorio: true, par: true },
+      { id: "periodicidade", rotulo: "Periodicidade", tipo: "select", opcoes: ["MENSAL", "SEMANAL", "ANUAL", "PERSONALIZADA"] },
+      { id: "dia", rotulo: "Dia do vencimento", tipo: "numero", par: true }, { id: "diaSemana", rotulo: "Dia da semana (semanal: 0=dom … 6=sáb)", tipo: "numero" },
+      { id: "mes", rotulo: "Mês (anual)", tipo: "numero", par: true }, { id: "aCadaMeses", rotulo: "A cada N meses (personalizada)", tipo: "numero" },
+      { id: "inicio", rotulo: "Início", tipo: "data", par: true }, { id: "fim", rotulo: "Fim (opcional)", tipo: "data" }]; } },
+    marcacoesPonto: { titulo: "Marcação de ponto", campos: function () { return [
+      { id: "funcionarioId", rotulo: "Funcionário", tipo: "select", obrigatorio: true, opcoes: L.ativos().map(function (f) { return { valor: f.id, rotulo: f.nome }; }) },
+      { id: "data", rotulo: "Data", tipo: "data", obrigatorio: true, par: true }, { id: "falta", rotulo: "Falta", tipo: "select", opcoes: [{ valor: "", rotulo: "Não" }, { valor: "1", rotulo: "Falta no dia" }] },
+      { id: "entrada", rotulo: "Entrada", dicaCampo: "08:00", par: true }, { id: "inicioIntervalo", rotulo: "Início do intervalo", dicaCampo: "12:00" },
+      { id: "fimIntervalo", rotulo: "Fim do intervalo", dicaCampo: "13:00", par: true }, { id: "saida", rotulo: "Saída", dicaCampo: "17:00" },
+      { id: "observacoes", rotulo: "Observações", tipo: "textarea" }]; },
+      ler: function (v) { v.falta = !!v.falta; return v; } },
+    diarias: { titulo: "Diária trabalhada", campos: function () { return [
+      { id: "funcionarioId", rotulo: "Trabalhador", tipo: "select", obrigatorio: true, opcoes: L.ativos().map(function (f) { return { valor: f.id, rotulo: f.nome }; }) },
+      { id: "data", rotulo: "Data trabalhada", tipo: "data", obrigatorio: true, par: true }, { id: "quantidade", rotulo: "Quantidade de diárias", tipo: "numero", passo: "0.5" },
+      { id: "valorUnitario", rotulo: "Valor contratado por diária", tipo: "moeda", obrigatorio: true, par: true }, { id: "adiantamento", rotulo: "Adiantamento", tipo: "moeda" },
+      { id: "ajuste", rotulo: "Ajuste (+/−)", tipo: "moeda", par: true }, { id: "pago", rotulo: "Valor já pago", tipo: "moeda" },
+      { id: "dataPagamento", rotulo: "Data de pagamento", tipo: "data" }]; },
+      ler: function (v) { if (!v.quantidade) v.quantidade = 1; return v; } }
+  };
+  var PADRAO = {
+    hospedagens: function () { return { checkin: dataSel(), checkout: H.addDias(dataSel(), 1), adultos: 1, cafeIncluido: "1", status: "CONFIRMADA" }; },
+    cafeAjustes: function () { return { data: dataSel() }; },
+    frigobarConsumos: function () { return { data: dataSel(), quantidade: 1 }; },
+    recebimentos: function () { return { data: dataSel(), forma: "DINHEIRO" }; },
+    transacoesCartao: function () { return { dataVenda: dataSel(), modalidade: "CREDITO", parcelas: 1 }; },
+    boletos: function () { return { emissao: L.hoje() }; },
+    notasFiscais: function () { return { emissao: L.hoje(), competencia: compSel(), status: "EMITIDA" }; },
+    contasRecorrentes: function () { return { periodicidade: "MENSAL", dia: 10, tipoConta: "FIXA", inicio: L.hoje() }; },
+    marcacoesPonto: function () { return { data: dataSel() }; },
+    diarias: function () { return { data: dataSel(), quantidade: 1 }; }
+  };
+
+  T.acoes["hotel-novo"] = function (alvo) {
+    var partes = String(alvo).split(":"), col = partes[0], id = partes[1];
+    var f = FORMS[col]; if (!f) return;
+    var atual = id ? L.buscarPorId(col, id) : null;
+    var campos = typeof f.campos === "function" ? f.campos() : f.campos;
+    var valores = atual ? Object.assign({}, atual) : (PADRAO[col] ? PADRAO[col]() : {});
+    campos.forEach(function (c) {
+      if (c.tipo === "moeda" && typeof valores[c.id] === "number") valores[c.id] = (valores[c.id] / 100).toFixed(2);
+      if (c.tipo === "select" && typeof valores[c.id] === "boolean") valores[c.id] = valores[c.id] ? "1" : "";
+    });
+    if (atual && atual.origem) campos = campos.concat([{ id: "justificativa", rotulo: "Justificativa da correção (dado importado)", tipo: "textarea", obrigatorio: true }]);
+    U.abrirFormulario({
+      titulo: (atual ? "Editar " : "Novo · ") + f.titulo.toLowerCase(), largo: campos.length > 6,
+      campos: campos, valores: valores,
+      aoSalvar: function (v) {
+        if (f.ler) v = f.ler(v);
+        if (atual) L.atualizar(col, atual.id, v); else L.criar(col, v);
+        U.fecharModal(); T.renderizar(); U.avisar("Salvo.");
+      }
+    });
+  };
+  function botaoNovo(col, rotulo) { return '<button class="botao primario" data-acao="hotel-novo" data-id="' + col + '">' + U.esc(rotulo) + "</button>"; }
+  function botaoEditar(col, r) { return T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-novo" data-id="' + col + ":" + r.id + '">Editar</button>' : ""; }
+
+  T.acoes["hotel-exportar"] = function () {
+    if (!T._export) return U.avisar("Nada para exportar nesta tela.");
+    var csv = H.paraCsv(T._export.cab, T._export.linhas);
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = T._export.nome + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  T.acoes["hotel-imprimir"] = function () { window.print(); };
+
+  // ------------------------------------------------------------ hospedagem do dia
+
+  T.telas.hospedagem = function () {
+    var d = dataSel(), o = H.ocupacao(d), ext = H.extratoDiario(d);
+    var tot = ext.reduce(function (a, x) { a.total += x.total; a.pago += x.pago; a.pend += x.pendente; return a; }, { total: 0, pago: 0, pend: 0 });
+    var rel = L.estado.relatoriosDiarios.find(function (r) { return r.data === d; });
+    exportavel("extrato-hospedagem-" + d,
+      ["Apartamento", "Hóspede", "Check-in", "Check-out previsto", "Check-out realizado", "Diárias", "Diária", "Hospedagem", "Consumos", "Descontos", "Total", "Pago", "Pendente", "Forma", "Empresa", "Situação", "Origem"],
+      ext.map(function (x) { var h = x.hospedagem; return [h.apartamento, h.hospede, h.checkin, h.checkout, h.checkoutRealizado || "", x.diarias, H.reaisCsv(h.valorDiaria), H.reaisCsv(x.valorHospedagem), H.reaisCsv(h.consumos), H.reaisCsv(h.descontos), H.reaisCsv(x.total), H.reaisCsv(x.pago), H.reaisCsv(x.pendente), (H.FORMAS[h.formaPagamento] || {}).nome || "", h.empresa || "", x.situacao, h.origem || "interno"]; }));
+    var html = T.cabecalho("Hospedagem do Dia", "Ocupação, extrato e relatório diário. Dados do DataHotel + complementos internos.", botaoNovo("hospedagens", "Lançar hospedagem"));
+    html += barraData();
+    if (!L.estado.apartamentos.length) html += '<div class="painel">' + vazio("Cadastre os apartamentos", "A taxa de ocupação precisa saber quantos apartamentos existem e quais estão bloqueados.", { acao: "hotel-novo", rotulo: "Cadastrar apartamento" }).replace('data-acao="hotel-novo"', 'data-acao="hotel-novo" data-id="apartamentos"') + "</div>";
+    html += kpis([
+      { rotulo: "Taxa de ocupação", valor: pct(o.taxa), nota: o.ocupados + " de " + (o.total - o.bloqueados) + " à venda", hero: true },
+      { rotulo: "Hóspedes presentes", valor: String(o.hospedes), nota: o.permanencias + " permanências" },
+      { rotulo: "Entradas / saídas", valor: o.entradas + " / " + o.saidas, nota: "check-ins e check-outs do dia" },
+      { rotulo: "Disponíveis", valor: String(o.disponiveis), nota: o.bloqueados + " bloqueado(s)" }
+    ]);
+    html += U.painelHtml("Extrato diário de hospedagem", ext.length + " hospedagem(ns) · total " + brl(tot.total) + " · pago " + brl(tot.pago) + " · pendente " + brl(tot.pend), U.tabelaHtml([
+      { rotulo: "Apto", conteudo: function (x) { return "<strong>" + U.esc(x.hospedagem.apartamento) + "</strong>"; } },
+      { rotulo: "Hóspede", conteudo: function (x) { var h = x.hospedagem; return '<div class="principal">' + U.esc(h.hospede || "") + '</div><div class="secundario">' + L.dataBR(h.checkin) + " → " + L.dataBR(h.checkoutRealizado || h.checkout) + (h.empresa ? " · " + U.esc(h.empresa) : "") + "</div>" + origemTag(h); } },
+      { rotulo: "Diárias", direita: true, conteudo: function (x) { return x.diarias + " × " + brl(x.hospedagem.valorDiaria || 0); } },
+      { rotulo: "Total", direita: true, conteudo: function (x) { return '<span class="num">' + brl(x.total) + "</span>"; } },
+      { rotulo: "Pago", direita: true, conteudo: function (x) { return '<span class="num">' + brl(x.pago) + "</span>"; } },
+      { rotulo: "Pendente", direita: true, conteudo: function (x) { return '<span class="num">' + brl(x.pendente) + "</span>"; } },
+      { rotulo: "Situação", direita: true, conteudo: function (x) { return status(x.situacao); } },
+      { rotulo: "", direita: true, conteudo: function (x) { return botaoEditar("hospedagens", x.hospedagem); } }
+    ], ext, { buscaLocal: "Hóspede, apartamento ou empresa", tituloVazio: "Nenhuma hospedagem nesta data", textoVazio: "Importe o relatório do DataHotel em Importações ou lance manualmente." }));
+    // Relatório diário: elaboração → conferência → aprovação → fechamento.
+    var etapas = ["ELABORACAO", "CONFERIDO", "APROVADO", "FECHADO"];
+    var atual = rel ? rel.status : "ELABORACAO";
+    var prox = etapas[etapas.indexOf(atual) + 1];
+    html += U.painelHtml("Relatório diário", rel ? ("Gerado por " + U.esc(rel.responsavel || "") + " em " + new Date(rel.geradoEm).toLocaleString("pt-BR")) : "Ainda não gerado",
+      '<div style="padding:0 20px 18px">' + etapas.map(function (e, i) { return pastilha(etapas.indexOf(atual) >= i && rel ? "ok" : "neutro", ["Elaboração", "Conferência", "Aprovação", "Fechamento"][i]); }).join(" → ") +
+      (rel && rel.pendencias ? '<p class="secundario">Pendências: ' + U.esc(rel.pendencias) + "</p>" : "") +
+      (T.podeEditar() && atual !== "FECHADO" ? ' <button class="botao miudo primario" data-acao="hotel-relatorio-dia">' + (rel ? "Avançar para " + ["", "conferência", "aprovação", "fechamento"][etapas.indexOf(prox)] : "Gerar relatório do dia") + "</button>" : "") +
+      (atual === "FECHADO" ? '<p class="secundario">Fechado. Qualquer alteração em hospedagem fica registrada na trilha de auditoria com valor anterior e justificativa.</p>' : "") + "</div>");
+    return html;
+  };
+  T.acoes["hotel-relatorio-dia"] = function () {
+    var d = dataSel(), rel = L.estado.relatoriosDiarios.find(function (r) { return r.data === d; });
+    var u = (L.estado.usuario || {}).nome;
+    if (!rel) {
+      var pend = H.extratoDiario(d).filter(function (x) { return x.situacao === "PENDENTE"; }).length;
+      L.criar("relatoriosDiarios", { data: d, status: "ELABORACAO", responsavel: u, geradoEm: new Date().toISOString(), ocupacao: H.ocupacao(d), pendencias: pend ? pend + " hospedagem(ns) com saldo pendente" : "" });
+    } else {
+      var ordem = ["ELABORACAO", "CONFERIDO", "APROVADO", "FECHADO"];
+      var prox = ordem[ordem.indexOf(rel.status) + 1];
+      if ((prox === "APROVADO" || prox === "FECHADO") && !T.temPerfil("DIRECAO", "FINANCEIRO")) return U.avisar("Aprovar e fechar é da Direção ou do Financeiro.");
+      var m = { status: prox }; m[prox.toLowerCase() + "Por"] = u; m[prox.toLowerCase() + "Em"] = new Date().toISOString();
+      L.atualizar("relatoriosDiarios", rel.id, m);
+    }
+    T.renderizar();
+  };
+
+  // ------------------------------------------------------------ café
+
+  T.telas.cafe = function () {
+    var c = H.listaCafe(dataSel());
+    exportavel("cafe-" + c.data, ["Apartamento", "Hóspede", "Adultos", "Crianças", "Café incluído", "Previstos"],
+      c.linhas.map(function (l) { return [l.apartamento, l.hospede, l.adultos, l.criancas, l.incluido ? "Sim" : "Não", l.previstos]; }).concat([["Extras autorizados", "", "", "", "", c.extras], ["TOTAL PREVISTO", "", c.adultos, c.criancas, "", c.totalPrevisto]]));
+    var html = T.cabecalho("Café da Manhã", "Quem pernoitou na noite anterior. Horário: " + L.estado.configHotel.cafeHorario + ".", botaoNovo("cafeAjustes", "Extra / ajuste"));
+    html += barraData();
+    html += kpis([
+      { rotulo: "Total previsto", valor: String(c.totalPrevisto), nota: "com café + extras", hero: true },
+      { rotulo: "Adultos / crianças", valor: c.adultos + " / " + c.criancas, nota: "hóspedes que pernoitaram" },
+      { rotulo: "Sem café incluído", valor: String(c.semCafe), nota: "não contam no previsto" },
+      { rotulo: "Atendidos", valor: c.atendidos == null ? "—" : String(c.atendidos), nota: "registrado ao fim do serviço", vazio: c.atendidos == null }
+    ]);
+    html += U.painelHtml("Lista por apartamento", "", U.tabelaHtml([
+      { rotulo: "Apto", conteudo: function (l) { return "<strong>" + U.esc(l.apartamento) + "</strong>"; } },
+      { rotulo: "Hóspede", conteudo: function (l) { return U.esc(l.hospede || ""); } },
+      { rotulo: "Adultos", direita: true, conteudo: function (l) { return l.adultos; } },
+      { rotulo: "Crianças", direita: true, conteudo: function (l) { return l.criancas; } },
+      { rotulo: "Café", direita: true, conteudo: function (l) { return l.incluido ? pastilha("ok", "Incluído") : pastilha("neutro", "Não incluído"); } }
+    ], c.linhas, { tituloVazio: "Ninguém pernoitou na noite anterior", textoVazio: "A lista vem das hospedagens importadas do DataHotel." }));
+    if (c.ajustes.length) html += U.painelHtml("Ajustes justificados", "não alteram o dado de origem", U.tabelaHtml([
+      { rotulo: "Quantidade", conteudo: function (a) { return a.tipo === "ATENDIDOS" ? "Atendidos: " + a.atendidos : (a.quantidade > 0 ? "+" : "") + a.quantidade; } },
+      { rotulo: "Referência", conteudo: function (a) { return U.esc(a.apartamento || ""); } },
+      { rotulo: "Justificativa", conteudo: function (a) { return U.esc(a.justificativa || ""); } }
+    ], c.ajustes));
+    if (T.podeEditar()) html += '<div class="painel" style="padding:16px 20px"><button class="botao" data-acao="hotel-cafe-atendidos">Registrar total atendido</button></div>';
+    return html;
+  };
+  T.acoes["hotel-cafe-atendidos"] = function () {
+    U.abrirFormulario({ titulo: "Total efetivamente atendido", campos: [{ id: "atendidos", rotulo: "Pessoas atendidas", tipo: "numero", obrigatorio: true }, { id: "justificativa", rotulo: "Observação operacional", tipo: "textarea" }],
+      aoSalvar: function (v) {
+        var ja = L.estado.cafeAjustes.find(function (a) { return a.data === dataSel() && a.tipo === "ATENDIDOS"; });
+        if (ja) L.atualizar("cafeAjustes", ja.id, { atendidos: v.atendidos, justificativa: v.justificativa });
+        else L.criar("cafeAjustes", { data: dataSel(), tipo: "ATENDIDOS", atendidos: v.atendidos, quantidade: 0, justificativa: v.justificativa });
+        U.fecharModal(); T.renderizar();
+      } });
+  };
+
+  // ------------------------------------------------------------ governança
+
+  T.telas.governanca = function () {
+    var d = dataSel(), g = H.listaGovernanca(d), alertas = H.alertasEnxoval(d);
+    var itens = L.estado.enxovalItens.filter(function (i) { return i.ativo !== false; });
+    var ini = d.slice(0, 8) + "01";
+    var resumos = itens.map(function (i) { return { item: i, r: H.resumoEnxoval(i.id, ini, d) }; });
+    exportavel("enxoval-" + d, ["Item", "Inicial do mês", "Entradas", "Entregue aptos", "Recolhido", "Enviado lavanderia", "Recebido lavanderia", "Danificado", "Extraviado", "Descartado", "Disponível", "Na lavanderia", "Final", "Mínimo"],
+      resumos.map(function (x) { var r = x.r; return [x.item.nome, r.inicial, r.entradas, r.entreguesApartamentos, r.recolhidos, r.enviadosLavanderia, r.recebidosLavanderia, r.danificados, r.extraviados, r.descartados, r.disponivel, r.pendenteLavanderia, r.final, r.minimo]; }));
+    var html = T.cabecalho("Governança e Enxoval", "Estoque final = inicial + entradas − saídas definitivas. Transferência só muda o local.",
+      (itens.length ? '<button class="botao primario" data-acao="hotel-mov-enxoval">Movimentar enxoval</button> ' : "") + botaoNovo("enxovalItens", "Novo item"));
+    html += barraData();
+    if (!itens.length) html += '<div class="painel">' + vazio("Nenhum item de enxoval", "Comece pelos cinco itens obrigatórios: toalha de rosto, de banho, lençol, fronha e cobertor.", { acao: "hotel-enxoval-padrao", rotulo: "Criar os 5 itens obrigatórios" }) + "</div>";
+    if (alertas.length) html += U.painelHtml("Alertas", "", '<ul class="lista-alertas" style="margin:0;padding:0 20px 16px 36px">' + alertas.map(function (a) { return "<li>" + pastilha(a.nivel === "critico" ? "critico" : "atencao", a.nivel === "critico" ? "Crítico" : "Atenção") + " " + U.esc(a.texto) + "</li>"; }).join("") + "</ul>");
+    html += U.painelHtml("Lista do dia", g.ocupados + " ocupados · " + g.saidas + " saídas · " + g.entradas + " entradas", U.tabelaHtml([
+      { rotulo: "Apto", conteudo: function (a) { return "<strong>" + U.esc(a.apartamento) + "</strong>"; } },
+      { rotulo: "O que fazer", conteudo: function (a) { return a.tarefas.map(U.esc).join(" · "); } }
+    ], g.apartamentos, { tituloVazio: "Nenhum apartamento para arrumar" }) +
+      (Object.keys(g.reposicao).length ? '<p class="secundario" style="padding:0 20px 14px">Reposição pelo padrão de cada apartamento: ' + Object.keys(g.reposicao).map(function (k) { var i = L.buscarPorId("enxovalItens", k); return (i ? i.nome : k) + " " + g.reposicao[k]; }).join(" · ") + "</p>" : ""));
+    if (itens.length) html += U.painelHtml("Estoque por item", "mês até " + L.dataBR(d), U.tabelaHtml([
+      { rotulo: "Item", conteudo: function (x) { return '<div class="principal">' + U.esc(x.item.nome) + '</div><div class="secundario">mínimo ' + (x.item.minimo || 0) + "</div>"; } },
+      { rotulo: "Rouparia", direita: true, conteudo: function (x) { return x.r.porLocal.ROUPARIA; } },
+      { rotulo: "Aptos", direita: true, conteudo: function (x) { return x.r.porLocal.APARTAMENTOS; } },
+      { rotulo: "Lavanderia", direita: true, conteudo: function (x) { return x.r.porLocal.LAVANDERIA; } },
+      { rotulo: "Reserva", direita: true, conteudo: function (x) { return x.r.porLocal.RESERVA; } },
+      { rotulo: "Perdas no mês", direita: true, conteudo: function (x) { return x.r.perdas; } },
+      { rotulo: "Total", direita: true, conteudo: function (x) { return "<strong>" + x.r.final + "</strong>"; } },
+      { rotulo: "", direita: true, conteudo: function (x) { return x.r.disponivel < (x.item.minimo || 0) ? pastilha("critico", "Abaixo do mínimo") : pastilha("ok", "Regular"); } }
+    ], resumos));
+    var movs = L.estado.enxovalMovimentos.filter(function (m) { return m.data === d; });
+    if (movs.length) html += U.painelHtml("Movimentações do dia", "", U.tabelaHtml([
+      { rotulo: "Item", conteudo: function (m) { var i = L.buscarPorId("enxovalItens", m.itemId); return U.esc(i ? i.nome : ""); } },
+      { rotulo: "Movimento", conteudo: function (m) { return U.esc(H.TIPOS_MOV_ENXOVAL[m.tipo].nome) + '<div class="secundario">' + (m.de ? H.LOCAIS_ENXOVAL[m.de] : "") + (m.de && m.para ? " → " : "") + (m.para ? H.LOCAIS_ENXOVAL[m.para] : "") + "</div>"; } },
+      { rotulo: "Qtd", direita: true, conteudo: function (m) { return m.tipo === "INVENTARIO" ? "contado " + m.contado : m.quantidade; } },
+      { rotulo: "Por", conteudo: function (m) { return U.esc(m.registradoPor || ""); } }
+    ], movs));
+    return html;
+  };
+  T.acoes["hotel-enxoval-padrao"] = function () {
+    H.ITENS_ENXOVAL_PADRAO.forEach(function (n) { if (!L.estado.enxovalItens.some(function (i) { return i.nome === n; })) L.criar("enxovalItens", { nome: n, minimo: 0 }); });
+    T.renderizar();
+  };
+  T.acoes["hotel-mov-enxoval"] = function () {
+    var locais = [{ valor: "", rotulo: "—" }].concat(Object.keys(H.LOCAIS_ENXOVAL).map(function (k) { return { valor: k, rotulo: H.LOCAIS_ENXOVAL[k] }; }));
+    U.abrirFormulario({ titulo: "Movimentar enxoval", largo: true, campos: [
+      { id: "itemId", rotulo: "Item", tipo: "select", obrigatorio: true, opcoes: L.estado.enxovalItens.map(function (i) { return { valor: i.id, rotulo: i.nome }; }) },
+      { id: "tipo", rotulo: "Movimento", tipo: "select", obrigatorio: true, opcoes: Object.keys(H.TIPOS_MOV_ENXOVAL).map(function (k) { return { valor: k, rotulo: H.TIPOS_MOV_ENXOVAL[k].nome }; }) },
+      { id: "data", rotulo: "Data", tipo: "data", obrigatorio: true, par: true }, { id: "quantidade", rotulo: "Quantidade", tipo: "numero" },
+      { id: "de", rotulo: "De (saída / transferência)", tipo: "select", opcoes: locais, par: true }, { id: "para", rotulo: "Para (entrada / transferência)", tipo: "select", opcoes: locais },
+      { id: "local", rotulo: "Local contado (inventário)", tipo: "select", opcoes: locais, par: true }, { id: "contado", rotulo: "Quantidade contada (inventário)", tipo: "numero" },
+      { id: "observacao", rotulo: "Observação", tipo: "textarea" }],
+      valores: { data: dataSel(), tipo: "TRANSFERENCIA" },
+      aoSalvar: function (v) {
+        ["de", "para", "local"].forEach(function (k) { if (!v[k]) delete v[k]; });
+        v.registradoPor = (L.estado.usuario || {}).nome;
+        L.criar("enxovalMovimentos", v); U.fecharModal(); T.renderizar(); U.avisar("Movimentação registrada.");
+      } });
+  };
+
+  // ------------------------------------------------------------ frigobar
+
+  T.telas.frigobar = function () {
+    var d = dataSel(), comp = compSel(), dia = H.frigobarDia(d), mes = H.frigobarMes(comp), nc = H.frigobarNaoCobrado(comp);
+    exportavel("frigobar-" + comp, ["Produto", "Quantidade", "Preço médio", "Receita", "Custo", "Margem bruta"],
+      mes.produtos.map(function (p) { return [p.produto, p.quantidade, H.reaisCsv(p.precoMedio), H.reaisCsv(p.receita), H.reaisCsv(p.custo), H.reaisCsv(p.margem)]; }));
+    var html = T.cabecalho("Frigobar", "Valor = quantidade × preço de venda. O mês soma os dias reais (" + mes.dias + " em " + comp + ").",
+      (L.estado.frigobarProdutos.length ? botaoNovo("frigobarConsumos", "Registrar consumo") + " " : "") + botaoNovo("frigobarProdutos", "Novo produto"));
+    html += barraData() + '<div class="barra-ferramentas" style="margin-top:-8px"><span class="filtro-rotulo">Mês</span><input type="month" class="hotel-filtro" data-chave="mesHotel" value="' + comp + '"></div>';
+    html += kpis([
+      { rotulo: "Consumo do dia", valor: brl(dia.total), nota: L.dataBR(d) },
+      { rotulo: "Receita do mês", valor: brl(mes.receita), nota: "soma de " + mes.dias + " dias", hero: true },
+      { rotulo: "Margem bruta do mês", valor: brl(mes.receita - mes.custo), nota: "receita − custo" },
+      { rotulo: "Sem cobrança", valor: String(nc.length), nota: "consumos não lançados na conta", tom: nc.length ? "critico" : "" }
+    ]);
+    if (mes.receitaJaNoDataHotel) html += '<p class="secundario">' + brl(mes.receitaJaNoDataHotel) + " desta receita já está na conta do hóspede no DataHotel e não deve ser lançada de novo.</p>";
+    html += U.painelHtml("Dia " + L.dataBR(d), "por produto e por apartamento", '<div class="grade-2">' + U.tabelaHtml([
+      { rotulo: "Produto", conteudo: function (p) { return U.esc(p.chave); } }, { rotulo: "Qtd", direita: true, conteudo: function (p) { return p.quantidade; } },
+      { rotulo: "Valor", direita: true, conteudo: function (p) { return brl(p.valor); } }], dia.produtos, { tituloVazio: "Sem consumo neste dia" }) +
+      U.tabelaHtml([{ rotulo: "Apto", conteudo: function (p) { return U.esc(p.chave); } }, { rotulo: "Itens", direita: true, conteudo: function (p) { return p.quantidade; } },
+      { rotulo: "Valor", direita: true, conteudo: function (p) { return brl(p.valor); } }], dia.apartamentos, { tituloVazio: "—" }) + "</div>");
+    html += U.painelHtml("Fechamento mensal por produto", comp, U.tabelaHtml([
+      { rotulo: "Produto", conteudo: function (p) { return U.esc(p.produto); } }, { rotulo: "Vendidos", direita: true, conteudo: function (p) { return p.quantidade; } },
+      { rotulo: "Preço médio", direita: true, conteudo: function (p) { return brl(p.precoMedio); } }, { rotulo: "Receita", direita: true, conteudo: function (p) { return brl(p.receita); } },
+      { rotulo: "Custo", direita: true, conteudo: function (p) { return brl(p.custo); } }, { rotulo: "Margem", direita: true, conteudo: function (p) { return brl(p.margem); } }
+    ], mes.produtos, { tituloVazio: "Sem consumo no mês" }));
+    if (nc.length) html += U.painelHtml("Consumos sem cobrança", "conferir com a conta do hóspede", U.tabelaHtml([
+      { rotulo: "Data", conteudo: function (c) { return L.dataBR(c.data); } }, { rotulo: "Apto", conteudo: function (c) { return U.esc(c.apartamento); } },
+      { rotulo: "Produto", conteudo: function (c) { var v = H.valorConsumo(c); return U.esc(v.produto ? v.produto.nome : c.produto); } },
+      { rotulo: "Valor", direita: true, conteudo: function (c) { return brl(H.valorConsumo(c).total); } },
+      { rotulo: "", direita: true, conteudo: function (c) { return T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-frigobar-cobrado" data-id="' + c.id + '">Marcar como cobrado</button>' : ""; } }
+    ], nc));
+    var prods = L.estado.frigobarProdutos;
+    if (prods.length) html += U.painelHtml("Produtos", "", U.tabelaHtml([
+      { rotulo: "Produto", conteudo: function (p) { return '<div class="principal">' + U.esc(p.nome) + '</div><div class="secundario">' + U.esc([p.codigo, p.categoria].filter(Boolean).join(" · ")) + "</div>"; } },
+      { rotulo: "Custo", direita: true, conteudo: function (p) { return brl(p.custo || 0); } }, { rotulo: "Venda", direita: true, conteudo: function (p) { return brl(p.precoVenda); } },
+      { rotulo: "Estoque", direita: true, conteudo: function (p) { return (p.estoque || 0) + ((p.estoqueMinimo && p.estoque < p.estoqueMinimo) ? " " + pastilha("critico", "baixo") : ""); } },
+      { rotulo: "", direita: true, conteudo: function (p) { return botaoEditar("frigobarProdutos", p); } }], prods));
+    return html;
+  };
+  T.acoes["hotel-frigobar-cobrado"] = function (id) { L.atualizar("frigobarConsumos", id, { cobrado: true, cobradoEm: L.hoje() }); T.renderizar(); };
+
+  // ------------------------------------------------------------ importações
+
+  T._previa = null;
+  T.telas.importacoes = function () {
+    var html = T.cabecalho("Importações DataHotel", "Arquivo exportado do DataHotel (CSV; planilha Excel: Salvar como → CSV). Nada é gravado antes da sua confirmação.");
+    html += '<div class="painel" style="padding:18px 20px"><div class="par" style="gap:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">' +
+      '<label class="campo"><span>Tipo de dado</span><select id="imp-tipo">' + Object.keys(H.LAYOUTS).map(function (k) { return '<option value="' + k + '"' + (T.filtros.impTipo === k ? " selected" : "") + ">" + H.LAYOUTS[k].nome + "</option>"; }).join("") + "</select></label>" +
+      '<label class="campo"><span>Origem</span><select id="imp-origem"><option value="DATAHOTEL">DataHotel (relatório exportado)</option><option value="ADQUIRENTE">Adquirente de cartão</option><option value="BANCO">Extrato bancário</option><option value="PLANILHA">Planilha interna</option></select></label>' +
+      '<label class="campo"><span>Arquivo CSV</span><input type="file" id="imp-arquivo" accept=".csv,text/csv"></label></div>' +
+      '<p class="secundario">Colunas reconhecidas para "' + H.LAYOUTS[T.filtros.impTipo || "hospedagens"].nome + '": ' + Object.keys(H.LAYOUTS[T.filtros.impTipo || "hospedagens"].campos).concat(["codigo"]).join(", ") +
+      '. O código original + a origem identificam cada registro: reimportar não duplica, e campo vazio no arquivo não apaga o que foi complementado aqui.</p></div>';
+    var p = T._previa;
+    if (p) {
+      html += kpis([
+        { rotulo: "Novos", valor: String(p.resumo.novo), nota: "serão criados" },
+        { rotulo: "Atualizados", valor: String(p.resumo.atualizado), nota: "só os campos que mudaram" },
+        { rotulo: "Duplicados", valor: String(p.resumo.duplicado), nota: "ignorados" },
+        { rotulo: "Inconsistentes", valor: String(p.resumo.inconsistente), nota: "não entram", tom: p.resumo.inconsistente ? "critico" : "" }
+      ]);
+      html += U.painelHtml("Pré-visualização · " + U.esc(p.arquivo || ""), p.resumo.total + " linha(s)", U.tabelaHtml([
+        { rotulo: "Linha", conteudo: function (i) { return i.linha; } },
+        { rotulo: "Código", conteudo: function (i) { return U.esc(i.registro.codigoOrigem || "—"); } },
+        { rotulo: "Resumo", conteudo: function (i) { var r = i.registro; return U.esc([r.hospede, r.apartamento, r.pagador, r.produto, r.checkin, r.data].filter(Boolean).join(" · ")); } },
+        { rotulo: "Situação", conteudo: function (i) { return pastilha({ novo: "info", atualizado: "atencao", duplicado: "neutro", inconsistente: "critico" }[i.situacao], i.situacao) +
+          (i.problemas.length ? '<div class="secundario">' + U.esc(i.problemas.join(" ")) + "</div>" : "") + (i.camposAlterados && i.camposAlterados.length ? '<div class="secundario">muda: ' + U.esc(i.camposAlterados.join(", ")) + "</div>" : ""); } }
+      ], p.itens) + '<div style="padding:14px 20px;display:flex;gap:8px"><button class="botao primario" data-acao="hotel-imp-confirmar"' + (p.resumo.novo + p.resumo.atualizado ? "" : " disabled") + '>Confirmar importação</button><button class="botao" data-acao="hotel-imp-cancelar">Descartar</button></div>');
+    }
+    var hist = L.estado.importacoes.slice().sort(function (a, b) { return String(b.em).localeCompare(String(a.em)); });
+    exportavel("historico-importacoes", ["Data", "Tipo", "Origem", "Arquivo", "Total", "Novos", "Atualizados", "Duplicados", "Inconsistentes", "Status", "Usuário"],
+      hist.map(function (i) { return [i.em, i.tipo, i.origem, i.arquivo, i.resumo.total, i.resumo.novo, i.resumo.atualizado, i.resumo.duplicado, i.resumo.inconsistente, i.status, i.usuario]; }));
+    html += U.painelHtml("Histórico de sincronizações", "", U.tabelaHtml([
+      { rotulo: "Quando", conteudo: function (i) { return new Date(i.em).toLocaleString("pt-BR") + '<div class="secundario">' + U.esc(i.usuario) + "</div>"; } },
+      { rotulo: "Dado", conteudo: function (i) { return U.esc((H.LAYOUTS[i.tipo] || {}).nome || i.tipo) + '<div class="secundario">' + U.esc(i.origem) + " · " + U.esc(i.arquivo || "") + "</div>"; } },
+      { rotulo: "Registros", conteudo: function (i) { var r = i.resumo; return r.total + " lidos · " + r.novo + " novos · " + r.atualizado + " atualizados · " + r.duplicado + " duplicados · " + r.inconsistente + " inconsistentes"; } },
+      { rotulo: "Status", direita: true, conteudo: function (i) { return status(i.status); } }
+    ], hist, { tituloVazio: "Nenhuma importação ainda" }), '<button class="botao miudo" data-acao="hotel-exportar">Exportar</button>');
+    return html;
+  };
+  T.acoes["hotel-imp-confirmar"] = function () {
+    if (!T._previa) return;
+    var imp = H.aplicarImportacao(T._previa, { arquivo: T._previa.arquivo, formato: "CSV" });
+    T._previa = null; T.renderizar();
+    U.avisar("Importação concluída: " + imp.resumo.novo + " novos, " + imp.resumo.atualizado + " atualizados.");
+  };
+  T.acoes["hotel-imp-cancelar"] = function () { T._previa = null; T.renderizar(); };
+
+  // ------------------------------------------------------------ caixa
+
+  T.telas.caixa = function () {
+    var d = dataSel(), f = H.fechamentoDia(d);
+    var movs = L.estado.recebimentos.filter(function (r) { return r.data === d; });
+    exportavel("fechamento-caixa-" + d, ["Forma", "Lançado", "Recebido", "A receber", "Qtd"],
+      Object.keys(f.porForma).map(function (k) { var x = f.porForma[k]; return [H.FORMAS[k].nome, H.reaisCsv(x.faturado), H.reaisCsv(x.recebido), H.reaisCsv(x.aReceber), x.qtd]; })
+        .concat([["TOTAL", H.reaisCsv(f.totais.faturado), H.reaisCsv(f.totais.recebido), H.reaisCsv(f.totais.aReceber), ""], ["Saldo inicial do caixa", H.reaisCsv(f.saldoInicial)], ["Saídas em dinheiro", H.reaisCsv(f.saidasDinheiro)], ["Saldo calculado", H.reaisCsv(f.saldoCalculado)]]));
+    var fx = f.fechamento;
+    var html = T.cabecalho("Fechamento de Caixa", "Faturado, recebido e a receber nunca se misturam. Caixa físico = saldo inicial + dinheiro recebido − saídas em dinheiro.", botaoNovo("recebimentos", "Lançar movimentação"));
+    html += barraData();
+    html += kpis([
+      { rotulo: "Receita lançada no dia", valor: brl(f.totais.faturado), nota: "todas as formas" },
+      { rotulo: "Efetivamente recebido", valor: brl(f.totais.recebido), nota: "dinheiro, Pix, cartão conciliado, boleto pago", hero: true },
+      { rotulo: "A receber", valor: brl(f.totais.aReceber), nota: "cartão a depositar, faturado, boleto" },
+      { rotulo: "Saldo calculado do caixa", valor: brl(f.saldoCalculado), nota: "inicial " + brl(f.saldoInicial) + " · saídas " + brl(f.saidasDinheiro) }
+    ]);
+    html += U.painelHtml("Por modalidade", "", U.tabelaHtml([
+      { rotulo: "Forma", conteudo: function (k) { return U.esc(H.FORMAS[k].nome); } },
+      { rotulo: "Lançado", direita: true, conteudo: function (k) { return brl(f.porForma[k].faturado); } },
+      { rotulo: "Recebido", direita: true, conteudo: function (k) { return brl(f.porForma[k].recebido); } },
+      { rotulo: "A receber", direita: true, conteudo: function (k) { return brl(f.porForma[k].aReceber); } }
+    ], Object.keys(f.porForma).filter(function (k) { return f.porForma[k].qtd; }), { tituloVazio: "Nenhuma movimentação no dia" }));
+    html += U.painelHtml("Movimentações", movs.length + " lançamento(s)", U.tabelaHtml([
+      { rotulo: "Descrição", conteudo: function (r) { return '<div class="principal">' + U.esc(r.descricao || r.pagador || (r.tipo === "SAIDA_CAIXA" ? "Saída do caixa" : "Recebimento")) + '</div><div class="secundario">' + U.esc([r.pagador, r.apartamento && "apto " + r.apartamento, r.codigoTransacao].filter(Boolean).join(" · ")) + "</div>" + origemTag(r); } },
+      { rotulo: "Forma", conteudo: function (r) { return r.tipo === "SAIDA_CAIXA" ? "Saída (dinheiro)" : U.esc((H.FORMAS[r.forma] || {}).nome || ""); } },
+      { rotulo: "Bruto", direita: true, conteudo: function (r) { return brl(r.valorBruto); } },
+      { rotulo: "Líquido", direita: true, conteudo: function (r) { return r.tipo === "SAIDA_CAIXA" ? "−" + brl(r.valorBruto) : brl(H.liquido(r)); } },
+      { rotulo: "Situação", direita: true, conteudo: function (r) { return r.tipo === "SAIDA_CAIXA" ? "" : status(H.situacaoRecebimento(r)); } },
+      { rotulo: "", direita: true, conteudo: function (r) {
+        var s = botaoEditar("recebimentos", r);
+        if (r.tipo !== "SAIDA_CAIXA" && H.situacaoRecebimento(r) === "A_RECEBER" && podeFinanceiro()) s += ' <button class="botao miudo" data-acao="hotel-confirmar-receb" data-id="' + r.id + '">Confirmar recebimento</button>';
+        return s; } }
+    ], movs, { buscaLocal: "Pagador, apto ou código", tituloVazio: "Nada lançado nesta data", textoVazio: "Importe os pagamentos do DataHotel ou lance manualmente." }));
+    html += U.painelHtml("Fechamento do dia", fx ? "Status: " + fx.status : "Aberto",
+      '<div style="padding:0 20px 18px">' + (fx && fx.status === "FECHADO"
+        ? "<p>Fechado por <strong>" + U.esc(fx.responsavel) + "</strong> em " + new Date(fx.fechadoEm).toLocaleString("pt-BR") + ". Saldo conferido " + brl(fx.saldoConferido) + " · diferença " + brl(fx.diferenca) + (fx.justificativa ? " · " + U.esc(fx.justificativa) + " (autorizado por " + U.esc(fx.aprovador) + ")" : "") + "</p>" +
+          (T.temPerfil("DIRECAO") ? '<button class="botao miudo" data-acao="hotel-reabrir-caixa">Reabrir (com justificativa)</button>' : "")
+        : (T.podeEditar() ? '<button class="botao primario" data-acao="hotel-fechar-caixa">Conferir e fechar o caixa</button>' : "")) + "</div>");
+    return html;
+  };
+  T.acoes["hotel-confirmar-receb"] = function (id) {
+    U.abrirFormulario({ titulo: "Confirmar recebimento", campos: [{ id: "recebidoEm", rotulo: "Data do crédito", tipo: "data", obrigatorio: true }, { id: "contaFinanceira", rotulo: "Conta financeira" }],
+      valores: { recebidoEm: L.hoje() }, aoSalvar: function (v) { L.atualizar("recebimentos", id, v); U.fecharModal(); T.renderizar(); } });
+  };
+  T.acoes["hotel-fechar-caixa"] = function () {
+    var f = H.fechamentoDia(dataSel());
+    U.abrirFormulario({ titulo: "Fechar o caixa de " + L.dataBR(f.data), sub: "Saldo calculado: " + L.brl(f.saldoCalculado),
+      campos: [{ id: "saldoConferido", rotulo: "Saldo contado no caixa", tipo: "moeda" }, { id: "justificativa", rotulo: "Justificativa (obrigatória se houver diferença)", tipo: "textarea" }],
+      valores: { saldoConferido: (f.saldoCalculado / 100).toFixed(2) },
+      aoSalvar: function (v) {
+        var aprov = T.temPerfil("DIRECAO", "FINANCEIRO") ? (L.estado.usuario || {}).nome : null;
+        var val = H.validarFechamentoCaixa(f, v.saldoConferido, v.justificativa, aprov);
+        if (val.problemas.length) throw new Error(val.problemas.join(" "));
+        var dados = { data: f.data, status: "FECHADO", saldoInicial: f.saldoInicial, saldoCalculado: f.saldoCalculado, saldoConferido: v.saldoConferido,
+          diferenca: val.diferenca, justificativa: v.justificativa, aprovador: val.diferenca ? aprov : null, responsavel: (L.estado.usuario || {}).nome,
+          fechadoEm: new Date().toISOString(), totais: f.totais };
+        if (f.fechamento) L.atualizar("fechamentosCaixa", f.fechamento.id, dados); else L.criar("fechamentosCaixa", dados);
+        U.fecharModal(); T.renderizar(); U.avisar("Caixa fechado.");
+      } });
+  };
+  T.acoes["hotel-reabrir-caixa"] = function () {
+    var f = H.fechamentoDia(dataSel()).fechamento;
+    U.abrirFormulario({ titulo: "Reabrir caixa", campos: [{ id: "justificativa", rotulo: "Por que reabrir?", tipo: "textarea", obrigatorio: true }],
+      aoSalvar: function (v) { L.atualizar("fechamentosCaixa", f.id, { status: "REABERTO", justificativa: v.justificativa, reabertoPor: (L.estado.usuario || {}).nome }); U.fecharModal(); T.renderizar(); } });
+  };
+
+  // ------------------------------------------------------------ cartões
+
+  T.telas.cartoes = function () {
+    var hoje = L.hoje(), comp = compSel();
+    var ts = L.estado.transacoesCartao.filter(function (t) { return H.noMes(t.dataVenda, comp); }).map(function (t) { return { t: t, c: H.conciliarCartao(t, hoje) }; });
+    var soma = function (f) { return ts.reduce(function (a, x) { return a + f(x); }, 0); };
+    exportavel("cartoes-" + comp, ["Data venda", "Modalidade", "Operadora", "Bandeira", "Parcelas", "Código", "Venda", "Taxa", "Antecipação", "Esperado", "Previsto", "Depósito", "Depositado", "Diferença", "Status"],
+      ts.map(function (x) { var t = x.t; return [t.dataVenda, t.modalidade, t.operadora, t.bandeira, t.parcelas, t.codigoTransacao, H.reaisCsv(t.valorVenda), H.reaisCsv(t.taxa), H.reaisCsv(t.antecipacao), H.reaisCsv(x.c.esperado), t.dataPrevista, t.dataDeposito, H.reaisCsv(t.valorDepositado), H.reaisCsv(x.c.diferenca), x.c.status]; }));
+    var html = T.cabecalho("Cartões e Depósitos", "Venda no cartão não é dinheiro na conta: só vira recebido quando o depósito é conciliado. Taxa e antecipação aparecem separadas.", botaoNovo("transacoesCartao", "Lançar venda"));
+    html += barraData(true);
+    html += kpis([
+      { rotulo: "Vendido no cartão", valor: brl(soma(function (x) { return x.t.valorVenda; })), nota: comp },
+      { rotulo: "Taxas + antecipação", valor: brl(soma(function (x) { return (x.t.taxa || 0) + (x.t.antecipacao || 0); })), nota: "custo financeiro" },
+      { rotulo: "Depositado", valor: brl(soma(function (x) { return x.t.valorDepositado || 0; })), nota: "conforme extrato", hero: true },
+      { rotulo: "Divergentes / atrasados", valor: String(ts.filter(function (x) { return x.c.status === "DIVERGENTE" || x.c.status === "ATRASADO"; }).length), nota: "exigem conferência", tom: "critico" }
+    ]);
+    html += U.painelHtml("Transações", "", U.tabelaHtml([
+      { rotulo: "Venda", conteudo: function (x) { var t = x.t; return '<div class="principal">' + L.dataBR(t.dataVenda) + " · " + U.esc(t.modalidade || "") + '</div><div class="secundario">' + U.esc([t.operadora, t.bandeira, t.codigoTransacao, t.parcelas > 1 ? t.parcelas + "x" : ""].filter(Boolean).join(" · ")) + "</div>"; } },
+      { rotulo: "Valor", direita: true, conteudo: function (x) { return brl(x.t.valorVenda) + '<div class="secundario">taxa ' + brl(x.t.taxa || 0) + "</div>"; } },
+      { rotulo: "Esperado", direita: true, conteudo: function (x) { return brl(x.c.esperado) + '<div class="secundario">' + (x.t.dataPrevista ? "em " + L.dataBR(x.t.dataPrevista) : "") + "</div>"; } },
+      { rotulo: "Depositado", direita: true, conteudo: function (x) { return x.t.valorDepositado == null ? "—" : brl(x.t.valorDepositado) + '<div class="secundario">' + L.dataBR(x.t.dataDeposito) + "</div>"; } },
+      { rotulo: "Diferença", direita: true, conteudo: function (x) { return x.c.diferenca == null ? "" : brl(x.c.diferenca); } },
+      { rotulo: "Status", direita: true, conteudo: function (x) { return status(x.c.status); } },
+      { rotulo: "", direita: true, conteudo: function (x) { return podeFinanceiro() ? '<button class="botao miudo" data-acao="hotel-deposito" data-id="' + x.t.id + '">Registrar depósito</button>' : ""; } }
+    ], ts, { tituloVazio: "Nenhuma venda no cartão no mês", textoVazio: "Lance as vendas ou importe o relatório da adquirente (CSV) em Importações." }));
+    return html;
+  };
+  T.acoes["hotel-deposito"] = function (id) {
+    var t = L.buscarPorId("transacoesCartao", id);
+    U.abrirFormulario({ titulo: "Depósito da adquirente", campos: [{ id: "dataDeposito", rotulo: "Data efetiva do depósito", tipo: "data", obrigatorio: true }, { id: "valorDepositado", rotulo: "Valor depositado", tipo: "moeda", obrigatorio: true }, { id: "status", rotulo: "Situação especial", tipo: "select", opcoes: [{ valor: "", rotulo: "Normal" }, { valor: "CANCELADO", rotulo: "Cancelado / estornado" }] }],
+      valores: { dataDeposito: L.hoje(), valorDepositado: t.valorDepositado != null ? (t.valorDepositado / 100).toFixed(2) : ((t.valorVenda - (t.taxa || 0) - (t.antecipacao || 0)) / 100).toFixed(2) },
+      aoSalvar: function (v) { if (!v.status) delete v.status; L.atualizar("transacoesCartao", id, v); U.fecharModal(); T.renderizar(); } });
+  };
+
+  // ------------------------------------------------------------ boletos e notas
+
+  T.telas.boletos = function () {
+    var hoje = L.hoje();
+    var bs = L.estado.boletos.map(function (b) { return { b: b, s: H.statusBoleto(b, hoje) }; }).sort(function (a, b) { return a.b.vencimento.localeCompare(b.b.vencimento); });
+    var aberto = bs.filter(function (x) { return x.s !== "PAGO" && x.s !== "CANCELADO"; });
+    exportavel("boletos", ["Empresa", "Documento", "Emissão", "Vencimento", "Valor", "Pago", "Data pagamento", "Juros", "Multa", "Desconto", "Saldo", "Status"],
+      bs.map(function (x) { var b = x.b; return [b.empresaNome, b.documento, b.emissao, b.vencimento, H.reaisCsv(b.valor), H.reaisCsv(b.valorPago), b.dataPagamento, H.reaisCsv(b.juros), H.reaisCsv(b.multa), H.reaisCsv(b.desconto), H.reaisCsv(H.saldoBoleto(b)), x.s]; }));
+    var html = T.cabecalho("Boletos e Notas Fiscais", "Boleto emitido não é pago e nota emitida não é recebida. A baixa gera o recebimento uma vez só.",
+      botaoNovo("boletos", "Lançar boleto") + " " + botaoNovo("notasFiscais", "Registrar nota fiscal"));
+    html += barraData(true);
+    html += kpis([
+      { rotulo: "Em aberto", valor: brl(aberto.reduce(function (a, x) { return a + H.saldoBoleto(x.b); }, 0)), nota: aberto.length + " boleto(s)", hero: true },
+      { rotulo: "Vencidos", valor: String(bs.filter(function (x) { return x.s === "VENCIDO"; }).length), nota: "cobrar", tom: "critico" },
+      { rotulo: "A vencer em 7 dias", valor: String(bs.filter(function (x) { return x.s === "A_VENCER"; }).length), nota: "" },
+      { rotulo: "Pagos", valor: String(bs.filter(function (x) { return x.s === "PAGO"; }).length), nota: "" }
+    ]);
+    html += U.painelHtml("Central de boletos", "", U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (x) { return '<div class="principal">' + U.esc(x.b.empresaNome || "—") + '</div><div class="secundario">' + U.esc(x.b.documento || "") + (x.b.notaFiscal ? " · NF " + U.esc(x.b.notaFiscal) : "") + "</div>"; } },
+      { rotulo: "Vencimento", conteudo: function (x) { return L.dataBR(x.b.vencimento); } },
+      { rotulo: "Valor", direita: true, conteudo: function (x) { return brl(x.b.valor); } },
+      { rotulo: "Saldo", direita: true, conteudo: function (x) { return brl(H.saldoBoleto(x.b)); } },
+      { rotulo: "Status", direita: true, conteudo: function (x) { return status(x.s); } },
+      { rotulo: "", direita: true, conteudo: function (x) { return x.s !== "PAGO" && x.s !== "CANCELADO" && podeFinanceiro() ? '<button class="botao miudo" data-acao="hotel-baixar-boleto" data-id="' + x.b.id + '">Dar baixa</button> <button class="botao miudo" data-acao="hotel-cobrar" data-id="boleto:' + x.b.id + '">Cobrar</button>' : ""; } }
+    ], bs, { tituloVazio: "Nenhum boleto lançado" }));
+    var nfs = L.estado.notasFiscais.filter(function (n) { return n.competencia === compSel(); });
+    html += U.painelHtml("Notas fiscais · " + compSel(), "emitidas fora do sistema; aqui ficam número, valor e situação", U.tabelaHtml([
+      { rotulo: "Número", conteudo: function (n) { return U.esc(n.numero) + (n.serie ? "/" + U.esc(n.serie) : ""); } },
+      { rotulo: "Empresa", conteudo: function (n) { var e = L.buscarPorId("empresas", n.empresaId); return U.esc(e ? (e.nomeFantasia || e.razaoSocial) : ""); } },
+      { rotulo: "Emissão", conteudo: function (n) { return L.dataBR(n.emissao); } },
+      { rotulo: "Valor", direita: true, conteudo: function (n) { return brl(n.valor); } },
+      { rotulo: "Situação", direita: true, conteudo: function (n) { return status(n.status === "EMITIDA" ? "EMITIDO" : n.status); } },
+      { rotulo: "", direita: true, conteudo: function (n) { return botaoEditar("notasFiscais", n); } }
+    ], nfs, { tituloVazio: "Nenhuma nota registrada no mês" }));
+    return html;
+  };
+  T.acoes["hotel-baixar-boleto"] = function (id) {
+    var b = L.buscarPorId("boletos", id);
+    U.abrirFormulario({ titulo: "Baixa do boleto " + (b.documento || ""), sub: "Saldo: " + L.brl(H.saldoBoleto(b)), campos: [
+      { id: "data", rotulo: "Data do pagamento", tipo: "data", obrigatorio: true, par: true }, { id: "valor", rotulo: "Valor pago", tipo: "moeda", obrigatorio: true },
+      { id: "juros", rotulo: "Juros", tipo: "moeda", par: true }, { id: "multa", rotulo: "Multa", tipo: "moeda" }, { id: "comprovante", rotulo: "Comprovante (referência)" }],
+      valores: { data: L.hoje(), valor: (H.saldoBoleto(b) / 100).toFixed(2) },
+      aoSalvar: function (v) { H.baixarBoleto(id, v); U.fecharModal(); T.renderizar(); U.avisar("Baixa registrada; o recebimento entrou no caixa do dia " + L.dataBR(v.data) + "."); } });
+  };
+
+  // ------------------------------------------------------------ cobranças (mensagens)
+
+  T.acoes["hotel-cobrar"] = function (alvo) {
+    var b = L.buscarPorId("boletos", String(alvo).split(":")[1]);
+    var e = b.empresaId ? L.buscarPorId("empresas", b.empresaId) : null;
+    var s = H.statusBoleto(b, L.hoje());
+    var modelo = s === "VENCIDO" ? "Cobrança vencida" : s === "A_VENCER" ? "Vencimento próximo" : "Boleto disponível";
+    var texto = "Prezados" + (e && e.responsavel ? " (" + e.responsavel + ")" : "") + ",\n\n" +
+      (s === "VENCIDO" ? "Consta em aberto o boleto " : "Segue o boleto ") + (b.documento || "") + " no valor de " + L.brl(H.saldoBoleto(b)) +
+      ", com vencimento em " + L.dataBR(b.vencimento) + (b.notaFiscal ? ", referente à NF " + b.notaFiscal : "") + ".\n\nAtenciosamente,\n" + L.estado.configHotel.nome;
+    var hist = L.estado.cobrancas.filter(function (c) { return c.boletoId === b.id; });
+    U.abrirModal({ titulo: modelo, sub: e ? (e.emailFinanceiro || "") + " · " + (e.telefone || "") : "",
+      corpo: '<textarea id="cob-texto" style="width:100%;min-height:180px">' + U.esc(texto) + "</textarea>" +
+        '<p class="secundario">O envio sai pelo seu e-mail ou WhatsApp (não há canal automático autorizado ainda). Registre aqui o envio para o histórico.</p>' +
+        (hist.length ? "<p><strong>Histórico:</strong><br>" + hist.map(function (c) { return L.dataBR(c.data) + " · " + U.esc(c.canal) + " · " + U.esc(c.modelo) + (c.resposta ? " — " + U.esc(c.resposta) : ""); }).join("<br>") + "</p>" : ""),
+      acoes: [
+        { rotulo: "Fechar", aoClicar: U.fecharModal },
+        { rotulo: "Abrir no e-mail", aoClicar: function () { window.open("mailto:" + encodeURIComponent((e && e.emailFinanceiro) || "") + "?subject=" + encodeURIComponent(modelo) + "&body=" + encodeURIComponent(U.el("cob-texto").value)); } },
+        { rotulo: "Abrir no WhatsApp", aoClicar: function () { window.open("https://wa.me/" + String((e && e.telefone) || "").replace(/\D/g, "") + "?text=" + encodeURIComponent(U.el("cob-texto").value)); } },
+        { rotulo: "Registrar envio", classe: "primario", aoClicar: function () {
+          L.criar("cobrancas", { boletoId: b.id, empresaId: b.empresaId, data: L.hoje(), modelo: modelo, canal: "E-mail/WhatsApp", texto: U.el("cob-texto").value, usuario: (L.estado.usuario || {}).nome });
+          U.fecharModal(); U.avisar("Cobrança registrada no histórico."); } }
+      ] });
+  };
+
+  // ------------------------------------------------------------ empresas
+
+  T.telas.empresas = function () {
+    var comp = compSel();
+    var cons = L.estado.empresas.map(function (e) { return H.consolidarEmpresa(e.id, comp); });
+    var sel = T.filtros.empresaSel ? H.consolidarEmpresa(T.filtros.empresaSel, comp) : null;
+    exportavel("faturamento-empresas-" + comp, ["Empresa", "CNPJ", "Hospedagens", "Total", "Pago na hospedagem", "Já faturado (NF)", "Saldo a faturar"],
+      cons.map(function (c) { return [c.empresa.razaoSocial, c.empresa.cnpj, c.hospedagens.length, H.reaisCsv(c.total), H.reaisCsv(c.jaPagoNaHospedagem), H.reaisCsv(c.jaFaturado), H.reaisCsv(c.saldoAFaturar)]; }));
+    var html = T.cabecalho("Faturamento de Empresas", "Consolida as hospedagens do mês pela empresa informada no DataHotel (nome, fantasia ou CNPJ).", botaoNovo("empresas", "Nova empresa"));
+    html += barraData(true);
+    html += U.painelHtml("Fechamento mensal · " + comp, "", U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (c) { return '<div class="principal">' + U.esc(c.empresa.nomeFantasia || c.empresa.razaoSocial) + '</div><div class="secundario">' + U.esc(c.empresa.cnpj || "") + "</div>"; } },
+      { rotulo: "Hospedagens", direita: true, conteudo: function (c) { return c.hospedagens.length; } },
+      { rotulo: "Total", direita: true, conteudo: function (c) { return brl(c.total); } },
+      { rotulo: "Já faturado", direita: true, conteudo: function (c) { return brl(c.jaFaturado); } },
+      { rotulo: "Saldo a faturar", direita: true, conteudo: function (c) { return "<strong>" + brl(c.saldoAFaturar) + "</strong>"; } },
+      { rotulo: "", direita: true, conteudo: function (c) { return '<button class="botao miudo" data-acao="hotel-empresa-ver" data-id="' + c.empresa.id + '">Demonstrativo</button> ' + botaoEditar("empresas", c.empresa); } }
+    ], cons, { tituloVazio: "Nenhuma empresa cadastrada" }));
+    if (sel) {
+      html += U.painelHtml("Demonstrativo · " + (sel.empresa.nomeFantasia || sel.empresa.razaoSocial), comp, U.tabelaHtml([
+        { rotulo: "Hóspede", conteudo: function (x) { return U.esc(x.hospedagem.hospede || ""); } },
+        { rotulo: "Apto", conteudo: function (x) { return U.esc(x.hospedagem.apartamento); } },
+        { rotulo: "Período", conteudo: function (x) { return L.dataBR(x.hospedagem.checkin) + " → " + L.dataBR(x.hospedagem.checkoutRealizado || x.hospedagem.checkout); } },
+        { rotulo: "Diárias", direita: true, conteudo: function (x) { return x.diarias; } },
+        { rotulo: "Hospedagem", direita: true, conteudo: function (x) { return brl(x.valorHospedagem); } },
+        { rotulo: "Consumos", direita: true, conteudo: function (x) { return brl(x.hospedagem.consumos || 0); } },
+        { rotulo: "Descontos", direita: true, conteudo: function (x) { return brl(x.hospedagem.descontos || 0); } },
+        { rotulo: "Total", direita: true, conteudo: function (x) { return brl(x.total); } }
+      ], sel.hospedagens, { tituloVazio: "Sem hospedagem desta empresa no mês" }) +
+        '<p style="padding:0 20px 16px">Total ' + brl(sel.total) + " · já pago " + brl(sel.jaPagoNaHospedagem) + " · notas " + brl(sel.jaFaturado) + " · <strong>saldo a faturar " + brl(sel.saldoAFaturar) + "</strong>. Próximos passos: emitir a NF no emissor fiscal, registrar em Boletos e Notas, lançar o boleto e cobrar.</p>");
+      T._export = { nome: "demonstrativo-" + comp, cab: ["Hóspede", "Apto", "Check-in", "Check-out", "Diárias", "Hospedagem", "Consumos", "Descontos", "Total"],
+        linhas: sel.hospedagens.map(function (x) { var h = x.hospedagem; return [h.hospede, h.apartamento, h.checkin, h.checkoutRealizado || h.checkout, x.diarias, H.reaisCsv(x.valorHospedagem), H.reaisCsv(h.consumos), H.reaisCsv(h.descontos), H.reaisCsv(x.total)]; }) };
+    }
+    return html;
+  };
+  T.acoes["hotel-empresa-ver"] = function (id) { T.filtros.empresaSel = id; T.renderizar(); };
+
+  // ------------------------------------------------------------ contas fixas e calendário
+
+  T.telas.recorrentes = function () {
+    var comp = compSel(), hoje = L.hoje();
+    var contas = L.estado.contas.filter(function (c) { return H.noMes(c.vencimento, comp); });
+    var html = T.cabecalho("Contas Fixas e Calendário", "Recorrência gera PREVISÃO (rascunho), nunca pagamento. O pagamento continua em Contas a Pagar, com aprovação.",
+      botaoNovo("contasRecorrentes", "Nova conta recorrente") + ' <button class="botao" data-acao="hotel-gerar-recorrentes">Gerar previsões de ' + comp + "</button>");
+    html += barraData(true);
+    if (!L.estado.contasRecorrentes.length) html += '<div class="painel">' + vazio("Nenhuma conta recorrente", "Cadastre internet, energia, água, telefone, placa solar e outras contas fixas.", { acao: "hotel-recorrentes-padrao", rotulo: "Criar as contas fixas iniciais" }) + "</div>";
+    else html += U.painelHtml("Recorrências", "", U.tabelaHtml([
+      { rotulo: "Conta", conteudo: function (r) { return '<div class="principal">' + U.esc(r.descricao) + '</div><div class="secundario">' + U.esc((r.tipoConta || "FIXA").toLowerCase() + " · " + (r.periodicidade || "MENSAL").toLowerCase() + (r.dia ? " · dia " + r.dia : "")) + "</div>"; } },
+      { rotulo: "Previsto", direita: true, conteudo: function (r) { return brl(r.valorPrevisto); } },
+      { rotulo: "", direita: true, conteudo: function (r) { return botaoEditar("contasRecorrentes", r); } }], L.estado.contasRecorrentes));
+    // Calendário mensal: soma por dia + saldo projetado.
+    var dias = H.diasDoMes(comp), primeiro = new Date(comp + "-01T12:00:00Z").getUTCDay();
+    var fluxo = H.fluxoCaixa(comp + "-01", comp + "-" + String(dias).padStart(2, "0"), T.saldoInicialFluxo || 0);
+    var cel = [];
+    for (var i = 0; i < primeiro; i++) cel.push('<div class="cal-dia vazio"></div>');
+    for (var d = 1; d <= dias; d++) {
+      var iso = comp + "-" + String(d).padStart(2, "0");
+      var cs = contas.filter(function (c) { return c.vencimento === iso; });
+      var pagas = cs.filter(function (c) { return c.status === "PAGO"; }), venc = cs.filter(function (c) { return c.status !== "PAGO" && c.status !== "CANCELADO" && iso < hoje; });
+      var tot = cs.reduce(function (a, c) { return a + c.valor; }, 0);
+      var tom = venc.length ? "critico" : (cs.length && pagas.length === cs.length ? "ok" : (cs.length ? "atencao" : ""));
+      var fl = fluxo.linhas[d - 1];
+      cel.push('<div class="cal-dia ' + tom + '" title="' + U.esc(cs.map(function (c) { return c.descricao + " " + L.brl(c.valor); }).join("\n")) + '"><span class="cal-n">' + d + "</span>" +
+        (cs.length ? '<span class="cal-v">' + L.brl(tot) + "</span><span class=\"cal-q\">" + cs.length + " conta(s)</span>" : "") +
+        '<span class="cal-s' + (fl.insuficiente ? " neg" : "") + '">saldo ' + L.brl(fl.saldoProjetado) + "</span></div>");
+    }
+    html += U.painelHtml("Calendário financeiro · " + comp, "verde pago · amarelo a pagar · vermelho vencido · saldo projetado no rodapé",
+      '<div class="cal-grade">' + ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(function (x) { return '<div class="cal-cab">' + x + "</div>"; }).join("") + cel.join("") + "</div>");
+    var alertas = L.estado.contas.filter(function (c) { return c.status !== "PAGO" && c.status !== "CANCELADO" && H.marcoAlerta(c.vencimento, hoje); });
+    if (alertas.length) html += U.painelHtml("Alertas de vencimento de hoje", "um aviso por marco: 7, 3, 1 dia, no dia e depois", U.tabelaHtml([
+      { rotulo: "Conta", conteudo: function (c) { return U.esc(c.descricao); } }, { rotulo: "Vencimento", conteudo: function (c) { return L.dataBR(c.vencimento); } },
+      { rotulo: "Valor", direita: true, conteudo: function (c) { return brl(c.valor); } },
+      { rotulo: "Marco", direita: true, conteudo: function (c) { var m = H.marcoAlerta(c.vencimento, hoje); return m === "VENCIDA" ? pastilha("critico", "Vencida") : pastilha("atencao", m === "D-0" ? "Vence hoje" : "Faltam " + m.slice(2) + " dia(s)"); } }], alertas));
+    exportavel("contas-" + comp, ["Vencimento", "Descrição", "Categoria", "Tipo", "Previsto", "Valor", "Status"],
+      contas.map(function (c) { return [c.vencimento, c.descricao, c.categoria, c.tipoConta || "", H.reaisCsv(c.valorPrevisto), H.reaisCsv(c.valor), c.status]; }));
+    return html;
+  };
+  T.acoes["hotel-gerar-recorrentes"] = function () { var n = H.gerarRecorrentes(compSel()); T.renderizar(); U.avisar(n.length ? n.length + " previsão(ões) criada(s) em Contas a Pagar." : "Nada novo: as previsões deste mês já existem."); };
+  T.acoes["hotel-recorrentes-padrao"] = function () {
+    ["Internet", "Placa solar / financiamento", "Energia elétrica", "Água", "Telefone"].forEach(function (n) {
+      L.criar("contasRecorrentes", { descricao: n, tipoConta: "FIXA", categoria: "Despesas fixas", periodicidade: "MENSAL", dia: 10, valorPrevisto: 1, inicio: L.hoje() });
+    });
+    T.renderizar(); U.avisar("Criadas com valor simbólico: ajuste o valor previsto e o dia de cada uma.");
+  };
+
+  // ------------------------------------------------------------ fluxo de caixa
+
+  T.telas.fluxo = function () {
+    var comp = compSel(), dias = H.diasDoMes(comp);
+    var saldoIni = Number(T.filtros.fluxoSaldo || 0);
+    var f = H.fluxoCaixa(comp + "-01", comp + "-" + String(dias).padStart(2, "0"), saldoIni);
+    T.saldoInicialFluxo = saldoIni;
+    exportavel("fluxo-" + comp, ["Data", "Entradas", "Saídas", "Saldo realizado", "Recebimentos previstos", "Pagamentos previstos", "Saldo projetado"],
+      f.linhas.map(function (l) { return [l.data, H.reaisCsv(l.entradas), H.reaisCsv(l.saidas), H.reaisCsv(l.saldoRealizado), H.reaisCsv(l.recebimentosPrevistos), H.reaisCsv(l.pagamentosPrevistos), H.reaisCsv(l.saldoProjetado)]; }));
+    var html = T.cabecalho("Fluxo de Caixa", "Realizado só com o que entrou e saiu de fato. Conta a receber fica no previsto até ser liquidada.");
+    html += barraData(true) + '<div class="barra-ferramentas" style="margin-top:-8px"><span class="filtro-rotulo">Saldo inicial (R$)</span><input type="number" step="0.01" class="hotel-filtro" data-chave="fluxoSaldoReais" value="' + (saldoIni / 100).toFixed(2) + '"></div>';
+    var soma = function (k) { return f.linhas.reduce(function (a, l) { return a + l[k]; }, 0); };
+    html += kpis([
+      { rotulo: "Entradas realizadas", valor: brl(soma("entradas")), nota: comp },
+      { rotulo: "Saídas realizadas", valor: brl(soma("saidas")), nota: "contas pagas + saídas de caixa" },
+      { rotulo: "Saldo realizado", valor: brl(f.saldoFinalRealizado), nota: "fim do mês", hero: true },
+      { rotulo: "Saldo projetado", valor: brl(f.saldoFinalProjetado), nota: f.diasInsuficientes.length ? f.diasInsuficientes.length + " dia(s) com caixa insuficiente" : "sem falta prevista", tom: f.diasInsuficientes.length ? "critico" : "" }
+    ]);
+    html += U.painelHtml("Dia a dia", "", U.tabelaHtml([
+      { rotulo: "Data", conteudo: function (l) { return L.dataBR(l.data); } },
+      { rotulo: "Entradas", direita: true, conteudo: function (l) { return brl(l.entradas); } }, { rotulo: "Saídas", direita: true, conteudo: function (l) { return brl(l.saidas); } },
+      { rotulo: "Realizado", direita: true, conteudo: function (l) { return brl(l.saldoRealizado); } },
+      { rotulo: "A receber", direita: true, conteudo: function (l) { return brl(l.recebimentosPrevistos); } }, { rotulo: "A pagar", direita: true, conteudo: function (l) { return brl(l.pagamentosPrevistos); } },
+      { rotulo: "Projetado", direita: true, conteudo: function (l) { return (l.insuficiente ? pastilha("critico", brl(l.saldoProjetado)) : brl(l.saldoProjetado)); } }
+    ], f.linhas.filter(function (l) { return l.entradas || l.saidas || l.recebimentosPrevistos || l.pagamentosPrevistos; }), { tituloVazio: "Sem movimento no mês" }));
+    return html;
+  };
+
+  // ------------------------------------------------------------ ponto e diárias
+
+  T.telas.ponto = function () {
+    var comp = compSel(), dias = H.diasDoMes(comp);
+    var fs = L.ativos();
+    var linhas = fs.map(function (f) {
+      var jornadaMin = Math.round((f.cargaHoraria || 44) / (f.diasSemana || 5.5) * 60);
+      var ms = L.estado.marcacoesPonto.filter(function (m) { return m.funcionarioId === f.id && H.noMes(m.data, comp); });
+      var dd = ms.map(function (m) { return H.diaDePonto(m, jornadaMin); });
+      var s = function (k) { return dd.reduce(function (a, x) { return a + x[k]; }, 0); };
+      return { f: f, marcacoes: ms.length, trabalhados: s("trabalhados"), extras: s("extras"), atrasos: s("atraso"), faltas: dd.filter(function (x) { return x.falta; }).length, saldo: s("diferenca"), diarias: H.fechamentoDiarias(f.id, comp) };
+    });
+    exportavel("ponto-" + comp, ["Funcionário", "Marcações", "Horas trabalhadas", "Extras", "Atrasos", "Faltas", "Saldo do mês", "Diárias", "Valor diárias", "Pendente"],
+      linhas.map(function (l) { return [l.f.nome, l.marcacoes, horas(l.trabalhados), horas(l.extras), horas(l.atrasos), l.faltas, horas(l.saldo), l.diarias.quantidade, H.reaisCsv(l.diarias.base), H.reaisCsv(l.diarias.pendente)]; }));
+    var html = T.cabecalho("Ponto e Diárias", "Marcação original nunca é alterada: correção vira ajuste justificado e aprovado. Este controle é gerencial — se virar ponto oficial, precisa atender à Portaria 671/2021.",
+      botaoNovo("marcacoesPonto", "Lançar marcação") + " " + botaoNovo("diarias", "Lançar diária"));
+    html += barraData(true);
+    html += U.painelHtml("Resumo do mês · " + comp, dias + " dias", U.tabelaHtml([
+      { rotulo: "Funcionário", conteudo: function (l) { return '<div class="principal">' + U.esc(l.f.nome) + '</div><div class="secundario">' + U.esc(l.f.cargo || "") + "</div>"; } },
+      { rotulo: "Trabalhadas", direita: true, conteudo: function (l) { return horas(l.trabalhados); } },
+      { rotulo: "Extras", direita: true, conteudo: function (l) { return horas(l.extras); } },
+      { rotulo: "Atrasos", direita: true, conteudo: function (l) { return horas(l.atrasos); } },
+      { rotulo: "Faltas", direita: true, conteudo: function (l) { return l.faltas; } },
+      { rotulo: "Saldo", direita: true, conteudo: function (l) { return horas(l.saldo); } },
+      { rotulo: "Diárias", direita: true, conteudo: function (l) { return l.diarias.quantidade ? l.diarias.quantidade + " · " + brl(l.diarias.base) + '<div class="secundario">pendente ' + brl(l.diarias.pendente) + "</div>" : "—"; } }
+    ], linhas, { tituloVazio: "Nenhum funcionário ativo", textoVazio: "Cadastre a equipe em Pessoas → Funcionários." }));
+    var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });
+    html += U.painelHtml("Marcações", "", U.tabelaHtml([
+      { rotulo: "Data", conteudo: function (m) { var f = L.buscarPorId("funcionarios", m.funcionarioId); return L.dataBR(m.data) + '<div class="secundario">' + U.esc(f ? f.nome : "") + "</div>"; } },
+      { rotulo: "Marcação original", conteudo: function (m) { return m.falta ? "Falta" : U.esc([m.entrada, m.inicioIntervalo, m.fimIntervalo, m.saida].filter(Boolean).join(" · ")); } },
+      { rotulo: "Trabalhadas", direita: true, conteudo: function (m) { var ef = H.marcacaoEfetiva(m); return horas(H.minutosTrabalhados(ef)) + (ef !== m ? " " + pastilha("info", "ajustada") : ""); } },
+      { rotulo: "", direita: true, conteudo: function (m) {
+        var pend = L.estado.ajustesPonto.filter(function (a) { return a.marcacaoId === m.id && a.status === "PENDENTE"; });
+        var s = T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-ajuste-ponto" data-id="' + m.id + '">Pedir ajuste</button>' : "";
+        if (pend.length && T.temPerfil("DIRECAO", "RH", "GESTOR")) s += ' <button class="botao miudo primario" data-acao="hotel-aprovar-ajuste" data-id="' + pend[0].id + '">Aprovar ajuste</button>';
+        return s; } }
+    ], ms, { tituloVazio: "Nenhuma marcação no mês" }));
+    return html;
+  };
+  T.acoes["hotel-ajuste-ponto"] = function (id) {
+    var m = L.buscarPorId("marcacoesPonto", id);
+    U.abrirFormulario({ titulo: "Pedido de ajuste", sub: "A marcação original fica preservada.", campos: [
+      { id: "entrada", rotulo: "Entrada", par: true }, { id: "inicioIntervalo", rotulo: "Início do intervalo" },
+      { id: "fimIntervalo", rotulo: "Fim do intervalo", par: true }, { id: "saida", rotulo: "Saída" },
+      { id: "justificativa", rotulo: "Justificativa", tipo: "textarea", obrigatorio: true }], valores: m,
+      aoSalvar: function (v) {
+        var novos = {}; ["entrada", "inicioIntervalo", "fimIntervalo", "saida"].forEach(function (k) { if (v[k] !== (m[k] || "")) novos[k] = v[k]; });
+        L.criar("ajustesPonto", { marcacaoId: id, novos: novos, justificativa: v.justificativa, status: "PENDENTE", pedidoPor: (L.estado.usuario || {}).nome, pedidoEm: new Date().toISOString() });
+        U.fecharModal(); T.renderizar(); } });
+  };
+  T.acoes["hotel-aprovar-ajuste"] = function (id) { L.atualizar("ajustesPonto", id, { status: "APROVADO", aprovadoPor: (L.estado.usuario || {}).nome, aprovadoEm: new Date().toISOString() }); T.renderizar(); };
+
+  // ------------------------------------------------------------ fechamento do mês
+
+  T.telas.fechamentomes = function () {
+    var comp = compSel(), hoje = L.hoje();
+    var pend = H.pendenciasDoMes(comp, hoje);
+    var reg = (L.estado.periodos || []).find(function (p) { return p.competencia === comp; }) || {};
+    var st = reg.statusHotel || (pend.length ? "COM_PENDENCIAS" : "ABERTO");
+    var passos = ["Receitas de hospedagem", "Recebimentos", "Cartões e depósitos", "Faturamento por empresa", "Notas fiscais", "Boletos", "Cobranças", "Frigobar", "Fornecedores", "Contas fixas", "Contas variáveis", "Fluxo de caixa", "Controle de ponto", "Banco de horas", "Folha de pagamento", "Relatório gerencial", "Pendências", "Submeter à Direção"];
+    var feitos = reg.passosHotel || {};
+    var html = T.cabecalho("Fechamento do Mês", "Roteiro do §27: cada etapa é conferida e marcada; a Direção aprova e fecha.");
+    html += barraData(true);
+    html += kpis([{ rotulo: "Status", valor: (ROT[st] || st), nota: comp, hero: true }, { rotulo: "Pendências automáticas", valor: String(pend.length), nota: "caixa, cartão, frigobar, boletos", tom: pend.length ? "critico" : "" },
+      { rotulo: "Etapas conferidas", valor: Object.keys(feitos).length + " / " + passos.length, nota: "" }]);
+    if (pend.length) html += U.painelHtml("Pendências", "", '<ul style="margin:0;padding:0 20px 16px 36px">' + pend.map(function (p) { return "<li>" + U.esc(p.texto) + "</li>"; }).join("") + "</ul>");
+    html += U.painelHtml("Roteiro", "", '<ol style="margin:0;padding:0 20px 16px 40px;line-height:2">' + passos.map(function (p, i) {
+      return "<li>" + U.esc(p) + " " + (feitos[i] ? pastilha("ok", "conferido por " + feitos[i]) : (T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-passo-mes" data-id="' + i + '">Marcar conferido</button>' : "")) + "</li>"; }).join("") + "</ol>" +
+      '<div style="padding:0 20px 18px;display:flex;gap:8px">' +
+      (st !== "FECHADO" && T.podeEditar() ? '<button class="botao" data-acao="hotel-status-mes" data-id="AGUARDANDO_APROVACAO">Submeter à Direção</button>' : "") +
+      (T.temPerfil("DIRECAO") && st === "AGUARDANDO_APROVACAO" ? ' <button class="botao primario" data-acao="hotel-status-mes" data-id="APROVADO">Aprovar</button>' : "") +
+      (T.temPerfil("DIRECAO") && st === "APROVADO" ? ' <button class="botao primario" data-acao="hotel-status-mes" data-id="FECHADO">Fechar o mês</button>' : "") + "</div>");
+    return html;
+  };
+  function periodo(comp) {
+    var p = (L.estado.periodos || []).find(function (x) { return x.competencia === comp; });
+    if (!p) { p = { competencia: comp, id: L.id() }; L.estado.periodos.push(p); }
+    return p;
+  }
+  T.acoes["hotel-passo-mes"] = function (i) { var p = periodo(compSel()); p.passosHotel = p.passosHotel || {}; p.passosHotel[i] = (L.estado.usuario || {}).nome; L.registrar("periodos", { descricao: "Fechamento " + compSel() + " · etapa " + (Number(i) + 1) }, "ALTERAR"); L.persistir(); T.renderizar(); };
+  T.acoes["hotel-status-mes"] = function (s) {
+    var comp = compSel();
+    if (s === "AGUARDANDO_APROVACAO" && H.pendenciasDoMes(comp, L.hoje()).length) return U.avisar("Resolva as pendências antes de submeter.");
+    var p = periodo(comp); p.statusHotel = s; p["hotel" + s + "Por"] = (L.estado.usuario || {}).nome;
+    L.registrar("periodos", { descricao: "Fechamento " + comp + " → " + s }, "ALTERAR"); L.persistir(); T.renderizar();
+  };
+
+  // ------------------------------------------------------------ cadastros do hotel
+
+  T.telas.hotelconfig = function () {
+    var c = L.estado.configHotel;
+    var html = T.cabecalho("Cadastros do Hotel", "Apartamentos e regras operacionais. Produtos e enxoval ficam nas próprias telas.", botaoNovo("apartamentos", "Novo apartamento"));
+    html += U.painelHtml("Regras", "", '<div style="padding:0 20px 18px">' +
+      "<p>Nome: <strong>" + U.esc(c.nome) + "</strong> · Café: " + U.esc(c.cafeHorario) + " · Ocupação " + (c.ocupacaoExcluiBloqueados ? "exclui" : "inclui") + " apartamentos bloqueados · Alertas de vencimento: " + c.alertasVencimentoDias.join(", ") + " dias · Saldo inicial do caixa: " + L.brl(c.saldoInicialCaixa || 0) + "</p>" +
+      (T.temPerfil("DIRECAO") ? '<button class="botao miudo" data-acao="hotel-config">Editar regras</button>' : "") + "</div>");
+    html += U.painelHtml("Apartamentos", L.estado.apartamentos.length + " cadastrado(s)", U.tabelaHtml([
+      { rotulo: "Número", conteudo: function (a) { return "<strong>" + U.esc(a.numero) + "</strong>"; } },
+      { rotulo: "Tipologia", conteudo: function (a) { return U.esc(a.tipologia || ""); } },
+      { rotulo: "Capacidade", direita: true, conteudo: function (a) { return a.capacidade || ""; } },
+      { rotulo: "Situação", direita: true, conteudo: function (a) { return a.bloqueado ? pastilha("atencao", "Bloqueado") : pastilha("ok", "À venda"); } },
+      { rotulo: "", direita: true, conteudo: function (a) { return botaoEditar("apartamentos", a); } }
+    ], L.estado.apartamentos.slice().sort(function (a, b) { return String(a.numero).localeCompare(String(b.numero), "pt-BR", { numeric: true }); }), { tituloVazio: "Nenhum apartamento" }));
+    return html;
+  };
+  T.acoes["hotel-config"] = function () {
+    var c = L.estado.configHotel;
+    U.abrirFormulario({ titulo: "Regras do hotel", campos: [
+      { id: "nome", rotulo: "Nome do hotel", obrigatorio: true }, { id: "cafeHorario", rotulo: "Horário do café", par: true },
+      { id: "ocupacaoExcluiBloqueados", rotulo: "Taxa de ocupação", tipo: "select", opcoes: [{ valor: "1", rotulo: "Exclui bloqueados do denominador" }, { valor: "", rotulo: "Considera todos os apartamentos" }] },
+      { id: "alertas", rotulo: "Alertas de vencimento (dias antes, separados por vírgula)", par: true }, { id: "saldoInicialCaixa", rotulo: "Saldo inicial do caixa", tipo: "moeda" }],
+      valores: { nome: c.nome, cafeHorario: c.cafeHorario, ocupacaoExcluiBloqueados: c.ocupacaoExcluiBloqueados ? "1" : "", alertas: c.alertasVencimentoDias.join(","), saldoInicialCaixa: ((c.saldoInicialCaixa || 0) / 100).toFixed(2) },
+      aoSalvar: function (v) {
+        Object.assign(c, { nome: v.nome, cafeHorario: v.cafeHorario, ocupacaoExcluiBloqueados: !!v.ocupacaoExcluiBloqueados, saldoInicialCaixa: v.saldoInicialCaixa,
+          alertasVencimentoDias: v.alertas.split(",").map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x); }) });
+        L.registrar("configHotel", { descricao: "Regras do hotel" }, "ALTERAR"); L.persistir(); U.fecharModal(); T.renderizar(); } });
+  };
+
+  // ------------------------------------------------------------ dashboard gerencial
+
+  var dashOriginal = T.telas.dashboard;
+  T.telas.dashboard = function () {
+    var base = dashOriginal();
+    var hoje = L.hoje(), comp = hoje.slice(0, 7);
+    var temDados = L.estado.hospedagens.length || L.estado.recebimentos.length || L.estado.apartamentos.length;
+    if (!temDados) return base;
+    var o = H.ocupacao(hoje), cafe = H.listaCafe(hoje), f = H.fechamentoDia(hoje);
+    var mes = L.estado.recebimentos.filter(function (r) { return H.noMes(r.data, comp) && r.tipo !== "SAIDA_CAIXA" && r.status !== "CANCELADO"; });
+    var recMes = mes.reduce(function (a, r) { var s = H.situacaoRecebimento(r); return a + (s === "RECEBIDO" || s === "CONCILIADO" ? H.liquido(r) : 0); }, 0);
+    var fatMes = mes.filter(function (r) { return !r.liquidaFaturado; }).reduce(function (a, r) { return a + H.liquido(r); }, 0);
+    var aRec = L.estado.recebimentos.filter(function (r) { return r.tipo !== "SAIDA_CAIXA" && H.situacaoRecebimento(r) === "A_RECEBER"; }).reduce(function (a, r) { return a + H.liquido(r); }, 0);
+    var bolPend = L.estado.boletos.filter(function (b) { var s = H.statusBoleto(b, hoje); return s !== "PAGO" && s !== "CANCELADO"; });
+    var frig = H.frigobarMes(comp);
+    var podeFin = T.podeVer("caixa");
+    var bloco = '<div class="painel" style="padding:18px 20px"><h2 style="margin:0 0 12px">Hotel hoje · ' + L.dataBR(hoje) + "</h2>" +
+      '<div class="grade-kpi">' + [
+        { rotulo: "Ocupação", valor: pct(o.taxa), nota: o.ocupados + " ocupados · " + o.disponiveis + " livres", destino: "hospedagem", hero: true },
+        { rotulo: "Hóspedes presentes", valor: String(o.hospedes), nota: o.entradas + " check-ins · " + o.saidas + " check-outs", destino: "hospedagem" },
+        { rotulo: "Café de hoje", valor: String(cafe.totalPrevisto), nota: "pessoas previstas", destino: "cafe" }
+      ].concat(podeFin ? [
+        { rotulo: "Receita lançada no mês", valor: L.brl(fatMes), nota: "reconhecida (não é dinheiro)", destino: "caixa" },
+        { rotulo: "Recebido no mês", valor: L.brl(recMes), nota: "efetivamente entrou", destino: "caixa" },
+        { rotulo: "A receber", valor: L.brl(aRec), nota: "cartão, faturado, boleto", destino: "cartoes" },
+        { rotulo: "Boletos em aberto", valor: String(bolPend.length), nota: L.brl(bolPend.reduce(function (a, b) { return a + H.saldoBoleto(b); }, 0)), destino: "boletos" },
+        { rotulo: "Caixa do dia", valor: L.brl(f.saldoCalculado), nota: f.fechamento && f.fechamento.status === "FECHADO" ? "fechado" : "aberto", destino: "caixa" },
+        { rotulo: "Frigobar no mês", valor: L.brl(frig.receita), nota: frig.produtos.length + " produto(s)", destino: "frigobar" }
+      ] : []).map(U.kpiHtml).join("") + "</div></div>";
+    // Encaixa logo depois do cabeçalho do dashboard.
+    var i = base.indexOf('<div class="cabecalho');
+    var fim = i === -1 ? -1 : base.indexOf("</div></div>", i);
+    return fim === -1 ? bloco + base : base.slice(0, fim + 12) + bloco + base.slice(fim + 12);
+  };
+
+  // ------------------------------------------------------------ eventos próprios
+
+  var ligar = T.ligarEventos;
+  T.ligarEventos = function () {
+    ligar.apply(this, arguments);
+    U.todos(".hotel-filtro", U.el("conteudo")).forEach(function (el) {
+      el.addEventListener("change", function () {
+        if (el.dataset.chave === "fluxoSaldoReais") T.filtros.fluxoSaldo = Math.round(parseFloat(el.value || "0") * 100);
+        else if (el.value) T.filtros[el.dataset.chave] = el.value;
+        if (el.dataset.chave === "dataHotel") T.filtros.mesHotel = el.value.slice(0, 7);
+        T.renderizar();
+      });
+    });
+    var tipo = U.el("imp-tipo"), arq = U.el("imp-arquivo"), origem = U.el("imp-origem");
+    if (tipo) tipo.addEventListener("change", function () { T.filtros.impTipo = tipo.value; T._previa = null; T.renderizar(); });
+    if (arq) arq.addEventListener("change", function () {
+      var file = arq.files && arq.files[0]; if (!file) return;
+      if (!/\.csv$/i.test(file.name)) { U.avisar("Envie CSV. No Excel: Arquivo → Salvar como → CSV (separado por ponto e vírgula)."); return; }
+      var leitor = new FileReader();
+      leitor.onload = function () {
+        try {
+          var linhas = H.lerCsv(leitor.result);
+          if (!linhas.length) return U.avisar("O arquivo está vazio.");
+          T._previa = H.preverImportacao(tipo.value, origem.value, linhas);
+          T._previa.arquivo = file.name;
+          T.renderizar();
+        } catch (e) { U.avisar(e.message || "Não foi possível ler o arquivo."); }
+      };
+      leitor.readAsText(file, "utf-8");
+    });
+  };
 })();
 
 })();

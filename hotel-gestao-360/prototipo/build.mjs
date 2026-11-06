@@ -53,6 +53,7 @@ const LIGA_BACKEND = comBackend ? "L.USA_BACKEND = true;" : "";
 // vem como código pronto, não como arquivo para `parte()` ler.
 const SCRIPTS = [
   "dominio.js",
+  "hotel-dominio.js",
   ...(comBackend ? [LIGA_BACKEND] : []),
   ...(temDadosReais ? ["dados-reais.js"] : []),
   ...(temDadosColaboradores ? ["dados-colaboradores.js"] : []),
@@ -63,6 +64,7 @@ const SCRIPTS = [
   "telas-b.js",
   "telas-lotacao.js",
   "telas-c.js",
+  "telas-hotel.js",
 ];
 
 // Carregada como "preload" e só virando folha de estilo depois de baixada:
@@ -91,6 +93,7 @@ ${parte("estilo.css")}
 ${parte("clean.css")}
 ${parte("section-polish.css")}
 ${parte("minimal.css")}
+${parte("hotel.css")}
 </style>
 
 ${parte("corpo.html")}

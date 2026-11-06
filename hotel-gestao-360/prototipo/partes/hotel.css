@@ -1,0 +1,26 @@
+/* Telas do hotel. Status: verde regular · âmbar atenção · vermelho problema · azul informação. */
+.pastilha.atencao { background: var(--ambar-fundo); color: var(--ambar); }
+:root { --azul-info: #1F5FA8; --azul-info-fundo: #E3EEFA; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; } }
+:root[data-theme="dark"] { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; }
+.pastilha.info { background: var(--azul-info-fundo); color: var(--azul-info); }
+.grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grade-2 { grid-template-columns: 1fr; } }
+.hotel-filtro { font: inherit; padding: 6px 10px; border: 1px solid var(--borda); border-radius: 8px; background: var(--superficie); color: var(--tinta); }
+.cal-grade { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 0 20px 18px; }
+.cal-cab { font-size: var(--t-0); color: var(--tinta-media); text-align: center; padding: 4px 0; }
+.cal-dia { min-height: 78px; border: 1px solid var(--borda); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; font-size: var(--t-0); background: var(--superficie); }
+.cal-dia.vazio { border: 0; background: transparent; }
+.cal-dia.ok { border-color: var(--verde); background: var(--verde-fundo); }
+.cal-dia.atencao { border-color: var(--ambar); background: var(--ambar-fundo); }
+.cal-dia.critico { border-color: var(--vermelho); background: var(--vermelho-fundo); }
+.cal-n { font-weight: 600; }
+.cal-v { font-weight: 600; }
+.cal-q, .cal-s { color: var(--tinta-media); }
+.cal-s.neg { color: var(--vermelho); font-weight: 600; }
+@media (max-width: 760px) { .cal-dia { min-height: 56px; padding: 4px; } .cal-q, .cal-s { display: none; } }
+@media print {
+  .lateral, nav, .topo, .barra-ferramentas, .cabecalho-acoes, button { display: none !important; }
+  body, .conteudo, #conteudo { background: #fff !important; color: #000 !important; }
+  .painel { break-inside: avoid; box-shadow: none !important; }
+}
