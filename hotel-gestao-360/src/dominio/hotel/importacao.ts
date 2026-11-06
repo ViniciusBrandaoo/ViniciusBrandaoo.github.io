@@ -10,7 +10,7 @@
  */
 import { createHash } from "node:crypto";
 
-export type TipoImportacao = "hospedagens" | "recebimentos";
+export type TipoImportacao = "hospedagens" | "recebimentos" | "cafe" | "apartamentos";
 export type TipoCampo = "texto" | "data" | "valor" | "inteiro" | "booleano" | "forma";
 export type Forma = "DINHEIRO" | "DEBITO" | "CREDITO" | "PIX" | "BOLETO" | "FATURADO" | "OUTRO";
 
@@ -78,6 +78,30 @@ export const LAYOUTS: Record<TipoImportacao, Layout> = {
       bandeira: { de: ["bandeira"] },
       operadora: { de: ["operadora", "adquirente"] },
       parcelas: { de: ["parcelas", "parcelamento"], tipo: "inteiro" },
+    },
+  },
+  cafe: {
+    tipo: "cafe",
+    nome: "Lista de café da manhã",
+    versao: "datahotel-2023.07-cafe-1",
+    codigo: ["codigo"],
+    campos: {
+      data: { de: ["data"], tipo: "data", obrigatorio: true },
+      apartamento: { de: ["apartamento", "apto"], obrigatorio: true },
+      hospede: { de: ["hospede"], obrigatorio: true },
+      adultos: { de: ["adultos"], tipo: "inteiro", obrigatorio: true },
+      criancas: { de: ["criancas"], tipo: "inteiro" },
+      tipo: { de: ["tipo"] },
+    },
+  },
+  apartamentos: {
+    tipo: "apartamentos",
+    nome: "Apartamentos (Lista de Camareira)",
+    versao: "datahotel-2023.07-camareira-1",
+    codigo: ["codigo"],
+    campos: {
+      numero: { de: ["apartamento", "apto"], obrigatorio: true },
+      situacaoOrigem: { de: ["situacao"], obrigatorio: true },
     },
   },
 };
@@ -269,6 +293,84 @@ export function lerMovimentoCaixaDataHotel(texto: string, desde?: string | null)
   }
   fecharSessao();
   return { colunas, linhas, conferencia: achouRodape ? { registros, totalCentavos: null, vistas } : null, ignoradas };
+}
+
+/**
+ * "Lista de Café da Manhã" do DataHotel (Hospedagem → Lista de Café da Manhã).
+ * Para cada dia: os apartamentos com hóspede, adultos e crianças. Depois da
+ * lista principal vem a seção "Check-in Antecipado" (os mesmos dias, outros
+ * hóspedes). O rodapé "Total de Hóspedes" soma as duas seções, e é com ele que
+ * a leitura é conferida.
+ *
+ * Linhas: `tipo` = LISTA ou ANTECIPADO. A previsão de café do sistema usa só
+ * a LISTA; o antecipado fica guardado à parte para não contar duas vezes quem
+ * aparece nas duas.
+ */
+export function lerListaCafeDataHotel(texto: string, desde?: string | null): {
+  colunas: string[]; linhas: LinhaBruta[]; erro: string | null; ignoradas: { antigas: number };
+} | null {
+  if (!/Lista de Caf. da Manh./i.test(texto) || !/Total de H.spedes/i.test(texto)) return null;
+  const colunas = ["codigo", "data", "apartamento", "hospede", "adultos", "criancas", "tipo"];
+  const linhas: LinhaBruta[] = [];
+  const ignoradas = { antigas: 0 };
+  let data = "";
+  let secao: "LISTA" | "ANTECIPADO" = "LISTA";
+  let adultos = 0, criancas = 0;
+  let totalAdultos: number | null = null, totalCriancas: number | null = null;
+  const vistos = new Set<string>();
+  for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
+    const t = bruta.split(";").map((s) => s.trim()).filter((c) => c !== "");
+    if (!t.length) continue;
+    if (/^Total de H.spedes/i.test(t[0]!)) {
+      const n = t.slice(1).map(Number);
+      if (n.length >= 2 && n.every((x) => Number.isInteger(x))) { totalAdultos = n[0]!; totalCriancas = n[1]!; }
+      continue;
+    }
+    if (t.length === 1 && DATA_BR.test(t[0]!)) { data = t[0]!; continue; }
+    if (t.length === 1 && /^Check-in Antecipado$/i.test(t[0]!)) { secao = "ANTECIPADO"; continue; }
+    const n = t.length;
+    if (!data || n < 4 || !/^\d{2,4}$/.test(t[0]!) || !/^\d+$/.test(t[n - 1]!) || !/^\d+$/.test(t[n - 2]!)) continue;
+    const hospede = t.slice(1, n - 2).join(" ").replace(/\s+/g, " ").trim();
+    const a = Number(t[n - 2]), c = Number(t[n - 1]);
+    adultos += a; criancas += c;
+    const iso = lerData(data);
+    if (typeof iso !== "string") continue;
+    if (desde && iso < desde) { ignoradas.antigas++; continue; }
+    const base = `CAFE-${iso.replace(/-/g, "")}-${t[0]}-${secao}-${sha256(Buffer.from(hospede)).slice(0, 8)}`;
+    if (vistos.has(base)) continue; // o mesmo hóspede repetido na quebra de página
+    vistos.add(base);
+    linhas.push({ codigo: base, data, apartamento: t[0]!, hospede, adultos: String(a), criancas: String(c), tipo: secao });
+  }
+  let erro: string | null = null;
+  if (totalAdultos !== null && (adultos !== totalAdultos || criancas !== totalCriancas)) {
+    erro = `O relatório diz ${totalAdultos} adulto(s) e ${totalCriancas} criança(s), mas foram lidos ${adultos} e ${criancas}. Nada foi importado; exporte de novo ou avise o suporte.`;
+  }
+  return { colunas, linhas, erro, ignoradas };
+}
+
+/**
+ * "Lista de Camareira" do DataHotel (Governança → Lista de Camareira): todos
+ * os apartamentos do hotel com a situação do dia (Livre, Ocupado, Reservado,
+ * Bloqueado, Governança). Serve de cadastro de apartamentos: o bloqueado sai
+ * do denominador da taxa de ocupação.
+ */
+export function lerApartamentosCamareiraDataHotel(texto: string): {
+  colunas: string[]; linhas: LinhaBruta[]; erro: string | null;
+} | null {
+  if (!/Lista de Camareira/i.test(texto)) return null;
+  const colunas = ["codigo", "apartamento", "situacao"];
+  const linhas: LinhaBruta[] = [];
+  const vistos = new Set<string>();
+  for (const bruta of texto.replace(/^﻿/, "").split(/\r?\n/)) {
+    const t = bruta.split(";").map((s) => s.trim()).filter((c) => c !== "");
+    if (t.length < 2 || !/^\d{2,4}$/.test(t[0]!)) continue;
+    const situacao = t.find((c, i) => i > 0 && /^(Livre|Ocupado|Reservado|Reserva|Bloqueado|Governan.a|Manuten..o)$/i.test(c));
+    if (!situacao) continue;
+    if (vistos.has(t[0]!)) continue;
+    vistos.add(t[0]!);
+    linhas.push({ codigo: `APTO-${t[0]}`, apartamento: t[0]!, situacao });
+  }
+  return { colunas, linhas, erro: linhas.length ? null : "Nenhum apartamento encontrado na Lista de Camareira." };
 }
 
 /** Confere o que foi lido contra o rodapé do relatório. Null = confere. */

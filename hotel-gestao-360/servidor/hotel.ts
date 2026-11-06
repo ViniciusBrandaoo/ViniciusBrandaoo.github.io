@@ -9,7 +9,8 @@
 import type pg from "pg";
 import { consultar, transacao, type Ator } from "./banco.js";
 import {
-  LAYOUTS, conferirTotais, lerCsv, lerContasRecebidasDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
+  LAYOUTS, conferirTotais, lerCsv, lerApartamentosCamareiraDataHotel, lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel,
+  lerRelatorioReservasDataHotel, lerXlsx, preverImportacao, sha256,
   type Conferencia,
   type LinhaBruta, type Registro, type TipoImportacao,
 } from "../src/dominio/hotel/importacao.js";
@@ -21,7 +22,7 @@ function erro(status: number, mensagem: string): Error {
 }
 
 export function tipoValido(t: string): t is TipoImportacao {
-  return t === "hospedagens" || t === "recebimentos";
+  return t === "hospedagens" || t === "recebimentos" || t === "cafe" || t === "apartamentos";
 }
 
 /** Campo do registro → coluna da tabela. */
@@ -47,6 +48,14 @@ const COLUNAS: Record<TipoImportacao, { tabela: string; campos: Record<string, s
       taxa: "taxa_centavos", codigoTransacao: "codigo_transacao", bandeira: "bandeira",
       operadora: "operadora", parcelas: "parcelas",
     },
+  },
+  cafe: {
+    tabela: "hotel_cafe_dia",
+    campos: { data: "data", apartamento: "apartamento", hospede: "hospede", adultos: "adultos", criancas: "criancas", tipo: "tipo" },
+  },
+  apartamentos: {
+    tabela: "hotel_apartamentos",
+    campos: { numero: "numero", situacaoOrigem: "situacao_origem" },
   },
 };
 
@@ -93,7 +102,12 @@ export interface EntradaArquivo {
   periodoFim?: string | null;
 }
 
-async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): Promise<{ formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null; familia?: "LR" | "CX" }> {
+async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): Promise<{
+  formato: "CSV" | "XLSX"; colunas: string[]; linhas: LinhaBruta[]; conferencia?: Conferencia | null;
+  familia?: "LR" | "CX"; erro?: string | null;
+  /** Tipo de importação a que o relatório reconhecido pertence. */
+  tipo?: TipoImportacao;
+}> {
   const ehXlsx = /\.xlsx$/i.test(nome) || (buffer[0] === 0x50 && buffer[1] === 0x4b);
   if (ehXlsx) {
     try {
@@ -110,11 +124,15 @@ async function lerArquivo(nome: string, buffer: Buffer, desde?: string | null): 
   if (texto.includes("�")) texto = buffer.toString("latin1");
   // Relatório de Reservas exportado do DataHotel: lido pelo conteúdo.
   const recebidas = lerContasRecebidasDataHotel(texto, desde);
-  if (recebidas) return { formato: "CSV", ...recebidas, familia: "LR" as const };
+  if (recebidas) return { formato: "CSV", ...recebidas, familia: "LR" as const, tipo: "recebimentos" as const };
   const caixa = lerMovimentoCaixaDataHotel(texto, desde);
-  if (caixa) return { formato: "CSV", ...caixa, familia: "CX" as const };
+  if (caixa) return { formato: "CSV", ...caixa, familia: "CX" as const, tipo: "recebimentos" as const };
+  const cafe = lerListaCafeDataHotel(texto, desde);
+  if (cafe) return { formato: "CSV", ...cafe, tipo: "cafe" as const };
+  const camareira = lerApartamentosCamareiraDataHotel(texto);
+  if (camareira) return { formato: "CSV", ...camareira, tipo: "apartamentos" as const };
   const relatorio = lerRelatorioReservasDataHotel(texto);
-  if (relatorio) return { formato: "CSV", ...relatorio };
+  if (relatorio) return { formato: "CSV", ...relatorio, tipo: "hospedagens" as const };
   return { formato: "CSV", ...lerCsv(texto) };
 }
 
@@ -132,6 +150,9 @@ export async function criarPrevia(ator: Ator, entrada: EntradaArquivo): Promise<
     throw erro(409, `Este mesmo arquivo já foi importado em ${jaConfirmado[0].confirmado_em}. Nada foi alterado.`);
   }
   const lido = await lerArquivo(entrada.nome, entrada.buffer, entrada.periodoInicio ?? null);
+  if (lido.tipo && lido.tipo !== entrada.tipo) {
+    throw erro(422, `Este arquivo é "${LAYOUTS[lido.tipo].nome}", mas você escolheu "${LAYOUTS[entrada.tipo].nome}". Escolha o tipo certo e envie de novo.`);
+  }
   const codigos = [...new Set(lido.linhas.map((l) => {
     for (const c of LAYOUTS[entrada.tipo].codigo) if (l[c]) return l[c].trim();
     return "";
@@ -150,7 +171,7 @@ export async function criarPrevia(ator: Ator, entrada: EntradaArquivo): Promise<
       throw erro(409, `Os recebimentos já foram importados pelo relatório "${jaNome}". Importar também o "${nome}" contaria os mesmos pagamentos duas vezes. Use só um dos dois.`);
     }
   }
-  const erroArquivo = lido.conferencia !== undefined ? conferirTotais(lido.linhas, lido.conferencia) : null;
+  const erroArquivo = lido.erro ?? (lido.conferencia !== undefined ? conferirTotais(lido.linhas, lido.conferencia) : null);
   const previa = preverImportacao(entrada.tipo, lido.colunas, lido.linhas, atuais, erroArquivo);
 
   return transacao(ator, async (db) => {
@@ -281,6 +302,12 @@ export async function confirmar(ator: Ator, loteId: string): Promise<Record<stri
             WHEN situacao_origem ILIKE 'cancel%' THEN 'CANCELADA'
             WHEN situacao_origem ILIKE 'checked-out%' THEN 'ENCERRADA'
             ELSE 'ATIVA' END
+          WHERE lote_id = $1`, [loteId]);
+    }
+    if (tipo === "apartamentos") {
+      await db.query(
+        `UPDATE hotel_apartamentos SET situacao = CASE
+            WHEN situacao_origem ILIKE 'bloqueado%' THEN 'BLOQUEADO' ELSE 'ATIVO' END
           WHERE lote_id = $1`, [loteId]);
     }
     const rej = await db.query<{ n: number }>(
