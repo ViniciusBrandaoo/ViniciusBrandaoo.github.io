@@ -135,3 +135,34 @@ rodapé do próprio relatório.
 - **Relatórios que vieram vazios:** Contas a Pagar e Comissão por Reservas (26/10 a 06/11). O hotel não usa nenhum dos dois no DataHotel.
 - **Ficha da empresa:** o botão Imprimir do cadastro de empresas imprime só a empresa selecionada, não a lista das 121.
 - **Não exportados por serem derivados ou telas de operação:** Mapa de Disponibilidade, Ranking de Reservas, Indicadores e gráficos (calculados das mesmas reservas), Mala Direta, Tarifador Telefônico, Day Use, NFS-e e Conta Corrente (telas de lançamento, sem relatório próprio).
+
+## Conferência automática do fechamento
+
+Roda sobre os arquivos acima, sem alterar nada no DataHotel nem no Hotel 360:
+
+```bash
+npx tsx scripts/conferir-datahotel.mts [pasta] [início AAAA-MM-DD] [fim AAAA-MM-DD]
+```
+
+Gera `conferencia_<início>_<fim>.md` e `.csv` na própria pasta. Regras (módulo
+`src/dominio/hotel/conferencia.ts`, testes em `tests/hotel/conferencia.test.ts`):
+
+| Regra | O que confere |
+|---|---|
+| C1/C2 | Contas Recebidas × Receitas x Despesas, no total e dia a dia |
+| C3 | Recebido por forma de pagamento × Créditos e Débitos (pede olho no turno do caixa) |
+| C4/C7 | Diária e total faturado por dia: Faturamento Diário × Faturamento Analítico |
+| C5/C6 | Consumo e venda de balcão: extrato das reservas × analítico × relatórios de consumo e de vendas |
+| C8 | Faturado para empresas × contas a receber lançadas |
+| C9 | Estadia encerrada com saldo em aberto ou com recebimento a mais |
+| C10 | Recebimento que cita reserva inexistente |
+| C11 | Lista de café × hóspedes das reservas que dormiram na noite anterior |
+| C12/C13 | Ocupação (RDS × Mapa × reservas), pagamento dos hóspedes em casa e cadastro de apartamentos |
+| C14 | Estoque com saldo negativo |
+| C15 | Noite de reserva sem diária lançada |
+
+**Resultado em 26/10 a 06/11/2026:** 11 regras OK, 4 divergentes, 4 com atenção.
+Divergências reais: diária de 06/11 (resumo R$ 540,00 × analítico R$ 405,00);
+faturado para empresas R$ 5.130,00 com apenas R$ 215,00 em contas a receber;
+RDS com 5 ocupados contra 4 no Mapa de Ocupação e nas reservas; total faturado
+R$ 149,50 acima no resumo (efeito do dia de hoje).
