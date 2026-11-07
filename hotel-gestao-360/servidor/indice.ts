@@ -78,7 +78,7 @@ const PRODUCAO = process.env.NODE_ENV === "production";
 // Rebaixado de 10 para 7 a pedido explícito da Direção (2026-09-16) — abaixo
 // disso o custo do scrypt (~100ms) já não segura muito uma tentativa de
 // força bruta, mas a decisão de quanto risco aceitar na própria conta é dela.
-const TAMANHO_MINIMO_SENHA = 7;
+const TAMANHO_MINIMO_SENHA = 6;
 
 await app.register(cookie, {
   secret: process.env.COOKIE_SECRET ?? randomBytes(32).toString("hex"),

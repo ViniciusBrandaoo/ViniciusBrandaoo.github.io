@@ -27,8 +27,8 @@ if (!nome || !email || !senha) {
   console.error('Uso: npm run semear -- "Nome Completo" email@escola.com.br senha');
   process.exit(1);
 }
-if (senha.length < 10) {
-  console.error("A senha precisa de pelo menos 10 caracteres.");
+if (senha.length < 6) {
+  console.error("A senha precisa de pelo menos 6 caracteres.");
   process.exit(1);
 }
 

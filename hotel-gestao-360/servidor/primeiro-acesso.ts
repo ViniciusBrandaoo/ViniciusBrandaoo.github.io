@@ -71,8 +71,8 @@ export function registrarPrimeiroAcesso(app: FastifyInstance): void {
 <form id="f" autocomplete="on">
 <label for="nome">Seu nome</label><input id="nome" name="nome" autocomplete="name" required minlength="3" maxlength="120">
 <label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="200">
-<label for="senha">Senha (mínimo 10 caracteres)</label><input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="10" maxlength="200">
-<label for="senha2">Repita a senha</label><input id="senha2" name="senha2" type="password" autocomplete="new-password" required minlength="10" maxlength="200">
+<label for="senha">Senha (mínimo 6 caracteres)</label><input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="6" maxlength="200">
+<label for="senha2">Repita a senha</label><input id="senha2" name="senha2" type="password" autocomplete="new-password" required minlength="6" maxlength="200">
 <button id="b" type="submit">Criar meu acesso</button><div id="m" class="erro" role="alert"></div></form>
 <script>
 var f=document.getElementById('f'),m=document.getElementById('m'),b=document.getElementById('b');
@@ -99,7 +99,7 @@ fetch('/api/primeiro-acesso',{method:'POST',headers:{'Content-Type':'application
       const senha = String(b.senha ?? "");
       if (nome.length < 3 || nome.length > 120) return resp.code(400).send({ erro: "Informe o seu nome." });
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 200) return resp.code(400).send({ erro: "Informe um e-mail válido." });
-      if (senha.length < 10 || senha.length > 200) return resp.code(400).send({ erro: "A senha precisa de pelo menos 10 caracteres." });
+      if (senha.length < 6 || senha.length > 200) return resp.code(400).send({ erro: "A senha precisa de pelo menos 6 caracteres." });
       const hash = await criarHashSenha(senha);
       const criado = await transacao({ userId: null }, async (c) => {
         // Trava a tabela: dois envios ao mesmo tempo não criam duas contas.

@@ -2191,9 +2191,9 @@ T.acoes["novo-acesso"] = function () {
     valores: { perfil: "CONSULTA" },
     rotuloSalvar: "Conceder acesso",
     aoSalvar: function (v) {
-      if (v.senha && v.senha.length < 10) {
+      if (v.senha && v.senha.length < 6) {
         var alvo = U.el("erro-senha");
-        if (alvo) { alvo.textContent = "A senha precisa de pelo menos 10 caracteres."; alvo.classList.remove("oculto"); }
+        if (alvo) { alvo.textContent = "A senha precisa de pelo menos 6 caracteres."; alvo.classList.remove("oculto"); }
         return;
       }
       var corpo = { nome: v.nome, email: v.email, perfis: [v.perfil] };
