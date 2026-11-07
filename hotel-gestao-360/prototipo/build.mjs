@@ -66,6 +66,7 @@ const SCRIPTS = [
   "telas-c.js",
   "telas-hotel.js",
   "hotel-conferencia.js",
+  "hotel-painel.js",
   "hotel-sync.js",
 ];
 
