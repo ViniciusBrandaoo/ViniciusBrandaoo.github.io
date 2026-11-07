@@ -14,6 +14,7 @@
     { grupo: "Hotel", chave: "governanca", nome: "Governança e Enxoval", icone: "operacao" },
     { grupo: "Hotel", chave: "frigobar", nome: "Frigobar", icone: "fatia" },
     { grupo: "Hotel", chave: "importacoes", nome: "Importações DataHotel", icone: "relatorios" },
+    { grupo: "Hotel", chave: "conferencia", nome: "Conferência do Fechamento", icone: "fechamento" },
     { grupo: "Financeiro", chave: "caixa", nome: "Fechamento de Caixa", icone: "fechamento" },
     { grupo: "Financeiro", chave: "cartoes", nome: "Cartões e Depósitos", icone: "contas" },
     { grupo: "Financeiro", chave: "boletos", nome: "Boletos e Notas Fiscais", icone: "contratos" },
@@ -41,12 +42,12 @@
   U.ICONES.hotel = '<path d="M3 19.5v-12M3 15h18v4.5M21 15v-3.5a2.5 2.5 0 0 0-2.5-2.5H11v6"/><circle cx="7" cy="11.5" r="1.8"/>';
 
   function addMod(perfil, chaves) { var p = T.PERFIS[perfil]; if (p && p.modulos !== "*") chaves.forEach(function (c) { if (p.modulos.indexOf(c) === -1) p.modulos.push(c); }); }
-  addMod("FINANCEIRO", ["hospedagem", "caixa", "cartoes", "boletos", "empresas", "recorrentes", "fluxo", "frigobar", "importacoes", "fechamentomes"]);
+  addMod("FINANCEIRO", ["hospedagem", "caixa", "cartoes", "boletos", "empresas", "recorrentes", "fluxo", "frigobar", "importacoes", "conferencia", "fechamentomes"]);
   addMod("RH", ["ponto"]);
   addMod("ADMINISTRATIVO", ["recorrentes"]);
   addMod("GESTOR", ["ponto"]);
   T.PERFIS.RECEPCAO = { nome: "Recepção", resumo: "Hospedagens, café, frigobar e fechamento operacional do caixa.",
-    modulos: ["dashboard", "hospedagem", "cafe", "frigobar", "caixa", "importacoes", "solicitacoes"] };
+    modulos: ["dashboard", "hospedagem", "cafe", "frigobar", "caixa", "importacoes", "conferencia", "solicitacoes"] };
   T.PERFIS.GOVERNANCA = { nome: "Governança", resumo: "Lista de apartamentos, enxoval, lavanderia e reposição.",
     modulos: ["dashboard", "governanca", "cafe", "solicitacoes"] };
   T.PERFIS.SECRETARIA.nome = "Recepção (documentos)";

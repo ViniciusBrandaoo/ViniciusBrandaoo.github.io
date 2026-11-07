@@ -210,6 +210,8 @@ export interface DadosConferencia {
   cafe: CafeLinha[];
   apartamentos: { numero: string; situacao: string }[];
   estoque: ReturnType<typeof lerEstoque>;
+  /** Quais relatórios foram enviados. Ausente = todos (modo do script). */
+  tem?: Partial<Record<Fonte, boolean>>;
 }
 
 /** Transforma as linhas lidas por `lerRelatorioReservasDataHotel` em reservas com valores em centavos. */
@@ -245,7 +247,7 @@ function comparar(regra: string, titulo: string, entre: string, esperado: number
 const noPeriodo = (d: DadosConferencia, dia: string) => dia >= d.inicio && dia <= d.fim;
 const diasEntre = (a: string, b: string): number => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 
-export function conferir(d: DadosConferencia): Resultado[] {
+function conferirTudo(d: DadosConferencia): Resultado[] {
   const out: Resultado[] = [];
 
   // C1/C2 — o dinheiro que entrou: Contas Recebidas × Receitas x Despesas
@@ -429,6 +431,47 @@ export function conferir(d: DadosConferencia): Resultado[] {
   }
 
   return out;
+}
+
+/** Cada fonte (relatório do DataHotel) que uma regra precisa. */
+export type Fonte =
+  | "reservas" | "recebidas" | "receitas" | "fatDiario" | "analitico" | "creditos" | "aReceber"
+  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque";
+
+export const NOME_FONTE: Record<Fonte, string> = {
+  reservas: "Relatório de Reservas (com extrato)", recebidas: "Relatório de Contas Recebidas",
+  receitas: "Receitas x Despesas", fatDiario: "Resumo de Faturamento Diário", analitico: "Relatório de Faturamento Analítico",
+  creditos: "Créditos e Débitos por Forma de Pgto.", aReceber: "Relatório de Contas a Receber",
+  consumo: "Relatório de Consumo", vendas: "Relatório de Vendas Itens", rds: "Relatório Diário (RDS)",
+  mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual",
+};
+
+const DEPENDE: Record<string, Fonte[]> = {
+  C1: ["recebidas", "receitas"], C2: ["recebidas", "receitas"], C3: ["recebidas", "creditos"],
+  C4: ["fatDiario", "analitico"], C5a: ["reservas", "analitico"], C5b: ["consumo", "analitico"],
+  C6a: ["fatDiario", "analitico"], C6b: ["vendas", "analitico"], C7: ["fatDiario", "analitico"],
+  C8: ["recebidas", "creditos", "aReceber"], C9a: ["reservas"], C9b: ["reservas"], C10: ["recebidas", "reservas"],
+  C11: ["cafe", "reservas"], C12: ["rds", "mapa", "reservas"], C12b: ["mapa"], C13: ["rds", "camareira"],
+  C14: ["estoque"], C15: ["reservas", "analitico"],
+};
+
+/**
+ * Roda as regras. Se `d.tem` diz que um relatório não foi enviado, as regras que
+ * dependem dele não rodam (em vez de acusar divergência falsa) e uma regra C0
+ * lista o que faltou.
+ */
+export function conferir(d: DadosConferencia): Resultado[] {
+  const todas = conferirTudo(d);
+  if (!d.tem) return todas;
+  const falta = (f: Fonte) => d.tem![f] === false;
+  const rodaram = todas.filter((r) => !(DEPENDE[r.regra] ?? []).some(falta));
+  const pulados = todas.length - rodaram.length;
+  const faltando = (Object.keys(NOME_FONTE) as Fonte[]).filter(falta);
+  if (!faltando.length) return rodaram;
+  return [{
+    regra: "C0", titulo: "Relatórios que não foram enviados", entre: "Arquivos desta conferência", situacao: "ATENCAO",
+    detalhes: [`${pulados} regra(s) não rodaram por falta de: ${faltando.map((f) => NOME_FONTE[f]).join("; ")}.`],
+  }, ...rodaram];
 }
 
 export function resumo(rs: Resultado[]): { ok: number; divergentes: number; atencao: number } {

@@ -108,3 +108,21 @@ describe("regras de conferência", () => {
     expect(regra(d, "C12b").situacao).toBe("ATENCAO");
   });
 });
+
+describe("envio parcial de relatórios", () => {
+  it("o que não foi enviado não gera erro técnico nem divergência falsa: só o aviso C0", async () => {
+    const { montarDados, reconhecer } = await import("../../src/dominio/hotel/conferencia-arquivos.js");
+    const { conferir } = await import("../../src/dominio/hotel/conferencia.js");
+    const rds = "Relatório Diário de Situação (RDS) - 06/11/2026;\nOcupadas;5;13\nLivres;21;56\nBloqueadas;5;10\n";
+    const cam = "Lista de Camareira;\n101;Livre;\n102;Bloqueado;\n";
+    expect(reconhecer(rds)).toBe("rds");
+    expect(reconhecer(cam)).toBe("camareira");
+    expect(reconhecer("a;b\n1;2")).toBeNull();
+    const m = montarDados([{ nome: "a.csv", texto: rds }, { nome: "b.csv", texto: cam }, { nome: "c.csv", texto: "a;b" }], "2026-10-26", "2026-11-06");
+    expect(m.erros).toEqual([]);
+    expect(m.naoReconhecidos).toEqual(["c.csv"]);
+    const r = conferir(m.dados);
+    expect(r.map((x) => x.regra)).toEqual(["C0", "C13"]);
+    expect(r[0]!.detalhes[0]).toMatch(/Contas Recebidas/);
+  });
+});

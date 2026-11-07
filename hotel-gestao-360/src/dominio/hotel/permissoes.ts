@@ -8,6 +8,8 @@ export type AcaoHotel =
   | "importacao.confirmar"
   | "hospedagem.ver"
   | "recebimento.ver"
+  | "conferencia.ver"
+  | "conferencia.executar"
   | "salario.ver";
 
 const MATRIZ: Record<AcaoHotel, readonly string[]> = {
@@ -16,6 +18,9 @@ const MATRIZ: Record<AcaoHotel, readonly string[]> = {
   "importacao.confirmar": ["DIRECAO", "FINANCEIRO", "RECEPCAO"],
   "hospedagem.ver": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "GOVERNANCA", "AUDITOR"],
   "recebimento.ver": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "AUDITOR"],
+  // A conferência mostra dinheiro: Governança não vê. Quem fecha o caixa roda.
+  "conferencia.ver": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "AUDITOR"],
+  "conferencia.executar": ["DIRECAO", "FINANCEIRO", "RECEPCAO"],
   // Salário é da Direção e do RH (o restante do sistema já aplica esta regra).
   "salario.ver": ["DIRECAO", "RH"],
 };

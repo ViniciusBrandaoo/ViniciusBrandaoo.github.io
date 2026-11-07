@@ -53,6 +53,7 @@ import * as validar from "./validacao.js";
 import * as lotacao from "./lotacao.js";
 import * as hotel from "./hotel.js";
 import * as hotelDados from "./hotel-dados.js";
+import * as hotelConferencia from "./hotel-conferencia.js";
 import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
 import { lerLotacionogramaDeBuffer } from "../src/importacao/lotacionograma.js";
 import * as clipescola from "./conectores/clipescola.js";
@@ -2271,6 +2272,38 @@ app.post<{ Params: { id: string } }>("/api/hotel/importacoes/:id/descartar", asy
   const s = exigirAcaoHotel(req, "importacao.enviar");
   if (!ID_HOTEL.test(req.params.id)) return resp.code(400).send({ erro: "Importação inválida." });
   return hotel.descartar({ userId: s.userId }, req.params.id);
+});
+
+// ---------------------------------------------------------------- hotel: conferência do fechamento
+//
+// Envia os CSVs do DataHotel, roda as regras e guarda o resultado (histórico).
+
+app.get("/api/hotel/conferencias", async (req) => {
+  exigirAcaoHotel(req, "conferencia.ver");
+  return { conferencias: await hotelConferencia.listar(), alerta: await hotelConferencia.alertaDoDia() };
+});
+
+app.get<{ Params: { conf: string } }>("/api/hotel/conferencias/:conf", async (req, resp) => {
+  exigirAcaoHotel(req, "conferencia.ver");
+  if (!ID_HOTEL.test(req.params.conf)) return resp.code(400).send({ erro: "Conferência inválida." });
+  return hotelConferencia.obter(req.params.conf);
+});
+
+app.post("/api/hotel/conferencias", { bodyLimit: 30 * 1024 * 1024 }, async (req, resp) => {
+  const s = exigirAcaoHotel(req, "conferencia.executar");
+  const campos: Record<string, string> = {};
+  const arquivos: Array<{ nome: string; buffer: Buffer }> = [];
+  // O limite global é de 1 arquivo; a conferência recebe vários relatórios de uma vez.
+  for await (const parte of req.parts({ limits: { files: 30, fileSize: 8 * 1024 * 1024 } })) {
+    if (parte.type === "file") {
+      if (parte.fieldname === "arquivos") arquivos.push({ nome: parte.filename || "arquivo.csv", buffer: await parte.toBuffer() });
+      else parte.file.resume();
+    } else {
+      campos[parte.fieldname] = String(parte.value ?? "");
+    }
+  }
+  if (!campos.inicio || !campos.fim) return resp.code(400).send({ erro: "Informe o período da conferência (início e fim)." });
+  return hotelConferencia.executar({ userId: s.userId }, arquivos, campos.inicio, campos.fim);
 });
 
 // ---------------------------------------------------------------- hotel: todas as áreas no banco
