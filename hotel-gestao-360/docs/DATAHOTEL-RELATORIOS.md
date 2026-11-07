@@ -1,0 +1,168 @@
+# DataHotel — onde fica cada relatório
+
+Levantado em 06/11/2026 na instalação do hotel (DataHotel versão 2023.07.11,
+acesso por Área de Trabalho Remota em `cloud.datahotel.com.br`).
+
+## Como exportar
+
+1. Abra o relatório pelo menu (lista abaixo).
+2. Espere a tela de filtros carregar. Ela fica "Não respondendo" por uns 10 segundos.
+3. Ajuste o período e clique **OK**: abre a **Pré-Visualizar**.
+4. Na barra de cima, clique no **disquete (Salvar)**. Aparecem os formatos:
+   **Tabela Excel (OLE)**, **Ficheiro PDF**, **Ficheiro CSV**.
+5. Escolha **Ficheiro CSV** → OK (separador `;`) → escolha a pasta → Salvar.
+
+**Atenção:** a janela Salvar mostra o computador do DataHotel, não o seu. Para
+o arquivo chegar ao seu computador, a conexão "Hotel" precisa compartilhar o
+disco local (ver "Compartilhar o disco" abaixo).
+
+## Mapa dos menus
+
+**Hospedagem**: Controle de Reservas · Consultar Reserva · Calendário Mensal ·
+Integração Channel Manager · Tarifador Telefônico · SNRHos · Mala Direta ·
+**Lista de Café da Manhã** · **Lista de Check-in/out Diário** · **Resumo de
+Ocupação Diário** · **Relatório Diário (RDS)** · Mapa de Disponibilidade ·
+Relatório de Reservas (Sintético) · **Relatório de Reservas** · Relatório de
+Pré-Reservas Vencidas · Ranking de Reservas
+
+**Vendas**: Venda Balcão · Day Use · Consulta Preço · Notas Fiscais de Serviço
+(NFS-e) · Relatório de Vendas Balcão · **Relatório de Consumo** · **Relatório de
+Vendas Itens (Consumo + Venda Balcão)** · Resumo de Vendas Balcão / Day Use /
+Reservas · Relatório de Vendas Day Use
+
+**Financeiro**: Controle do Caixa · Contas a Pagar · Contas a Receber ·
+Consultar Faturas · Conta Corrente · Controle de Créditos · **Relatório de
+Contas a Receber** · **Relatório de Contas Recebidas** · Relatório de Contas a
+Pagar · Relatório de Contas Pagas · Comissão por Reservas · Créditos x Débitos
+por Forma Pgto. · **Recebimentos do Caixa por Forma de Pgto.** · **Resumo de
+Movimentação por Caixa** · Receitas x Despesas
+
+**Governança**: Governança · **Lista de Camareira** · Lista de Camas Adicionais ·
+Check List de Inspeção
+
+**Gerencial**: Indicadores de Ocupação · Indicadores de Ocupação por Hóspedes ·
+Indicadores de Reservas · Indicadores de Performance (KPI's-REVPAR/TREVPAR) ·
+Taxa de Ocupação Diária · Taxa de Ocupação Mensal · Gráfico de Situação dos
+Apartamentos · Gráfico de Despesas Mensais · Gráficos de Faturamento Diário /
+Mensal / por Tipo de Conta · **Relatório de Faturamento** · Resumo de
+Faturamento Diário · Manutenção nos Dados · Auditoria de Usuários
+
+**Relatórios**: Auditoria
+
+Em negrito, os que alimentam o Hotel 360.
+
+## Relatório de Reservas (conferido)
+
+Filtros: Agrupado por · Período (Check-in/Check-out, de/até) · Hóspedes ·
+Empresas · Grupos · Canal de Venda · Funcionários · situações (Pré-Reserva,
+Reserva, Checked-in, Checked-out, Cancelada, No-Show).
+
+Colunas: **Cód. Res.** (ex.: `ABC123456`) · Check-in · Check-out · Hóspede ·
+Apto. · Nº Diárias · Nº Hósp. · Canal de Venda · Funcionário · Situação ·
+Vr. Total. Rodapé com "Total Geral" (precisa ser ignorado na importação).
+
+## Compartilhar o disco com a Área de Trabalho Remota
+
+Uma vez só, no seu computador:
+1. Feche o DataHotel (saia da sessão).
+2. Clique com o botão direito no atalho **Hotel** da área de trabalho → **Editar**.
+3. Aba **Recursos Locais** → **Mais...** → marque **Unidades** (ou só o `C:`) → OK.
+4. Aba **Geral** → **Salvar**. Conecte de novo.
+
+Na janela Salvar do DataHotel vai aparecer "C em <seu computador>". Salve em
+`C:\Users\<você>\Downloads\datahotel\`.
+
+Se a opção não aparecer ou o disco continuar sem aparecer, o servidor do
+DataHotel bloqueia isso; aí o caminho é pedir ao suporte do DataHotel
+("Atendimento Online") para liberar o redirecionamento de unidades.
+
+---
+
+## Exportações feitas em 06/11/2026 (período 26/10 a 06/11/2026)
+
+Regra do usuário: **não trazer dado anterior a 26/10/2026**. Pasta no computador
+do usuário: `Downloads\datahotel\`. Cada arquivo foi conferido contra o
+rodapé do próprio relatório.
+
+| Arquivo | Relatório no DataHotel | O que traz | O sistema lê? |
+|---|---|---|---|
+| `reservas_extrato_2026-10-26_2026-11-06.csv` | Hospedagem → Relatório de Reservas, com *Exibir extrato resumido* e *Cancelada* | 42 reservas; por reserva: diária lançada, consumo e recebimento. Resumo final: diária R$ 16.285,00, consumo R$ 36,00 | **Sim** (tipo Hospedagens) |
+| `contas_recebidas_2026-10-26_2026-11-06.csv` | Financeiro → Relatório de Contas Recebidas | 88 recebimentos, R$ 14.570,50, cada um com número de lançamento | **Sim** (tipo Recebimentos, recomendado) |
+| `movimentacao_caixa_2026-10-26_2026-11-06.csv` | Financeiro → Resumo de Movimentação por Caixa | Livro-caixa por sessão (entradas, sangrias, fechamento) e consumo por apartamento. Sessões 1365 e 1366 | **Sim** (tipo Recebimentos; **não usar junto** com Contas Recebidas) |
+| `cafe_manha_2026-10-26_2026-11-06.csv` | Hospedagem → Lista de Café da Manhã | Por dia e apartamento: hóspede, adultos e crianças (rodapé: 148 adultos, 1 criança) | Ainda não |
+| `camareira_apartamentos_2026-11-06.csv` | Governança → Lista de Camareira | Todos os apartamentos com a situação (Livre, Ocupado, Bloqueado, Reservado) em 06/11 | Ainda não |
+| `mapa_ocupacao_2026-11-06.csv` | Hospedagem → Resumo de Ocupação Diário | Retrato de 06/11: empresa, código da reserva, pago Sim/Parcial/Não | Ainda não |
+| `faturamento_analitico_2026-10-26_2026-11-06.csv` | Gerencial → Relatório de Faturamento (Analítico) | Diária por reserva e por noite (competência), consumo por reserva e vendas de balcão | Ainda não |
+| `consumo_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Consumo (agrupado por Data) | 5 registros, R$ 36,00 (bate com o extrato) | Ainda não |
+| `vendas_itens_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Vendas Itens | Por dia e produto: quantidade, custo e preço (73 itens, custo R$ 161,98, venda R$ 330,50) | Ainda não |
+| `contas_a_receber_venc_2026-10-26_2026-12-06.csv` | Financeiro → Relatório de Contas a Receber | 1 conta: R$ 215,00 vence 15/11 (empresa) | Ainda não |
+| `estoque_atual_2026-11-06.csv` | Estoque → Relatório Estoque Atual | 25 itens com saldo. Saldos negativos: chocolate −30, sprite −1, hóspede adicional −76, impressão −432, lavanderia −2.247 e −1.058 | Ainda não |
+| `cadastro_apartamentos_transcrito.csv` | Cadastros → Apartamentos (aba Pesquisa) | 31 apartamentos, todos categoria LUXO, bloco 1, andar T (101–113) ou 1 (114–131); 79 leitos (confere com o total do DataHotel). **Transcrito da tela** | Ainda não |
+| `reservas_futuras_extrato_2026-11-07_2026-12-31.csv` | Hospedagem → Relatório de Reservas (futuras, com extrato) | 1 reserva: 12/11 a 13/11, apto 112, R$ 215,00 | Sim (tipo Hospedagens) |
+| `creditos_debitos_por_forma_2026-10-26_2026-11-06.csv` | Financeiro → Créditos x Débitos por Forma Pgto. | Por forma: créditos, débitos e saldo. Saldo de "Faturar empresa" R$ 5.130,00 (a receber das empresas) | Ainda não |
+| `recebimentos_caixa_por_forma_2026-10-26_2026-11-06.csv` | Financeiro → Recebimentos do Caixa por Forma de Pgto. | Por caixa (1365, 1366) e forma; total R$ 17.367,50 | Ainda não (conferência) |
+| `faturamento_diario_resumo_2026-10-26_2026-11-06.csv` | Gerencial → Resumo de Faturamento Diário | Por dia: diária, consumo e venda de balcão (total R$ 13.140,00). É a receita por competência | Ainda não |
+| `rds_relatorio_diario_2026-11-06.csv` | Hospedagem → Relatório Diário (RDS) | Retrato de 06/11: 5 ocupados, 21 livres, 5 bloqueados; taxa 16,13%; receita do dia R$ 554,50 | Ainda não |
+| `receitas_x_despesas_2026-10-26_2026-11-06.csv` | Financeiro → Receitas x Despesas, com *Sangrias e Suprimentos* | Receita por dia (total R$ 14.570,50 = Contas Recebidas) e despesas só de sangria (R$ 370,00) | Ainda não (serve de conferência) |
+
+### O que isso respondeu das perguntas da Etapa 1
+
+- **D2/P3:** a reserva tem código único (ex.: `ABC123456`); o recebimento tem número de lançamento em Contas Recebidas. No livro-caixa não há número.
+- **P5:** o hotel **não lança contas a pagar no DataHotel** (Relatório de Contas a Pagar de 26/10 a 06/12 veio vazio). As únicas despesas lá são sangrias do caixa. As contas a pagar ficam no Hotel 360.
+- **P4:** o consumo de frigobar **é** lançado na conta do hóspede no DataHotel (aparece como CONSUMO no extrato).
+- **P11:** o café traz adultos e crianças separados na Lista de Café, mas não no Relatório de Reservas.
+- **Exportação:** todos os relatórios exportam CSV, Excel e PDF pela pré-visualização.
+
+### Cuidados ao exportar
+
+- A janela Salvar às vezes ignora o nome digitado e usa o anterior, sobrescrevendo o arquivo. Sempre confira o nome no campo antes de clicar em Salvar.
+- O campo de data é por partes (dia, mês, ano): clique no dia, digite, setinha para a direita, digite o mês.
+- O relatório "Consumo agrupado por Apartamento" mostra o apartamento 112 como "12/04/1900" (defeito do DataHotel): não use.
+- A exportação de relatórios longos leva minutos (uma página por vez). Não feche a pré-visualização até a barra "Exportando" sumir.
+
+- **Se a janela Salvar não mostrar "C on <seu computador>"**, a sessão foi aberta sem compartilhar unidades. Feche o DataHotel e abra de novo pelo atalho Hotel (Recursos Locais → Mais... → Unidades marcado e salvo). Em 06/11 isso aconteceu depois de uma reconexão; o estoque (uma página) foi lido da tela.
+
+### Cadastros do DataHotel (vistos em 06/11/2026, somente leitura)
+
+- **Menu Cadastros:** Hóspedes, Empresas, Fornecedores, Categorias, Apartamentos, Caixas/Bancos, Formas de Pagamento, Plano de Contas, Eventos/Feriados, Pacotes, Tipos de Tarifa, Tarifário, Canais de Venda, Tipos de Contas, Grupos de Produtos, Produtos/Serviços, Locais de Estoque, Centro de Custo, Funcionários, Usuários, Parâmetros. **Hóspedes e Funcionários não foram abertos** (dados pessoais).
+- **Empresas:** 121 cadastradas, com CNPJ, endereço, telefone, e-mail, limite de crédito, comissão e prazo de pagamento. Não transcritas: o sistema só precisa das que aparecem nas reservas. Para exportar a lista inteira, use Imprimir → Salvar → CSV com o compartilhamento de unidades ativo.
+- **Tarifário:** por calendário e por número de adultos e crianças ("Cobrança por Adultos e Crianças"); a tabela do dia consultado estava vazia. Diárias observadas nas reservas: R$ 135,00 (1 hóspede) e R$ 215,00 (2).
+- **Fornecedores, Plano de Contas e Centro de Custo existem no DataHotel**, mas as contas a pagar estão vazias; o hotel não os usa para despesas.
+
+### Achados dos relatórios de 06/11/2026
+
+- **Taxa de ocupação do DataHotel inclui os bloqueados no denominador:** 5 ocupados de 31 apartamentos = 16,13%. O padrão do Hotel 360 (bloqueados fora do denominador) dá 19,23% (5 de 26). Confirmar qual vale para a direção e ajustar em Cadastros do Hotel.
+- **Relatórios que vieram vazios:** Contas a Pagar e Comissão por Reservas (26/10 a 06/11). O hotel não usa nenhum dos dois no DataHotel.
+- **Ficha da empresa:** o botão Imprimir do cadastro de empresas imprime só a empresa selecionada, não a lista das 121.
+- **Não exportados por serem derivados ou telas de operação:** Mapa de Disponibilidade, Ranking de Reservas, Indicadores e gráficos (calculados das mesmas reservas), Mala Direta, Tarifador Telefônico, Day Use, NFS-e e Conta Corrente (telas de lançamento, sem relatório próprio).
+
+## Conferência automática do fechamento
+
+Roda sobre os arquivos acima, sem alterar nada no DataHotel nem no Hotel 360:
+
+```bash
+npx tsx scripts/conferir-datahotel.mts [pasta] [início AAAA-MM-DD] [fim AAAA-MM-DD]
+```
+
+Gera `conferencia_<início>_<fim>.md` e `.csv` na própria pasta. Regras (módulo
+`src/dominio/hotel/conferencia.ts`, testes em `tests/hotel/conferencia.test.ts`):
+
+| Regra | O que confere |
+|---|---|
+| C1/C2 | Contas Recebidas × Receitas x Despesas, no total e dia a dia |
+| C3 | Recebido por forma de pagamento × Créditos e Débitos (pede olho no turno do caixa) |
+| C4/C7 | Diária e total faturado por dia: Faturamento Diário × Faturamento Analítico |
+| C5/C6 | Consumo e venda de balcão: extrato das reservas × analítico × relatórios de consumo e de vendas |
+| C8 | Faturado para empresas × contas a receber lançadas |
+| C9 | Estadia encerrada com saldo em aberto ou com recebimento a mais |
+| C10 | Recebimento que cita reserva inexistente |
+| C11 | Lista de café × hóspedes das reservas que dormiram na noite anterior |
+| C12/C13 | Ocupação (RDS × Mapa × reservas), pagamento dos hóspedes em casa e cadastro de apartamentos |
+| C14 | Estoque com saldo negativo |
+| C15 | Noite de reserva sem diária lançada |
+
+**Resultado em 26/10 a 06/11/2026:** 11 regras OK, 4 divergentes, 4 com atenção.
+Divergências reais: diária de 06/11 (resumo R$ 540,00 × analítico R$ 405,00);
+faturado para empresas R$ 5.130,00 com apenas R$ 215,00 em contas a receber;
+RDS com 5 ocupados contra 4 no Mapa de Ocupação e nas reservas; total faturado
+R$ 149,50 acima no resumo (efeito do dia de hoje).

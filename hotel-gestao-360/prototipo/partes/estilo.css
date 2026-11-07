@@ -1,0 +1,1757 @@
+/* ============================================================ tokens
+   Redesign para linguagem premium/SaaS: off-white quente, cartão branco,
+   texto grafite — mas o azul-marinho continua sendo cor de marca de verdade
+   do colégio (não é "excesso de azul" a zerar, é identidade), então botão
+   primário, título de ênfase e link continuam nele. Grafite/preto ficou só
+   para a cápsula da lateral, que é um pedido à parte e explícito. Dourado é
+   o acento de destaque (selo, indicador, borda especial), não o único.
+   Os nomes das variáveis continuam os de sempre (--marinho, --titulo,
+   --orbital…) de propósito: trocar o VALOR aqui basta para o sistema inteiro
+   mudar de identidade sem tocar em mais nada. */
+:root {
+  color-scheme: light;
+  /* Paleta única do tema claro — a mesma identidade do site novo do colégio:
+     creme de fundo, cartão quase branco, navy de marca e dourado de acento.
+     É a única fonte dessas cores; os outros arquivos CSS só usam as variáveis. */
+  --tinta: #14253e;
+  --tinta-media: #606875;
+  --tinta-fraca: #68707c;
+  --papel: #eeeade;
+  --superficie: #fffefa;
+  --superficie-alt: #f5f2e9;
+  --borda: #e0dcd0;
+  --borda-forte: #a4a99f;
+  --topo-vidro-fundo: rgba(238, 234, 222, .96);
+  --kpi-borda: #e0dcd0;
+  --kpi-vidro-fundo: #fffefa;
+  --kpi-hover-fundo: #faf8f2;
+  --kpi-rotulo-cor: #606875;
+  --kpi-valor-cor: #142b4b;
+  --kpi-nota-cor: #606875;
+
+  --marinho-abissal: #07182d;
+  --marinho: #142b4b;
+  --marinho-borda: #243f61;
+  --titulo: #142b4b;
+  --marinho-claro: #2f5a8f;
+  --dourado: #edc84b;
+  --orbital: #8C6D18;
+  --orbital-luz: #d9b95a;
+  --orbital-fundo: #fbf4de;
+  --verde: #1E7A55;
+  --verde-fundo: #E3F3EA;
+  --ambar: #92660B;
+  --ambar-fundo: #FBEFD9;
+  --vermelho: #B23A4E;
+  --vermelho-fundo: #FBE7EA;
+
+  --painel-fundo: #1A1A19;
+  --painel-fundo-alt: #232320;
+  --painel-tinta: #C9C9C4;
+  --painel-tinta-forte: #FFFFFF;
+  --painel-linha: rgba(201, 169, 104, .22);
+
+  --sombra-1: 0 1px 2px rgba(20, 37, 62, .04);
+  --sombra-2: 0 1px 3px rgba(20, 37, 62, .04), 0 8px 24px -12px rgba(20, 37, 62, .08);
+  --sombra-3: 0 16px 48px rgba(20, 37, 62, .08);
+  --raio: 14px;
+  --raio-pequeno: 9px;
+
+  --t-0: .6875rem; --t-1: .8125rem; --t-2: .9375rem;
+  --t-3: 1.0625rem; --t-4: 1.375rem; --t-5: 1.75rem; --t-6: 2.375rem;
+}
+
+/* Tema escuro: os mesmos valores nos dois seletores — `prefers-color-scheme`
+   para quem não escolheu, `[data-theme]` para quem clicou no botão. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --tinta: #e8edf2; --tinta-media: #aeb9c8; --tinta-fraca: #99a7b8;
+    --papel: #08111e; --superficie: #101d2d; --superficie-alt: #18283b;
+    --borda: #29384b; --borda-forte: #41536b;
+    --topo-vidro-fundo: rgba(8, 17, 30, .96);
+    --kpi-borda: #29384b; --kpi-vidro-fundo: #101d2d; --kpi-hover-fundo: #18283b;
+    --kpi-rotulo-cor: #aeb9c8; --kpi-valor-cor: #f2f5f8; --kpi-nota-cor: #aeb9c8;
+    --marinho: #2b4f7c; --marinho-borda: #3b6394; --titulo: #f2f5f8; --marinho-claro: #7fa3d6;
+    --dourado: #edc84b;
+    --orbital: #d9b95a; --orbital-luz: #edd79a; --orbital-fundo: #2a2312;
+    --verde: #63C29E; --verde-fundo: #123226;
+    --ambar: #E4A946; --ambar-fundo: #2A1F0E;
+    --vermelho: #D98A97; --vermelho-fundo: #2E1119;
+    --lateral-fundo: #050d1a; --lateral-fundo-alt: #132942; --lateral-mais-hover: #1b3552;
+    --sombra-1: 0 1px 2px rgba(0,0,0,.3);
+    --sombra-2: 0 2px 12px rgba(0,0,0,.25);
+    --sombra-3: 0 20px 56px -18px rgba(0,0,0,.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --tinta: #e8edf2; --tinta-media: #aeb9c8; --tinta-fraca: #99a7b8;
+  --papel: #08111e; --superficie: #101d2d; --superficie-alt: #18283b;
+  --borda: #29384b; --borda-forte: #41536b;
+  --topo-vidro-fundo: rgba(8, 17, 30, .96);
+  --kpi-borda: #29384b; --kpi-vidro-fundo: #101d2d; --kpi-hover-fundo: #18283b;
+  --kpi-rotulo-cor: #aeb9c8; --kpi-valor-cor: #f2f5f8; --kpi-nota-cor: #aeb9c8;
+  --marinho: #2b4f7c; --marinho-borda: #3b6394; --titulo: #f2f5f8; --marinho-claro: #7fa3d6;
+  --dourado: #edc84b;
+  --orbital: #d9b95a; --orbital-luz: #edd79a; --orbital-fundo: #2a2312;
+  --verde: #63C29E; --verde-fundo: #123226;
+  --ambar: #E4A946; --ambar-fundo: #2A1F0E;
+  --vermelho: #D98A97; --vermelho-fundo: #2E1119;
+  --lateral-fundo: #050d1a; --lateral-fundo-alt: #132942; --lateral-mais-hover: #1b3552;
+  --sombra-1: 0 1px 2px rgba(0,0,0,.3);
+  --sombra-2: 0 2px 12px rgba(0,0,0,.25);
+  --sombra-3: 0 20px 56px -18px rgba(0,0,0,.6);
+}
+
+/* Lateral: cápsula navy nos dois temas (o tema escuro só troca o fundo/alt
+   acima). Cor de marca do colégio o tempo todo. */
+:root {
+  --lateral-fundo: #07182d; --lateral-fundo-alt: #132a45;
+  --lateral-borda: rgba(255,255,255,.08);
+  --lateral-texto: #eeeade; --lateral-texto-fraca: #c2cbd6; --lateral-texto-fraca-ativo: #c2cbd6;
+  --lateral-texto-ativa: #fffefa;
+  --lateral-dourado: #edc84b; --lateral-dourado-fundo: rgba(237, 200, 75, .13); --lateral-dourado-ativo: #edc84b;
+  --lateral-mais-hover: #1b3552;
+  --lateral-urgente: #ffb4c0; --lateral-urgente-ativo: #ffb4c0;
+}
+
+* { box-sizing: border-box; }
+
+/* Barra de rolagem fina e no tom do sistema, não a cinza grossa padrão do
+   sistema operacional. Vale para a aplicação inteira; `.nav` continua sem
+   barra nenhuma (regra própria mais abaixo, com prioridade sobre esta). */
+* { scrollbar-width: thin; scrollbar-color: var(--borda-forte) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--borda-forte); border-radius: 20px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--tinta-fraca); }
+*::-webkit-scrollbar-corner { background: transparent; }
+
+body {
+  margin: 0; background: var(--papel); color: var(--tinta);
+  font-family: Manrope, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: var(--t-2); line-height: 1.5; -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: inherit; font-weight: 600; margin: 0; text-wrap: balance; color: var(--titulo); }
+:focus-visible { outline: 2px solid var(--orbital-luz); outline-offset: 2px; border-radius: 4px; }
+.num { font-variant-numeric: tabular-nums; }
+.oculto { display: none !important; }
+
+/* Atalho de teclado: a navegação tem 14 itens, e sem isto quem usa leitor de
+   tela percorre todos antes de chegar ao conteúdo em cada troca de tela. */
+.pular {
+  position: absolute; left: 8px; top: -60px; z-index: 100;
+  padding: 10px 16px; border-radius: 8px; font-size: var(--t-1); font-weight: 500;
+  background: var(--marinho); color: #fff; text-decoration: none;
+  transition: top .15s ease;
+}
+.pular:focus { top: 8px; }
+#conteudo:focus { outline: none; }
+
+/* ============================================================ acesso
+   Claro, branco e azul. O átomo é desenho técnico — traço fino de nanquim
+   sobre papel —, não um fundo decorativo. */
+
+/* Presa à altura da janela: a tela de entrada nunca deve pedir rolagem. O
+   `1fr` do meio é quem absorve a sobra, e o cartão rola por dentro se algum
+   dia crescer além do que cabe — em vez de empurrar a página. `dvh` porque no
+   celular a barra do navegador some e volta, e `vh` mede a janela maior. */
+.acesso {
+  height: 100dvh; min-height: 100dvh; overflow: hidden;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  background:
+    radial-gradient(90% 70% at 12% 8%, var(--acesso-brilho-frio) 0%, transparent 60%),
+    radial-gradient(70% 60% at 92% 96%, var(--acesso-brilho-quente) 0%, transparent 55%),
+    var(--acesso-fundo);
+  color: var(--tinta);
+}
+:root {
+  --acesso-fundo: #E4DCC7;
+  --acesso-brilho-frio: #DCE4F0;
+  --acesso-brilho-quente: #EFE2C2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --acesso-fundo: #03050F;
+    --acesso-brilho-frio: #0E2C51;
+    --acesso-brilho-quente: #1E1806;
+  }
+}
+:root[data-theme="dark"] {
+  --acesso-fundo: #03050F;
+  --acesso-brilho-frio: #0E2C51;
+  --acesso-brilho-quente: #1E1806;
+}
+
+.acesso-topo {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 40px; border-bottom: 1px solid var(--borda);
+}
+.acesso-topo svg { flex: none; }
+.marca-texto { display: flex; align-items: baseline; gap: 10px; }
+.marca-titulo { font-family: inherit; font-size: var(--t-3); letter-spacing: -.01em; color: var(--titulo); }
+.marca-titulo em { font-style: normal; color: var(--orbital); }
+.marca-divisor { width: 1px; height: 14px; background: var(--borda-forte); align-self: center; }
+.marca-modulo { font-size: var(--t-0); letter-spacing: .19em; text-transform: uppercase; color: var(--tinta-fraca); }
+.acesso-topo-nota { margin-left: auto; font-size: var(--t-0); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-fraca); }
+
+.acesso-palco {
+  position: relative; width: 100%; max-width: 1340px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1fr) 408px; gap: 72px;
+  align-items: center; padding: 28px 40px;
+  /* O átomo é posicionado para fora da caixa DE PROPÓSITO — `height: 150%`,
+     metade para cima e metade para baixo. Isso obriga o recorte nos DOIS
+     eixos: com `overflow-y: auto` aqui, a sobra do desenho vira 140px de
+     conteúdo rolável, e a tela ganha uma barra de rolagem para percorrer
+     um enfeite. */
+  overflow: hidden; min-height: 0;
+}
+/* O núcleo fica cortado pela margem esquerda: só as órbitas atravessam a
+   coluna de texto, e traço fino atrás de texto não atrapalha a leitura. */
+#atomo {
+  /* Sangra na horizontal (o núcleo fica cortado pela margem esquerda, de
+     propósito), mas cabe na vertical. Com `height: 150%` sobravam 140px de
+     desenho fora da caixa: mesmo recortados, eles contam como área rolável, e
+     o navegador rola até lá sozinho se o foco cair naquela região — a tela
+     salta sem o usuário ter pedido. */
+  position: absolute; left: -48%; top: 0;
+  width: 96%; height: 100%; pointer-events: none;
+}
+
+/* Uma frase só, no lugar de manchete + parágrafo + prova social: o lema da
+   escola ("resultados de alto impacto") emprestado para a gestão, sem
+   precisar explicar o sistema por extenso. */
+.acesso-texto { position: relative; z-index: 1; }
+.acesso-tese {
+  font-family: inherit; font-weight: 500;
+  font-size: clamp(1.4rem, 2vw, 1.75rem); line-height: 1.35;
+  letter-spacing: -.01em; margin: 0; max-width: 30ch; color: var(--titulo);
+}
+.acesso-tese em { font-style: italic; font-weight: 400; color: var(--orbital); }
+
+.acesso-cartao {
+  position: relative; z-index: 1;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 16px;
+  box-shadow: var(--sombra-3);
+  padding: 26px 30px 24px;
+  /* Sem rolagem própria: um cartão que rola dentro de uma tela que rola são
+     dois roladores aninhados, e o ponteiro nunca sabe qual dos dois obedece. */
+  max-height: 100%;
+}
+
+/* Botão de tema: dois discos, claro e escuro, como as fases de um corpo
+   celeste. Aparece no acesso e no topo do sistema. */
+.tema {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px;
+  border: 1px solid var(--borda); border-radius: 20px; background: var(--superficie-alt);
+}
+.tema button {
+  width: 26px; height: 26px; border: 0; border-radius: 50%; cursor: pointer;
+  background: transparent; color: var(--tinta-fraca); font-size: 13px; line-height: 1;
+  display: grid; place-items: center;
+}
+.tema button:hover { color: var(--tinta); }
+.tema button[aria-pressed="true"] {
+  background: var(--superficie); color: var(--orbital);
+  box-shadow: var(--sombra-1); outline: 1px solid var(--borda);
+}
+/* Filete dourado no topo do cartão: o detalhe que separa de um form comum. */
+.acesso-cartao::before {
+  content: ""; position: absolute; top: 0; left: 26px; right: 26px; height: 2px;
+  background: linear-gradient(to right, transparent, var(--orbital-luz) 22%, var(--orbital-luz) 78%, transparent);
+  border-radius: 2px;
+}
+.formulario { width: 100%; }
+.formulario h1 { font-size: var(--t-4); letter-spacing: -.02em; color: var(--titulo); }
+.formulario > p { margin: 6px 0 18px; color: var(--tinta-media); font-size: var(--t-1); }
+
+.acesso-rodape {
+  display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
+  padding: 16px 40px; border-top: 1px solid var(--borda);
+  font-size: var(--t-0); color: var(--tinta-fraca);
+}
+.acesso-rodape span { display: inline-flex; align-items: center; gap: 7px; }
+.acesso-rodape span::before {
+  content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--orbital-luz);
+}
+.acesso-rodape .fim { margin-left: auto; }
+
+.abas { display: flex; gap: 2px; padding: 3px; background: var(--superficie-alt); border: 1px solid var(--borda); border-radius: 9px; margin-bottom: 18px; }
+/* `display:flex` acima é regra de autor e vence o `[hidden]{display:none}` padrão do
+   navegador (que é só UA stylesheet, prioridade mais baixa) — sem isto, esconder a aba
+   de autocadastro via `.hidden = true` no JS não escondia nada na tela. */
+.abas[hidden] { display: none; }
+.aba { flex: 1; padding: 7px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--tinta-media); font: inherit; font-size: var(--t-1); font-weight: 500; cursor: pointer; }
+.aba[aria-selected="true"] { background: var(--superficie); color: var(--tinta); box-shadow: var(--sombra-1); }
+
+.forca { display: flex; gap: 4px; margin-top: 7px; }
+.forca i { flex: 1; height: 3px; border-radius: 2px; background: var(--borda); }
+.forca i.on-1 { background: var(--vermelho); } .forca i.on-2 { background: var(--ambar); } .forca i.on-3 { background: var(--verde); }
+.forca-texto { font-size: var(--t-0); color: var(--tinta-fraca); margin-top: 5px; }
+
+.nota-seguranca {
+  margin-top: 14px; padding: 9px 12px; border-radius: 8px;
+  background: var(--orbital-fundo); border: 1px solid rgba(154,123,24,.28);
+  font-size: var(--t-0); color: var(--tinta-media); line-height: 1.45;
+}
+.nota-seguranca strong { color: var(--orbital); }
+
+/* ============================================================ campos */
+
+.campo { display: block; margin-bottom: 13px; }
+.campo > span { display: block; font-size: var(--t-1); font-weight: 500; color: var(--tinta-media); margin-bottom: 6px; }
+.campo input, .campo select, .campo textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--borda-forte); border-radius: 8px;
+  background: var(--superficie); color: var(--tinta); font: inherit; font-size: var(--t-2);
+}
+.campo textarea { min-height: 76px; resize: vertical; }
+.campo input::placeholder { color: var(--tinta-fraca); }
+/* O campo do tipo "select" virou seletor rico (ver U.campoHtml); sem isto
+   ele ficava com a largura mínima do componente solto, bem menor que os
+   outros campos do formulário ao lado dele. */
+.campo .seletor-rico { width: 100%; }
+.campo .seletor-campo { width: 100%; min-width: 0; max-width: none; }
+.campo .dica { display: block; font-size: var(--t-0); color: var(--tinta-fraca); margin-top: 5px; font-weight: 400; }
+.campo .erro { display: block; font-size: var(--t-0); color: var(--vermelho); margin-top: 5px; font-weight: 500; }
+.campo input[aria-invalid="true"], .campo select[aria-invalid="true"] { border-color: var(--vermelho); }
+/* `auto-fit`/`minmax`, não `1fr 1fr` fixo: a quebra para 1 coluna em
+   @media (max-width: 980px) deixava uma faixa de largura intermediária
+   (a barra lateral flutuante tira espaço real do modal antes do CSS "achar"
+   que é celular) onde duas colunas de 1fr ainda cabiam no grid mas não no
+   conteúdo de cada input — resultado, rolagem horizontal dentro do modal.
+   Com minmax, cada coluna já pede no mínimo 180px e o próprio grid decide
+   sozinho, em qualquer largura, sem depender só do breakpoint. */
+.par { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.trio { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grupo { border: 0; padding: 0; margin: 0 0 6px; }
+.grupo-legenda { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .1em; color: var(--tinta-fraca); padding-bottom: 10px; }
+/* Divisor fino + respiro entre seções do formulário (linha, não caixa). */
+.abrir-comp { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--tinta-media); }
+.abrir-comp strong { color: var(--titulo); font-weight: 600; }
+.grupo + .grupo { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--borda); }
+
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 18px; border-radius: var(--raio-pequeno); border: 1px solid var(--borda-forte);
+  background: var(--superficie); color: var(--tinta); font: inherit; font-size: var(--t-1); font-weight: 500; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, filter .15s ease;
+}
+.botao:hover { background: var(--superficie-alt); border-color: var(--tinta-fraca); }
+.botao.primario { background: var(--marinho); border-color: var(--marinho-borda); color: #fff; }
+/* `filter: brightness` em vez de um hex fixo: clareia a cor que o botão já
+   tem (grafite no claro, ardósia no escuro) — um valor fixo só acertava um
+   tema e virava azul aceso vazando por cima do grafite no outro. */
+.botao.primario:hover { filter: brightness(1.18); }
+.botao.perigo { color: var(--vermelho); border-color: var(--vermelho); background: transparent; }
+.botao.perigo:hover { background: var(--vermelho-fundo); }
+.botao.largo { width: 100%; padding: 12px 18px; font-size: var(--t-2); }
+.botao.miudo { padding: 6px 12px; font-size: var(--t-0); }
+.botao.discreto { border-color: transparent; background: transparent; color: var(--marinho-claro); padding: 4px 2px; }
+.botao.discreto:hover { background: transparent; text-decoration: underline; }
+.botao[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* ============================================================ shell */
+
+.app { display: block; min-height: 100vh; }
+/* O conteúdo não fica mais numa coluna de grid ao lado da lateral — ela saiu
+   do fluxo (position: fixed) para flutuar por cima. O respiro é feito aqui,
+   não por uma coluna de grid. */
+.area-principal { margin-left: 84px; min-width: 0; }
+
+/* Dock flutuante, não coluna de menu: cápsula com cantos bem fechados,
+   ícone-só. Marca de repouso muda por tema (creme no claro, navy no
+   escuro — ver bloco de tokens), mas hover/ativo é SEMPRE um preenchimento
+   navy sólido nos dois temas: é o que garante que o estado apareça mesmo
+   quando a cápsula em repouso já é clara. Por isso os ícones em cima de
+   --lateral-fundo-alt usam sempre as versões "ativo" do dourado/urgente
+   (claras), nunca as versões de repouso (que no claro viraram escuras).
+   Cápsula bem fina: o botão quase encosta na borda da cápsula, não sobra
+   moldura larga em volta de um ícone pequeno no meio. */
+.lateral {
+  background: var(--lateral-fundo); color: var(--lateral-texto);
+  border: 1px solid var(--lateral-borda);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  position: fixed; left: 16px; top: 16px; bottom: 16px; width: 52px;
+  border-radius: 26px; padding: 10px 0; z-index: 40;
+  box-shadow: var(--sombra-3);
+}
+.lateral-logo {
+  flex: none; width: 42px; height: 42px; border-radius: 50%; margin-bottom: 4px;
+  display: grid; place-items: center; border: 0; background: transparent;
+  color: var(--lateral-dourado); cursor: pointer;
+}
+.lateral-logo:hover { background: var(--lateral-fundo-alt); color: var(--lateral-dourado-ativo); }
+.lateral-item-caixa { position: relative; flex: none; }
+.lateral-mais {
+  width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--lateral-fundo-alt); color: var(--lateral-texto-ativa);
+  display: grid; place-items: center; margin-bottom: 6px;
+  transition: background .15s ease;
+}
+.lateral-mais:hover { background: var(--lateral-mais-hover); }
+
+/* 14 módulos soltos não cabem sempre — a lista rola dentro da cápsula em
+   vez de estourar por baixo dela. `flex:1;min-height:0` é o que deixa este
+   filho flex encolher e assumir só o espaço que sobrou entre o "+" lá em
+   cima e a engrenagem/ajuda/avatar lá embaixo.
+   A barra de rolagem fica fina mas VISÍVEL de propósito: escondida por
+   completo (como era antes), numa janela baixa com uma categoria do
+   acordeão aberta, o conteúdo cortado embaixo não deixa nenhum indício de
+   que há mais itens além do que cabe — a pessoa não descobre que precisa
+   rolar. */
+.nav {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  flex: 1; min-height: 0; width: 100%; overflow-y: auto; overflow-x: visible;
+  scrollbar-width: thin; scrollbar-color: var(--lateral-fundo-alt) transparent;
+}
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-track { background: transparent; }
+.nav::-webkit-scrollbar-thumb { background: var(--lateral-fundo-alt); border-radius: 4px; }
+.nav-item {
+  width: 42px; height: 42px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; border: 0; background: transparent; color: var(--lateral-texto-fraca);
+  cursor: pointer; position: relative; transition: background .15s ease, color .15s ease;
+}
+.nav-item:hover { background: var(--lateral-fundo-alt); color: var(--lateral-texto-ativa); }
+.nav-item[aria-current="true"] {
+  background: var(--lateral-fundo-alt); color: var(--lateral-dourado-ativo);
+}
+.nav-item .contador {
+  position: absolute; top: 3px; right: 3px; min-width: 8px; height: 8px; padding: 0 2px;
+  border-radius: 20px; background: var(--lateral-dourado); font-size: 0; /* bolinha, não número — cápsula não tem espaço para rótulo */
+}
+.nav-item .contador.urgente { background: var(--lateral-urgente); }
+/* Hover/ativo trocam o fundo do item para navy sólido — a bolinha de
+   repouso (escura, feita para ler sobre a cápsula clara) sumiria em cima
+   dele, então troca para a versão clara junto. */
+.nav-item:hover .contador,
+.nav-item[aria-current="true"] .contador { background: var(--lateral-dourado-ativo); }
+.nav-item:hover .contador.urgente,
+.nav-item[aria-current="true"] .contador.urgente { background: var(--lateral-urgente-ativo); }
+
+/* Tooltip: só aparece no hover/foco, porque a cápsula não escreve nome
+   nenhum por padrão. */
+.dica {
+  position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 12px;
+  background: #191919; color: #fff; font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  padding: 6px 11px; border-radius: 8px; pointer-events: none;
+  opacity: 0; transition: opacity .12s ease; z-index: 60;
+}
+.lateral-item-caixa:hover .dica,
+.lateral-logo:hover .dica,
+button:focus-visible .dica { opacity: 1; }
+
+/* `.dica` nasceu como tooltip da barra lateral: absoluta e invisível até o
+   hover. Dentro de formulário e de modal ela é usada como texto de apoio, que
+   precisa estar SEMPRE visível — sem estes resets o texto fica no HTML e não
+   aparece na tela, e a confirmação de uma ação destrutiva abre em branco. */
+.campo .dica,
+.modal-corpo .dica {
+  position: static; opacity: 1; transform: none; margin-left: 0;
+  background: transparent; color: var(--tinta-fraca);
+  white-space: normal; pointer-events: auto; z-index: auto;
+  font-weight: 400;
+}
+.modal-corpo .dica { font-size: var(--t-1); line-height: 1.55; }
+.modal-corpo .dica + .dica { margin-top: 10px; }
+
+.lateral-extra { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.avatar-botao {
+  width: 42px; height: 42px; border-radius: 50%; border: 0; background: transparent;
+  cursor: pointer; display: grid; place-items: center; margin-top: 4px;
+}
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  font-size: 11.5px; font-weight: 600; background: var(--lateral-dourado-fundo); color: var(--lateral-dourado);
+  border: 1px solid var(--lateral-dourado);
+}
+
+/* Popover: abre ao lado da cápsula (nunca embutido nela) — é onde o nome do
+   grupo, da conta ou da configuração finalmente aparece escrito. */
+.capsula-popover {
+  position: absolute; left: calc(100% + 12px); top: 50%; transform: translateY(-50%);
+  background: var(--superficie); border: 1px solid var(--borda); color: var(--tinta);
+  border-radius: 16px; box-shadow: var(--sombra-3);
+  padding: 8px; min-width: 216px; z-index: 55;
+}
+.lateral-extra .capsula-popover { top: auto; bottom: 0; transform: none; }
+.capsula-popover-titulo {
+  font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-fraca);
+  padding: 6px 10px 8px;
+}
+.capsula-popover-item {
+  display: flex; align-items: center; width: 100%; text-align: left; border: 0; background: transparent;
+  padding: 10px 10px; border-radius: 10px; font: inherit; font-size: var(--t-1); color: var(--tinta); cursor: pointer;
+}
+.capsula-popover-item:hover { background: var(--superficie-alt); }
+.capsula-popover-item[aria-current="page"] { color: var(--orbital); font-weight: 600; }
+.capsula-popover-texto { padding: 6px 10px 2px; font-size: var(--t-1); color: var(--tinta-media); line-height: 1.5; max-width: 26ch; }
+.capsula-popover hr { border: 0; border-top: 1px solid var(--borda); margin: 5px 2px; }
+/* Par de botões de tema dentro do popover de conta — mesma ideia do toggle
+   do topo antigo, só que cabendo numa linha do popover. */
+.capsula-popover-tema { display: flex; gap: 6px; padding: 4px 10px 8px; }
+.capsula-popover-tema button {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px; border-radius: 9px; border: 1px solid var(--borda); background: transparent;
+  color: var(--tinta-media); font: inherit; font-size: var(--t-0); cursor: pointer;
+}
+.capsula-popover-tema button[aria-pressed="true"] { background: var(--superficie-alt); color: var(--tinta); border-color: var(--borda-forte); }
+
+/* Botão de expandir: uma seta pequena logo abaixo do "+", sempre visível —
+   é o que diz que ícone-só é uma escolha, não o único jeito de usar. */
+.lateral-expandir {
+  width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--lateral-borda);
+  background: var(--lateral-fundo-alt); color: var(--lateral-texto-fraca-ativo); cursor: pointer;
+  display: grid; place-items: center; margin-bottom: 4px; flex: none;
+  transition: transform .18s ease, color .15s ease;
+}
+.lateral-expandir:hover { color: var(--lateral-texto-ativa); }
+.lateral-expandir[aria-pressed="true"] { transform: rotate(180deg); }
+
+/* Estado expandido: a cápsula vira uma coluna larga, com o nome de cada
+   módulo ao lado do ícone — o mesmo texto que já vivia na dica (tooltip),
+   só que fixo em vez de só aparecer no hover. Nada de nome vira ícone
+   diferente ou rota diferente: é a mesma cápsula, só mais larga.
+   Este bloco é só o CONTEÚDO interno (ícone+nome lado a lado, seta de
+   categoria) — não depende de largura de tela, então roda em qualquer
+   viewport. A LARGURA/POSIÇÃO da cápsula em si (empurra o conteúdo no
+   desktop; vira gaveta por cima no celular) fica em blocos à parte, mais
+   abaixo, cada um dentro do media query certo. */
+body.lateral-expandida .lateral-logo { align-self: center; }
+body.lateral-expandida .lateral-item-caixa,
+body.lateral-expandida .lateral-mais,
+body.lateral-expandida .avatar-botao { width: 100%; }
+body.lateral-expandida .nav-item,
+body.lateral-expandida .lateral-mais,
+body.lateral-expandida .avatar-botao {
+  /* Era `display:grid` (herdado do ícone-só), que sem colunas definidas
+     empilha ícone e nome em linhas separadas em vez de lado a lado — por
+     isso o nome aparecia embaixo do ícone em vez de ao lado. */
+  display: flex; flex-direction: row;
+  width: 100%; height: 44px; border-radius: 12px; justify-content: flex-start; padding: 0 12px; gap: 12px;
+}
+body.lateral-expandida .lateral-expandir { align-self: flex-end; margin-right: 4px; }
+body.lateral-expandida .dica {
+  position: static; transform: none; margin-left: 0; opacity: 1; pointer-events: none;
+  background: transparent; color: inherit; padding: 0; font-size: var(--t-1); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* Cresce para ocupar o espaço livre, empurrando indicador/seta para a
+     borda direita do botão em vez de deixá-los grudados no nome. */
+  flex: 1; min-width: 0; text-align: left;
+}
+body.lateral-expandida .avatar-botao .dica { color: var(--lateral-texto-ativa); }
+body.lateral-expandida .nav-item .contador { position: static; width: 7px; padding: 0; flex: none; }
+body.lateral-expandida .nav-categoria .categoria-seta {
+  display: block; flex: none; opacity: .65; transition: transform .18s ease;
+}
+body.lateral-expandida .nav-categoria[aria-expanded="true"] .categoria-seta { transform: rotate(90deg); opacity: 1; }
+/* Recuo só faz sentido com o nome visível ao lado — no modo ícone-só os
+   filhos aparecem soltos, sem recuo, como mais um ícone na pilha. */
+body.lateral-expandida .categoria-filhos .nav-item { padding-left: 24px; height: auto; min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+/* Nomes como "Folha de Pagamento" e "13º, Férias e Rescisão" eram cortados com "…":
+   nos filhos o nome quebra em duas linhas em vez de sumir. */
+body.lateral-expandida .categoria-filhos .dica { white-space: normal; line-height: 1.25; }
+.lateral-fundo { display: none; }
+
+/* Desktop: a cápsula expandida empurra o conteúdo, não sobrepõe — sobra
+   tela de sobra pros 224px não incomodarem. Tudo aqui dentro de
+   `min-width:981px` de propósito: abaixo disso é a faixa do
+   `@media (max-width:980px)` mais adiante, que força a cápsula de volta a
+   ícone-só — sem essa guarda, `body.lateral-expandida .lateral` (uma
+   classe + elemento) tem mais especificidade que a regra `.lateral` da
+   faixa de celular e ganhava dela mesmo dentro do media query certo,
+   deixando a cápsula de 224px presa na tela inteira de um telefone. */
+@media (min-width: 981px) {
+  body.lateral-expandida .lateral { width: 224px; border-radius: 24px; align-items: stretch; padding: 14px 12px; }
+  body.lateral-expandida .area-principal { margin-left: 248px; }
+}
+
+/* Categoria (Pessoas/Financeiro/Operação): mesmo botão de módulo, só que
+   abre um acordeão embutido em vez de navegar direto. A seta só existe
+   visualmente quando a cápsula já está larga o bastante para ler o nome. */
+.nav-categoria .categoria-seta { display: none; }
+.categoria-filhos { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; }
+.categoria-filhos[hidden] { display: none; }
+
+/* Em repouso, transparente — o topo nem parece uma barra, é só onde a busca
+   e o seletor de competência moram. Rolar a página é que revela a barra de
+   vidro: fundo do tema borrado por trás, borda dourada quase invisível,
+   sombra funda o bastante pra separar do conteúdo passando por baixo. A
+   classe (`.topo-rolado`) é alternada por scroll em `T.ligarRolagemTopo`. */
+.topo {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px;
+  padding: 11px 26px; background: transparent; border-bottom: 1px solid transparent;
+  transition: background .45s, border-color .45s, box-shadow .45s;
+}
+.topo.topo-rolado {
+  background: var(--topo-vidro-fundo);
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  border-bottom-color: rgba(201, 168, 76, .16);
+  box-shadow: 0 4px 40px rgba(0, 0, 0, .18);
+}
+.busca { flex: 1; max-width: 420px; position: relative; }
+/* Sem caixa nenhuma em repouso — só o ícone e o texto sobre o fundo do
+   topo, como busca de Linear/Notion. A caixa (fundo + borda) só nasce
+   quando o campo ganha foco, que é quando faz sentido marcar a área. */
+.busca input {
+  width: 100%; padding: 7px 10px 7px 30px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--tinta); font: inherit; font-size: var(--t-1);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.busca input::placeholder { color: var(--tinta-fraca); }
+.busca input:hover { background: var(--superficie-alt); }
+.busca input:focus {
+  background: var(--superficie-alt); border-color: var(--borda-forte); outline: none;
+}
+.busca .lupa { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--tinta-fraca); font-size: 13px; }
+.busca-resultados {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 20;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 10px;
+  box-shadow: var(--sombra-3); max-height: 360px; overflow-y: auto; padding: 5px;
+}
+.busca-item { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: inherit; font: inherit; padding: 8px 10px; border-radius: 7px; cursor: pointer; }
+.busca-item:hover { background: var(--superficie-alt); }
+.busca-item .onde { font-size: var(--t-0); color: var(--tinta-fraca); text-transform: uppercase; letter-spacing: .07em; }
+.topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* Competência é o contexto de tudo: fica no topo, visível o tempo todo.
+   Sem pílula-dentro-de-pílula (a caixa com borda em volta do texto e o
+   status como um badge próprio dentro dela) — aqui é só texto e um ponto de
+   status, do jeito que o resto do app já mostra rótulo + valor. */
+.competencia-topo { display: flex; align-items: center; gap: 10px; }
+.competencia-topo-rotulo {
+  font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--tinta-fraca);
+}
+/* O seletor rico nasceu para a lista de professores, com corpo próprio
+   (borda, fundo, largura mínima). Aqui no topo ele só precisa do texto e da
+   seta — sem caixa em volta, para não duplicar a moldura do próprio topo. */
+.competencia-topo .seletor-campo {
+  min-width: 0; max-width: none; padding: 4px 2px; border: 0; background: transparent;
+  font-weight: 600; color: var(--titulo);
+}
+.competencia-topo .seletor-campo:hover { border-color: transparent; }
+.competencia-topo .status-competencia {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-0); font-weight: 500; color: var(--tinta-media);
+  padding-left: 10px; border-left: 1px solid var(--borda);
+}
+.competencia-topo .status-competencia::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none;
+}
+/* Mesmos quatro tons de sempre (T.STATUS_PERIODO), só que como ponto de cor
+   em vez de badge com fundo — o texto já diz o status, o ponto só reforça. */
+.competencia-topo .status-competencia.pendente { color: var(--ambar); }
+.competencia-topo .status-competencia.destaque { color: var(--orbital); }
+.lembrete-competencia button {
+  display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12px; font-weight: 600;
+  padding: 3px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  color: var(--ambar); background: transparent; border: 1px solid currentColor;
+  opacity: .9; transition: opacity .15s, background .15s;
+}
+.lembrete-competencia button:hover:not(:disabled) { opacity: 1; background: color-mix(in srgb, currentColor 10%, transparent); }
+.lembrete-competencia button:disabled { cursor: default; opacity: .75; }
+.lembrete-competencia .ponto { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulsa-lembrete 2s ease-in-out infinite; }
+@keyframes pulsa-lembrete { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .lembrete-competencia .ponto { animation: none; } }
+.competencia-topo .status-competencia.ok { color: var(--verde); }
+
+@media (max-width: 980px) {
+  /* A barra do topo passa a ter duas linhas: contexto em cima, busca embaixo.
+     Espremer competência, tema e busca numa linha só estoura a largura. */
+  .topo { flex-wrap: wrap; gap: 8px; }
+  .topo-acoes { order: 1; margin-left: 0; width: 100%; }
+  .busca { order: 2; flex-basis: 100%; max-width: none; }
+  .competencia-topo { flex: 1; min-width: 0; padding-left: 10px; }
+  .competencia-topo-rotulo { display: none; }
+  .competencia-topo .status-competencia { display: none; }
+  .competencia-topo .seletor-rico { flex: 1; min-width: 0; }
+  .competencia-topo .seletor-campo { width: 100%; }
+  .competencia-topo { gap: 6px; }
+  .lembrete-competencia { flex: none; }
+  .lembrete-competencia .ponto { display: none; }
+  .lembrete-competencia button { font-size: 11px; padding: 2px 8px; }
+}
+
+.conteudo { padding: 26px; max-width: 1320px; }
+/* Respiro maior só na primeira tela que os donos veem — o resto do sistema
+   (telas de tabela densa) continua no padding compacto que já tinha. */
+.conteudo:has(.tela-dashboard) { padding: 40px; }
+@media (max-width: 980px) {
+  .conteudo:has(.tela-dashboard) { padding: 18px 14px; }
+}
+.cabecalho { margin-bottom: 22px; display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.cabecalho h1 { font-size: var(--t-6); letter-spacing: -.025em; line-height: 1.1; }
+.cabecalho p { margin: 7px 0 0; color: var(--tinta-media); max-width: 64ch; }
+.cabecalho-acoes { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============================================================ blocos */
+
+/* Mesma faixa dourada translúcida de `.grade-kpi`/`.kpi` — pedido explícito
+   do Vinicius de estender o "quadrado vidro dourado" para todo painel do
+   sistema, não só a faixa de KPI. Vidro + borda dourada em vez do cartão
+   opaco de antes. */
+.painel {
+  background: var(--kpi-vidro-fundo); border: 1px solid var(--kpi-borda); border-radius: var(--raio);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--sombra-1); overflow: hidden;
+}
+.painel + .painel { margin-top: 16px; }
+.painel-topo { display: flex; align-items: center; gap: 12px; padding: 18px 24px; border-bottom: 1px solid var(--kpi-borda); flex-wrap: wrap; }
+.painel-topo h2 { font-size: var(--t-4); }
+/* Base para QUALQUER `.contexto`, não só dentro de `.painel-topo`: sem isto,
+   um `.contexto` colado ao texto do rótulo (relatório, título de grupo) sai
+   sem espaço nenhum — "Hotel8 pessoa(s)". Dentro de `.painel-topo`
+   (flex), a regra mais específica abaixo troca por `margin-left: auto` para
+   empurrar até a borda direita. */
+.contexto { margin-left: 8px; font-size: var(--t-0); color: var(--tinta-fraca); text-transform: uppercase; letter-spacing: .09em; }
+.painel-topo .contexto { margin-left: auto; }
+.painel-corpo { padding: 24px; }
+
+/* 166px é o que faz as seis fichas do dashboard caberem numa linha em 1400px
+   com a lateral aberta, em vez de sobrar uma órfã embaixo.
+   Faixa única (borda dourada translúcida, vidro por baixo) em vez de cada
+   ficha ser seu próprio cartão — pedido explícito do Vinicius, com
+   referência visual e código. A divisória de cada célula é `outline`, não
+   `border`: outline não entra na largura da caixa, então não precisa da
+   conta de margem negativa pra colar uma na outra — e continua certa
+   mesmo quando o grid `auto-fit` quebra linha num monitor estreito, onde
+   um `border-right` só no penúltimo item de cada fileira exigiria saber
+   de antemão quantas colunas cabem (o que `auto-fit` decide sozinho). */
+.grade-kpi, .resumo {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(166px, 1fr));
+  margin-bottom: 20px; border: 1px solid var(--kpi-borda); border-radius: var(--raio);
+  background: var(--kpi-vidro-fundo);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+.kpi, .resumo-item {
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  outline: 1px solid var(--kpi-borda); outline-offset: -1px;
+  padding: 20px 18px; text-align: center; font: inherit; color: inherit;
+  /* Sem isto, o item de grid usa a largura mínima do conteúdo (o valor
+     inteiro numa linha só) como piso — em faixas de 6+ células isso força a
+     coluna a estourar o `1fr` combinado e a faixa vaza pelo `overflow:
+     hidden` do container, cortando o número ao meio. `min-width: 0` deixa a
+     coluna respeitar o espaço combinado; `container-type` é o que deixa o
+     valor lá dentro (`.kpi-valor`) encolher a fonte pela largura real da
+     célula, não pela da viewport — a mesma célula fica mais estreita numa
+     faixa de 6 colunas do que numa de 4. */
+  min-width: 0;
+  container-type: inline-size;
+}
+.kpi { cursor: pointer; transition: background .35s cubic-bezier(.4, 0, .2, 1); }
+.kpi:hover { background: var(--kpi-hover-fundo); }
+.kpi[data-inerte] { cursor: default; }
+.kpi[data-inerte]:hover { background: transparent; }
+.kpi-rotulo, .resumo-item dt {
+  font-size: .625rem; text-transform: uppercase; letter-spacing: .28em; font-weight: 500;
+  color: var(--kpi-rotulo-cor);
+  /* Reserva o espaço de duas linhas sempre — sem isto, a célula cujo rótulo
+     é a única a quebrar linha ("Folha com encargos") empurra só o próprio
+     valor pra baixo, e a faixa toda perde o alinhamento horizontal entre
+     os valores. */
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1.3; min-height: 2.6em;
+}
+.kpi-valor, .resumo-item dd {
+  font-family: inherit; font-weight: 700; letter-spacing: -.01em;
+  font-size: clamp(.7rem, 9.5cqw, var(--t-5));
+  margin-top: 8px; line-height: 1.05; color: var(--kpi-valor-cor);
+  /* `R$ 625.708,28` tem espaço não separável: `break-word` cortava o número
+     no meio. `nowrap` evita; `ellipsis` é só o último recurso. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kpi-valor.vazio { color: var(--tinta-fraca); }
+.kpi-nota {
+  font-size: var(--t-1); font-family: inherit; font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  color: var(--kpi-nota-cor); margin-top: 6px;
+}
+.kpi.critico .kpi-valor { color: var(--vermelho); }
+.kpi.atencao .kpi-valor { color: var(--ambar); }
+
+/* KPI em destaque: sem isto, os 6 KPIs do dashboard competem no mesmo peso
+   e o olho não sabe onde pousar primeiro. Ocupa duas colunas da faixa e o
+   valor cresce um degrau — vira a âncora visual da tela. */
+.kpi.hero { grid-column: span 2; }
+.kpi.hero .kpi-rotulo { font-size: .7rem; }
+.kpi.hero .kpi-valor { font-size: clamp(1.3rem, 7cqw, var(--t-6)); }
+
+/* ---------------------------------------------------------- tela: dashboard
+   Composição dedicada, não a lista de painéis empilhados do resto do
+   sistema: alertas (o que pede decisão) na coluna larga, evolução e
+   checklist — apoio, não urgência — numa coluna secundária mais estreita.
+   Escopado a `.tela-dashboard` de propósito: o resto do sistema (telas de
+   tabela densa) continua no respiro mais compacto que já tinha. */
+.dashboard-grade {
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start;
+}
+.dashboard-coluna { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+.dashboard-coluna .painel + .painel { margin-top: 0; }
+/* Coluna secundária tem só 360px — o grid de 3 colunas do `.passos`
+   (número, título+detalhe lado a lado, estado) só cabe confortavelmente em
+   coluna larga. Reaproveita o mesmo ajuste de 2 colunas que o `.passos` já
+   usa no celular (`@media max-width:720px` mais abaixo), porque o aperto
+   aqui é do container, não da viewport — em telas grandes essa coluna
+   continua com 360px independente da largura da janela. */
+.dashboard-coluna .passos li { grid-template-columns: 22px 1fr; }
+.dashboard-coluna .passos .estado { grid-row: auto; grid-column: 2; justify-self: start; padding-top: 4px; }
+@media (max-width: 1080px) {
+  .dashboard-grade { grid-template-columns: 1fr; }
+}
+
+.tela-dashboard .cabecalho { margin-bottom: 36px; }
+.tela-dashboard .grade-kpi { margin-bottom: 28px; }
+.tela-dashboard .painel-corpo { padding: 32px; }
+/* Filete dourado do cartão de login (`.acesso-cartao::before`), emprestado
+   para os painéis do dashboard — é a primeira tela que os donos veem, e
+   hoje era a única do app sem esse acabamento. */
+.tela-dashboard .painel { position: relative; }
+.tela-dashboard .painel::before {
+  content: ""; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
+  background: linear-gradient(to right, transparent, var(--orbital-luz) 22%, var(--orbital-luz) 78%, transparent);
+  border-radius: 2px;
+}
+@media (max-width: 640px) {
+  .tela-dashboard .cabecalho { margin-bottom: 24px; }
+  .tela-dashboard .painel-corpo { padding: 20px; }
+}
+
+.vazio-bloco { display: grid; justify-items: center; text-align: center; gap: 9px; padding: 44px 24px; }
+.vazio-bloco .orbita { width: 42px; height: 42px; margin-bottom: 3px; opacity: .75; color: var(--tinta-fraca); }
+.vazio-bloco h3 { font-family: inherit; font-size: var(--t-3); }
+.vazio-bloco p { margin: 0; color: var(--tinta-media); max-width: 46ch; }
+.vazio-bloco .botao { margin-top: 7px; }
+
+.passos { list-style: none; margin: 0; padding: 0; counter-reset: passo; }
+.passos li { display: grid; grid-template-columns: 26px 1fr auto; gap: 3px 14px; align-items: start; padding: 14px 18px; border-bottom: 1px solid var(--borda); }
+.passos li:last-child { border-bottom: 0; }
+.passos li::before {
+  counter-increment: passo; content: counter(passo, decimal-leading-zero);
+  grid-row: span 2; font-family: inherit; font-variant-numeric: tabular-nums; font-size: var(--t-1); color: var(--tinta-fraca); padding-top: 2px;
+}
+.passos .titulo { font-weight: 600; color: var(--titulo); }
+.passos .detalhe { color: var(--tinta-media); font-size: var(--t-1); }
+.passos .estado { grid-row: span 2; align-self: center; }
+.passos li.pronto .titulo { color: var(--tinta-media); }
+
+.pastilha { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 20px; font-size: var(--t-0); font-weight: 500; white-space: nowrap; }
+.pastilha::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pastilha.ok { background: var(--verde-fundo); color: var(--verde); }
+.pastilha.pendente { background: var(--ambar-fundo); color: var(--ambar); }
+.pastilha.critico { background: var(--vermelho-fundo); color: var(--vermelho); }
+.pastilha.neutro { background: var(--superficie-alt); color: var(--tinta-media); border: 1px solid var(--borda); }
+.pastilha.destaque { background: var(--orbital-fundo); color: var(--orbital); }
+
+/* Alertas clicáveis: cada um leva à tela onde se resolve. */
+.alertas { list-style: none; margin: 0; padding: 0; }
+.alertas li { border-bottom: 1px solid var(--borda); }
+.alertas li:last-child { border-bottom: 0; }
+.alerta {
+  display: grid; grid-template-columns: 3px 1fr auto; gap: 0 14px; align-items: center;
+  width: 100%; border: 0; background: transparent; color: inherit; font: inherit;
+  padding: 0; cursor: pointer; text-align: left;
+}
+.alerta:hover { background: var(--superficie-alt); }
+.alerta .barra { align-self: stretch; }
+.alerta.critico .barra { background: var(--vermelho); }
+.alerta.atencao .barra { background: var(--ambar); }
+.alerta.info .barra { background: var(--marinho-claro); }
+.alerta .miolo { padding: 13px 0; min-width: 0; }
+/* São spans dentro de uma célula de grid: sem `block` o detalhe cola no
+   título na mesma linha. */
+.alerta .titulo { display: block; font-weight: 500; }
+.alerta .detalhe { display: block; font-size: var(--t-1); color: var(--tinta-media); margin-top: 2px; }
+.alerta .seta { padding-right: 18px; color: var(--tinta-fraca); }
+
+/* Tabela premium: header discreto, linha alta, divisor quase invisível — o
+   respiro é o que separa "planilha" de "produto financeiro". */
+.rolagem { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: var(--t-1); }
+th {
+  text-align: left; font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em;
+  color: var(--tinta-fraca); font-weight: 500; padding: 14px 20px; border-bottom: 1px solid var(--borda);
+  white-space: nowrap;
+}
+td { padding: 18px 20px; border-bottom: 1px solid var(--borda); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.clicavel { cursor: pointer; transition: background .12s ease; }
+tbody tr.clicavel:hover { background: var(--superficie-alt); }
+td.direita, th.direita { text-align: right; }
+td.acoes { text-align: right; white-space: nowrap; }
+.principal { font-weight: 500; color: var(--titulo); }
+.secundario { font-size: var(--t-0); color: var(--tinta-fraca); margin-top: 1px; }
+
+/* Sem fundo sólido: um `background` de superfície nesta barra, ao lado dos
+   filtros que às vezes são só 1-2 seletores curtos, sobrava como um bloco
+   colorido cheio de vão vazio — a barra só precisa do traço embaixo pra
+   separar do que vem depois. */
+.barra-ferramentas { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 16px 20px; border-bottom: 1px solid var(--borda); }
+.barra-ferramentas input {
+  padding: 7px 10px; border: 1px solid var(--borda-forte); border-radius: 7px;
+  background: var(--superficie); color: var(--tinta); font: inherit; font-size: var(--t-1);
+}
+.barra-ferramentas .filtro-rotulo { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-fraca); }
+.barra-ferramentas .direita { margin-left: auto; display: flex; gap: 8px; }
+
+/* ============================================================ modal */
+
+.cortina {
+  position: fixed; inset: 0; z-index: 50; background: rgba(6, 21, 41, .55);
+  display: grid; place-items: center; padding: 24px; overflow-y: auto;
+}
+.modal {
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px;
+  box-shadow: var(--sombra-3); width: 100%; max-width: 560px; max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal.largo { max-width: 860px; }
+.modal-topo { display: flex; align-items: baseline; gap: 12px; padding: 18px 22px 14px; border-bottom: 1px solid var(--borda); }
+.modal-topo h2 { font-size: var(--t-4); letter-spacing: -.015em; }
+.modal-topo .sub { font-size: var(--t-1); color: var(--tinta-fraca); }
+.modal-corpo { padding: 20px 22px; overflow-y: auto; overflow-x: hidden; }
+.modal-rodape { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 22px; border-top: 1px solid var(--borda); background: var(--superficie-alt); }
+.modal-rodape { flex-wrap: wrap; align-items: center; }
+.modal-rodape .botao { white-space: nowrap; flex: 0 0 auto; }
+.modal-rodape .esquerda { margin-right: 0; padding: 8px 10px; font-size: 13px; }
+.modal-rodape { gap: 6px; }
+.modal-rodape .ultima-esquerda { margin-right: auto; }
+
+/* Fundo compartilhado preenchendo o vão (peça única com traço fino) quebrava
+   toda vez que a última linha não fechava: sobrava uma célula vazia do
+   tamanho da coluna que faltou, pintada da cor da "borda" — o mesmo defeito
+   corrigido em .kpi. Cada ficha com a própria borda evita isso de vez: linha
+   incompleta só deixa espaço em branco. */
+/* Ficha sem "parede de cartão": rótulo sobre valor, só um filete embaixo. */
+.ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px 24px; }
+.ficha div { padding: 0 0 12px; border-bottom: 1px solid var(--borda); }
+.ficha dt { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-fraca); }
+.ficha dd { margin: 5px 0 0; font-weight: 500; color: var(--titulo); }
+
+/* `.resumo`/`.resumo-item` é o mesmo componente de `.grade-kpi`/`.kpi` —
+   estilizado junto ali em cima, com o outline resolvendo a linha que não
+   fecha sem precisar de borda própria por item. */
+
+/* ---------------------------------------------------------------- opções */
+
+.grupo-opcoes + .grupo-opcoes { margin-top: 22px; }
+.grupo-opcoes .grupo-legenda { padding-bottom: 4px; }
+/* Uma caixa por linha (borda + fundo em cada uma marcada) virava uma grade de
+   quadrados — pesado para uma lista de preferências. Um traço fino entre as
+   linhas já separa; marcar é o próprio quadradinho escurecer. */
+.opcao-painel {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px;
+  align-items: start; padding: 11px 2px; cursor: pointer;
+  border-bottom: 1px solid var(--borda);
+}
+.grupo-opcoes .opcao-painel:last-of-type { border-bottom: 0; }
+.opcao-painel:hover .nome { color: var(--titulo); }
+
+/* Checkbox próprio: o nativo do sistema operacional destoava do resto do
+   desenho, do mesmo jeito que o `<select>` cru destoava (ver seletor rico). */
+.opcao-painel input {
+  appearance: none; -webkit-appearance: none; flex: none;
+  width: 17px; height: 17px; margin: 3px 0 0; border-radius: 4px;
+  border: 1px solid var(--borda-forte); background: var(--superficie);
+  display: grid; place-items: center; cursor: pointer;
+  transition: background .12s ease, border-color .12s ease;
+}
+.opcao-painel input:checked { background: var(--marinho); border-color: var(--marinho-borda); }
+.opcao-painel input:checked::after {
+  content: ""; width: 8px; height: 5px; margin-bottom: 1px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg);
+}
+.opcao-painel input:focus-visible { outline: 2px solid var(--orbital-luz); outline-offset: 2px; }
+.opcao-painel .nome { display: block; font-weight: 500; font-size: var(--t-2); }
+.opcao-painel .descricao { display: block; font-size: var(--t-1); color: var(--tinta-media); margin-top: 2px; line-height: 1.45; }
+
+/* ---------------------------------------------------------------- alçadas */
+
+.alcadas { display: grid; gap: 1px; background: var(--borda); }
+.alcada {
+  background: var(--superficie); padding: 12px 18px;
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 14px; align-items: baseline;
+}
+.alcada .ordem {
+  grid-row: span 2; font-family: inherit; font-variant-numeric: tabular-nums;
+  font-size: var(--t-0); color: var(--tinta-fraca);
+}
+.alcada .nome { font-weight: 600; color: var(--titulo); }
+.alcada .detalhe { font-size: var(--t-1); color: var(--tinta-media); }
+.alcada .teto {
+  grid-row: span 2; align-self: center; font-variant-numeric: tabular-nums;
+  font-weight: 500; white-space: nowrap; color: var(--titulo);
+}
+/* Recuo cresce com o nível: a cadeia de comando fica visível na indentação. */
+.alcada[data-ordem="2"] { padding-left: 32px; }
+.alcada[data-ordem="3"] { padding-left: 46px; }
+.alcada[data-ordem="4"] { padding-left: 60px; }
+.alcada[data-ordem="5"], .alcada[data-ordem="6"] { padding-left: 74px; }
+
+.cadeia { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 14px 18px; }
+.cadeia .elo {
+  padding: 4px 11px; border-radius: 20px; font-size: var(--t-1); font-weight: 500;
+  background: var(--superficie-alt); border: 1px solid var(--borda);
+}
+.cadeia .elo.final { background: var(--orbital-fundo); color: var(--orbital); border-color: rgba(154,123,24,.3); }
+.cadeia .seta-elo { color: var(--tinta-fraca); }
+/* Estado do percurso: quem já decidiu, quem decide agora, quem ainda vem. */
+.cadeia .elo.concluido { background: var(--verde-fundo); color: var(--verde); border-color: transparent; }
+.cadeia .elo.concluido::before { content: "✓ "; }
+.cadeia .elo.atual {
+  background: var(--marinho); color: #fff; border-color: var(--marinho); font-weight: 600;
+}
+
+.aviso-flutuante {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 80; max-width: min(92vw, 460px);
+  padding: 12px 18px; border-radius: 10px; font-size: var(--t-1);
+  background: var(--marinho); color: #fff; box-shadow: var(--sombra-3);
+  animation: sobe .18s ease-out;
+}
+@keyframes sobe { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+@media (max-width: 720px) {
+  /* Colocação explícita: sem isto a descrição cai na coluna de 26px do
+     indicador de nível e sai uma palavra por linha. */
+  .alcada, .alcada[data-ordem] {
+    padding-left: 14px;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+  .alcada .ordem { grid-row: 1; grid-column: 1; }
+  .alcada .nome { grid-row: 1; grid-column: 2; }
+  .alcada .teto { grid-row: 1; grid-column: 3; align-self: baseline; }
+  .alcada .detalhe { grid-row: 2; grid-column: 2 / -1; }
+}
+
+/* ============================================================ folha */
+
+.folha-grade { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
+
+.sem-quebra { white-space: nowrap; }
+.rotulo-encargo { color: var(--tinta-fraca); font-size: var(--t-0); font-weight: 400; }
+.cod { font-family: inherit; font-variant-numeric: tabular-nums; font-size: var(--t-0); color: var(--tinta-fraca); }
+.v-provento { font-weight: 500; color: var(--titulo); }
+.v-desconto { color: var(--vermelho); font-weight: 500; }
+.v-encargo { color: var(--tinta-media); font-weight: 500; }
+
+.faixa-aviso { display: flex; gap: 10px; padding: 11px 18px; font-size: var(--t-1); border-bottom: 1px solid var(--borda); }
+.faixa-aviso.divergencia { background: var(--vermelho-fundo); color: var(--vermelho); }
+.faixa-aviso.atencao { background: var(--ambar-fundo); color: var(--ambar); }
+.faixa-aviso.info { background: var(--superficie-alt); color: var(--tinta-media); }
+
+.passo-calc { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 18px; padding: 13px 18px; border-bottom: 1px solid var(--borda); }
+.passo-calc:last-child { border-bottom: 0; }
+.passo-calc .t { font-weight: 600; color: var(--titulo); }
+.passo-calc .r { font-family: inherit; font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; align-self: center; grid-row: span 3; color: var(--titulo); }
+.passo-calc .f { font-family: inherit; font-variant-numeric: tabular-nums; font-size: var(--t-0); color: var(--tinta-media); }
+/* Fundamento: nota de rodape do passo, nao destaque. Em dourado ele gritava
+   mais que o proprio valor calculado. */
+.passo-calc .b { font-size: var(--t-0); color: var(--tinta-fraca); }
+
+/* ============================================================ barras e calendário */
+
+.barra-dado { display: grid; grid-template-columns: minmax(120px, 190px) 1fr auto; gap: 12px; align-items: center; padding: 9px 18px; }
+.barra-dado + .barra-dado { border-top: 1px solid var(--borda); }
+.barra-dado .trilho { height: 7px; border-radius: 4px; background: var(--superficie-alt); overflow: hidden; border: 1px solid var(--borda); }
+.barra-dado .preenche { height: 100%; background: var(--marinho-claro); border-radius: 4px; }
+.barra-dado .valor { font-variant-numeric: tabular-nums; font-weight: 500; min-width: 92px; text-align: right; color: var(--titulo); }
+.barra-dado strong { color: var(--titulo); }
+
+.calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; padding: 18px; }
+.calendario .rotulo-dia { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .06em; color: var(--tinta-fraca); text-align: center; padding-bottom: 4px; }
+.calendario .dia { aspect-ratio: 1; border: 1px solid var(--borda); border-radius: 7px; padding: 5px 6px; font-size: var(--t-0); background: var(--superficie); position: relative; }
+.calendario .dia.fora { opacity: .3; }
+.calendario .dia .marca { position: absolute; left: 6px; right: 6px; bottom: 6px; height: 4px; border-radius: 3px; }
+.calendario .dia .marca.ferias { background: var(--marinho-claro); }
+.calendario .dia .marca.atestado { background: var(--ambar); }
+.calendario .dia .marca.outro { background: var(--tinta-fraca); }
+.legenda { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 18px 16px; font-size: var(--t-0); color: var(--tinta-media); }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda i { width: 12px; height: 4px; border-radius: 3px; display: inline-block; }
+
+/* Editor de faixas: grade de inputs alinhada por coluna. Digitar tabela de
+   imposto é trabalho de conferência linha a linha — as colunas precisam bater
+   com a portaria aberta ao lado. */
+.faixas-editor { margin-top: 6px; }
+.faixa-cabecalho, .faixa-linha {
+  display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center;
+}
+.faixas-editor:has(#fx-ded-0) .faixa-cabecalho,
+.faixas-editor:has(#fx-ded-0) .faixa-linha {
+  grid-template-columns: 1fr 110px 1fr;
+}
+.faixa-cabecalho {
+  font-size: var(--t-0); text-transform: uppercase; letter-spacing: .07em;
+  color: var(--tinta-fraca); margin-bottom: 6px;
+}
+.faixa-linha + .faixa-linha { margin-top: 6px; }
+.faixa-linha input {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--borda-forte); border-radius: 8px;
+  background: var(--superficie); color: var(--tinta); font: inherit;
+  font-size: var(--t-1); font-variant-numeric: tabular-nums;
+}
+.faixa-linha input:focus-visible { outline: 2px solid var(--marinho-claro); outline-offset: 1px; }
+
+/* Faixa de falha de gravação: fica acima do conteúdo, largura inteira, e não
+   se fecha — o problema não passa sozinho. */
+.falha-gravacao {
+  padding: 11px 22px; font-size: var(--t-1); line-height: 1.5;
+  background: var(--vermelho-fundo); color: var(--vermelho);
+  border-bottom: 1px solid var(--vermelho);
+}
+.falha-gravacao strong { color: inherit; }
+
+.erros-tabela {
+  margin-top: 14px; padding: 12px 14px; border-radius: 9px;
+  background: var(--vermelho-fundo); border: 1px solid var(--vermelho);
+  color: var(--vermelho); font-size: var(--t-1);
+}
+.erros-tabela ul { margin: 6px 0 0; padding-left: 18px; }
+.erros-tabela li + li { margin-top: 3px; }
+
+.aviso-tela {
+  display: flex; gap: 10px; padding: 12px 14px; border-radius: 9px; font-size: var(--t-1);
+  background: var(--orbital-fundo); border: 1px solid rgba(154,123,24,.28); color: var(--tinta-media);
+  margin-bottom: 16px;
+}
+.aviso-tela strong { color: var(--orbital); }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+@media (max-width: 1080px) {
+  .acesso-palco { grid-template-columns: 1fr; gap: 40px; padding: 44px 32px; }
+  #atomo { left: auto; right: -18%; top: 0; width: 72%; height: 60%; opacity: .55; }
+  .acesso-cartao { max-width: 440px; }
+  /* Em coluna única a ordem do HTML poria o discurso institucional inteiro
+     antes do formulário: quem usa o sistema todo dia rolaria a tela toda
+     manhã só para digitar a senha. O cartão de acesso vem primeiro; o
+     texto institucional continua disponível logo abaixo, para quem quiser. */
+  .acesso-cartao { order: -1; }
+}
+
+@media (max-width: 700px) {
+  .acesso { overflow-x: hidden; height: 100%; }
+  .acesso-topo { padding: 14px 18px; gap: 10px; }
+  .acesso-topo-nota { display: none; }
+  /* "Hotel | GESTÃO 360" quebrava em duas colunas apertadas. */
+  .marca-texto { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .marca-divisor { display: none; }
+  .marca-titulo { font-size: var(--t-2); line-height: 1.2; }
+  .marca-modulo { font-size: 9.5px; }
+  /* No celular ninguém lê discurso institucional para digitar a senha todo
+     dia — o texto de vendas, as três provas e o rodapé de selos só empurram
+     o formulário para baixo da dobra. Fica só marca + card de acesso. */
+  .acesso-texto, .acesso-rodape, #atomo { display: none; }
+  .acesso-palco {
+    display: flex; align-items: center; justify-content: center;
+    /* Sem `min-height` aqui: `.acesso` já é a altura da janela e este é o
+       `1fr` do meio. Somar de novo estourava a tela em 19px. */
+    padding: 20px 20px 28px; gap: 0;
+  }
+  .acesso-cartao { width: 100%; max-width: 420px; padding: 24px 20px 20px; }
+}
+
+@media (max-width: 980px) {
+  /* A cápsula continua vertical e flutuante — só encolhe. Ícone-só já é o
+     formato mais compacto que existe; virar barra horizontal era o remendo
+     que o desenho anterior (menu com nome escrito) precisava, este não. */
+  .lateral { left: 8px; top: 8px; bottom: 8px; width: 46px; border-radius: 23px; padding: 8px 0; gap: 2px; }
+  .lateral-logo, .lateral-mais, .nav-item, .avatar-botao { width: 38px; height: 38px; }
+  .avatar { width: 30px; height: 30px; }
+  .area-principal { margin-left: 68px; }
+  /* 22px é alvo de toque pequeno demais — é o único jeito de abrir a
+     gaveta com nome dos módulos no celular, então precisa ser fácil de
+     acertar com o dedo, não só com o cursor do mouse. */
+  .lateral-expandir { width: 30px; height: 30px; }
+
+  /* Expandida no celular não empurra o conteúdo (224px não cabe numa tela
+     de 375px) — vira gaveta por cima, com fundo escurecido atrás. É a
+     única forma de ver o nome de cada módulo e abrir as categorias
+     (Pessoas, Financeiro...) num toque só: sem isto o menu no celular
+     fica preso em ícone-só pra sempre, sem rótulo e sem submenu
+     alcançável — só ícone e adivinhação. */
+  body.lateral-expandida .lateral {
+    left: 12px; top: 12px; bottom: 12px; width: min(272px, calc(100vw - 48px));
+    border-radius: 24px; align-items: stretch; padding: 16px 14px; z-index: 70;
+    box-shadow: var(--sombra-3);
+  }
+  body.lateral-expandida .lateral-fundo {
+    display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, .5); z-index: 60;
+  }
+  .folha-grade { grid-template-columns: 1fr; }
+  .conteudo { padding: 18px 14px; }
+  .passo-calc { grid-template-columns: 1fr; }
+  .passo-calc .r { grid-row: auto; text-align: left; }
+  .par, .trio { grid-template-columns: 1fr; }
+  .topo { padding: 10px 14px; }
+  .cabecalho h1 { font-size: 1.9rem; }
+  .cabecalho-acoes { margin-left: 0; width: 100%; }
+  .cabecalho-acoes .botao { flex: 1; justify-content: center; }
+}
+
+/* ---------------------------------------------------------------- celular
+   Abaixo de 720px a tabela deixa de ser tabela: cada linha vira um cartão
+   com rótulo à esquerda e valor à direita. Rolagem horizontal em tabela de
+   dados no celular é a pior saída — some com metade da informação. */
+@media (max-width: 720px) {
+  .rolagem { overflow-x: visible; }
+  .rolagem table, .rolagem tbody, .rolagem tr, .rolagem td { display: block; width: auto; }
+  .rolagem thead { display: none; }
+
+  .rolagem tr {
+    border: 1px solid var(--borda); border-radius: 10px;
+    background: var(--superficie); margin: 0 14px 10px; padding: 4px 0;
+  }
+  .rolagem tr:last-child { margin-bottom: 14px; }
+  .painel-topo + .rolagem tr:first-child { margin-top: 14px; }
+
+  .rolagem td {
+    display: grid; grid-template-columns: minmax(88px, 40%) minmax(0, 1fr);
+    gap: 14px; align-items: baseline;
+    padding: 8px 14px; border: 0; text-align: left;
+  }
+  .rolagem td + td { border-top: 1px dashed var(--borda); }
+  .rolagem td::before {
+    content: attr(data-rotulo);
+    font-size: var(--t-0); text-transform: uppercase; letter-spacing: .07em;
+    color: var(--tinta-fraca); font-weight: 500;
+  }
+  /* Coluna sem cabeçalho (a dos botões) ocupa a linha inteira. */
+  .rolagem td[data-rotulo=""] { grid-template-columns: 1fr; }
+  .rolagem td[data-rotulo=""]::before { content: none; }
+  .rolagem td.direita { text-align: left; }
+  .rolagem td .secundario { margin-top: 2px; }
+  /* Detalhe de apoio fica só no desktop; no cartão do celular ele triplicaria
+     a altura de cada linha sem mudar a decisão de ninguém. */
+  .rolagem td.col-secundaria { display: none; }
+  /* A primeira coluna já é a identidade da linha (nome, descrição): repetir
+     "FUNCIONÁRIO" em caixa alta acima do próprio nome era peso sem função.
+     Vira o título do cartão em vez de mais um campo rotulado. */
+  .rolagem td:first-child:has(.principal) { padding-top: 12px; padding-bottom: 10px; }
+  .rolagem td:first-child:has(.principal)::before { content: none; }
+  .rolagem .principal { font-size: var(--t-3); font-weight: 600; }
+  /* Botão de ação sem rótulo (Abrir/Extrato) esticava para a largura da
+     linha inteira porque virou item único de um grid — um retângulo cheio
+     de borda por linha. Volta a ser um botão do tamanho do próprio texto. */
+  .rolagem td[data-rotulo=""] { justify-items: start; padding-top: 10px; }
+
+  /* Sem `gap`: as células continuam encostadas, senão a divisória
+     (`outline`) some no vão e a faixa única vira quadrados soltos de novo. */
+  .grade-kpi, .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi, .resumo-item { padding: 12px 13px 13px; }
+  /* `.kpi-valor`/`.resumo-item dd` não precisa de override aqui: o
+     `clamp(cqw)` já encolhe pela largura real da célula, que no celular
+     (2 colunas) é ainda mais estreita do que qualquer breakpoint fixo daria
+     conta sozinho. */
+  .barra-ferramentas { padding: 10px 14px; }
+  /* `flex:1` sozinho deixava os 4 filtros (busca + 3 seletores) disputando
+     a mesma linha e encolhendo até o rótulo virar ilegível — "Todos os
+     módulos" cortado pra "1". `flex-basis:100%` faz cada um reivindicar a
+     linha inteira; com `flex-wrap` já ligado na regra base, os de baixo
+     descem sozinhos, um por linha, sem inventar breakpoint novo. */
+  .barra-ferramentas input, .barra-ferramentas .seletor-rico { flex: 1 1 100%; min-width: 0; }
+  .barra-ferramentas .seletor-campo { width: 100%; }
+  .barra-ferramentas .direita { margin-left: 0; width: 100%; }
+  .barra-ferramentas .direita .botao { flex: 1; justify-content: center; }
+  .barra-dado { grid-template-columns: 1fr auto; gap: 6px 12px; }
+  .barra-dado .trilho { grid-column: 1 / -1; order: 3; }
+  .ficha { grid-template-columns: 1fr 1fr; }
+  /* Rodapé com quatro ações (o da tabela legal) espremia cada botão em três
+     linhas de texto. No celular eles empilham: um por linha, legíveis. */
+  .modal-rodape { flex-wrap: wrap; }
+  .modal-rodape .botao { flex: 1 1 100%; justify-content: center; }
+  .modal-rodape .esquerda, .modal-rodape .ultima-esquerda { flex-basis: 100%; margin-right: 0; }
+  .alerta { grid-template-columns: 3px 1fr; }
+  .alerta .seta { display: none; }
+  .passos li { grid-template-columns: 22px 1fr; }
+  .passos .estado { grid-row: auto; grid-column: 2; justify-self: start; padding-top: 4px; }
+}
+
+/* Alvo de toque confortável no celular, sem inchar o desktop. */
+@media (pointer: coarse) {
+  .botao { padding: 12px 16px; min-height: 44px; }
+  .botao.miudo { padding: 9px 13px; min-height: 38px; }
+  .aba { padding: 12px 10px; }
+  .tema button { width: 38px; height: 38px; font-size: 15px; }
+  .campo input, .campo textarea, .campo .seletor-campo { padding: 12px; font-size: 16px; }
+  .barra-ferramentas input, .barra-ferramentas .seletor-campo { padding: 10px 12px; font-size: 16px; }
+  .busca input { padding: 12px 12px 12px 34px; font-size: 16px; }
+  /* 16px é o limiar abaixo do qual o Safari no iPhone dá zoom automático ao
+     focar um campo — e o zoom desalinha o layout inteiro. */
+}
+
+/* ------------------------------------------------ conferência de aulas × PPP */
+.conf-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.conf-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px;
+  align-items: baseline; padding: 10px 12px;
+  border: 1px solid var(--borda); border-radius: 9px;
+}
+.conf-item .seg { font-weight: 500; color: var(--titulo); }
+.conf-item .num { font-variant-numeric: tabular-nums; color: var(--tinta-media); }
+.conf-item .pastilha { grid-column: 1 / -1; justify-self: start; margin-top: 2px; }
+.conf-total { margin-top: 14px; font-size: var(--t-2); color: var(--tinta-media); }
+.conf-total.diverge { color: var(--vermelho); }
+.conf-total strong { color: var(--titulo); font-variant-numeric: tabular-nums; }
+.conf-total.diverge strong { color: var(--vermelho); }
+
+/* =========================================================== leitura quieta
+   Regra da tela: só a exceção ganha peso visual. Quarenta e uma pastilhas
+   iguais viram ruído; duas marcas vermelhas viram pendência. */
+
+/* Conferência: uma linha. O detalhe fica atrás de um clique, porque na maioria
+   dos dias não há nada para ver. */
+.conferencia-linha { margin: 0 0 18px; font-size: var(--t-1); color: var(--tinta-media); }
+.conferencia-linha strong { color: var(--titulo); font-variant-numeric: tabular-nums; }
+
+.conferencia { margin-bottom: 18px; }
+.conferencia > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 9px;
+  padding: 10px 14px; border-radius: 9px;
+  background: var(--ambar-fundo); border: 1px solid rgba(154, 123, 24, .28);
+  font-size: var(--t-1); color: var(--tinta);
+}
+.conferencia > summary::-webkit-details-marker { display: none; }
+.conferencia > summary strong { color: var(--titulo); font-variant-numeric: tabular-nums; }
+.conferencia > summary:hover { border-color: var(--orbital); }
+.conferencia .marcador {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--ambar); flex: none;
+  transform: translateY(-1px);
+}
+.conferencia[open] > summary { border-radius: 9px 9px 0 0; }
+
+.conferencia-detalhe {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 20px; padding: 16px 14px;
+  border: 1px solid rgba(154, 123, 24, .28); border-top: 0;
+  border-radius: 0 0 9px 9px;
+}
+.det-bloco { display: flex; flex-direction: column; gap: 4px; }
+.det-titulo {
+  font-size: var(--t-0); text-transform: uppercase; letter-spacing: .09em;
+  color: var(--tinta-fraca); font-weight: 500; margin-bottom: 2px;
+}
+.det-linha {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: var(--t-1); color: var(--tinta-media);
+}
+.det-linha.fora { color: var(--vermelho); font-weight: 500; }
+.det-linha .num { font-variant-numeric: tabular-nums; }
+.det-nomes { font-size: var(--t-1); color: var(--tinta); }
+.det-dica { font-size: var(--t-1); color: var(--tinta-fraca); }
+
+/* Célula normal: texto. Célula com pendência: marcada. */
+.quieto { color: var(--tinta-media); }
+.falta { color: var(--vermelho); font-weight: 500; }
+
+.modulos { margin-top: 4px; font-size: var(--t-0); color: var(--tinta-fraca); }
+/* O `<select>` nativo (e o hack de seta em SVG que tentava disfarçá-lo)
+   saiu de cena: o último caso — filtro e formulário — virou seletor rico.
+   Ver U.seletorRico em interface.js. */
+
+/* ------------------------------------------------------- observações do mês
+   A legenda que a escola mantinha na planilha: é onde fica escrito por que a
+   carga de alguém mudou no meio da competência. */
+.observacoes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.observacoes li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0 12px; align-items: baseline; padding: 10px 0;
+}
+.observacoes li + li { border-top: 1px solid var(--borda); }
+.obs-rotulo {
+  font-size: var(--t-0); color: var(--tinta-fraca);
+  font-variant-numeric: tabular-nums; min-width: 14px;
+}
+.obs-texto { color: var(--tinta); }
+.obs-acoes { display: flex; gap: 6px; opacity: 0; transition: opacity .12s ease; }
+.observacoes li:hover .obs-acoes,
+.observacoes li:focus-within .obs-acoes { opacity: 1; }
+.obs-vazio { margin: 0; color: var(--tinta-fraca); }
+
+@media (max-width: 640px) {
+  .observacoes li { grid-template-columns: auto minmax(0, 1fr); }
+  /* Sem hover no toque: as ações ficam sempre visíveis, na linha de baixo. */
+  .obs-acoes { opacity: 1; grid-column: 1 / -1; margin-top: 6px; }
+}
+@media (hover: none) { .obs-acoes { opacity: 1; } }
+
+/* Botão que se comporta como link dentro de um parágrafo. */
+.ligacao {
+  border: 0; background: transparent; padding: 0; font: inherit;
+  color: var(--marinho-claro); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ligacao:hover { color: var(--titulo); }
+
+/* ------------------------------------------------------------ seletor rico
+   A lista de um `<select>` nativo é desenhada pelo sistema operacional e não
+   aceita CSS. Este é um listbox próprio: mesmo desenho do resto, com busca —
+   que em 43 nomes deixa de ser luxo. */
+.seletor-rico { position: relative; display: inline-block; }
+
+.seletor-campo {
+  display: flex; align-items: center; gap: 10px;
+  min-width: 200px; max-width: 280px;
+  padding: 7px 12px; border-radius: 8px;
+  border: 1px solid var(--borda-forte); background: var(--superficie);
+  color: var(--tinta); font: inherit; font-size: var(--t-1); cursor: pointer;
+  text-align: left;
+}
+.seletor-campo:hover { border-color: var(--tinta-fraca); }
+.seletor-valor { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seletor-seta {
+  width: 0; height: 0; flex: none;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid var(--tinta-fraca);
+}
+.seletor-campo[aria-expanded="true"] .seletor-seta { transform: rotate(180deg); }
+
+.seletor-painel {
+  position: absolute; z-index: 40; top: calc(100% + 5px); right: 0;
+  min-width: 100%; width: max-content; max-width: 340px;
+  background: var(--superficie); border: 1px solid var(--borda);
+  border-radius: 10px; box-shadow: var(--sombra-3);
+  padding: 5px; display: flex; flex-direction: column; gap: 5px;
+}
+.seletor-busca {
+  width: 100%; padding: 8px 10px; border-radius: 7px;
+  border: 1px solid var(--borda); background: var(--superficie-alt);
+  color: var(--tinta); font: inherit; font-size: var(--t-1);
+}
+.seletor-lista {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 300px; overflow-y: auto;
+}
+.seletor-lista li {
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: var(--t-1); color: var(--tinta);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.seletor-lista li.oculto { display: none; }
+.seletor-lista li:hover,
+.seletor-lista li.ativo { background: var(--superficie-alt); }
+.seletor-lista li[aria-selected="true"] { color: var(--titulo); font-weight: 500; }
+.seletor-lista li[aria-selected="true"]::after {
+  content: "✓"; margin-left: auto; color: var(--orbital); font-weight: 400;
+}
+.seletor-detalhe { color: var(--tinta-fraca); font-size: var(--t-0); }
+
+@media (max-width: 640px) {
+  .seletor-campo { min-width: 0; width: 100%; max-width: none; }
+  .seletor-painel { left: 0; right: 0; max-width: none; }
+}
+
+/* Linha aberta no detalhe: filete dourado na borda esquerda. Quem rola de
+   volta precisa reencontrar de quem era o número que acabou de ver. */
+tbody tr.selecionada { background: var(--orbital-fundo); }
+tbody tr.selecionada td:first-child { box-shadow: inset 3px 0 0 var(--orbital-luz); }
+tbody tr.selecionada:hover { background: var(--orbital-fundo); }
+
+/* Causas de bloqueio: o texto do aviso, e quem ele atinge. */
+.causas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.causas li { display: flex; flex-direction: column; gap: 3px; }
+.causa-texto { color: var(--tinta); }
+.causa-quem { font-size: var(--t-1); color: var(--tinta-fraca); }
+
+/* Salário-hora de referência: nível à esquerda, faixas por titulação. */
+.sh-nivel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding: 9px 0; }
+.sh-nivel + .sh-nivel { border-top: 1px solid var(--borda); }
+.sh-rotulo { min-width: 110px; font-weight: 500; color: var(--titulo); }
+.sh-faixa { font-size: var(--t-1); color: var(--tinta-fraca); white-space: nowrap; }
+.sh-faixa b { color: var(--titulo); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Identificação da versão de demonstração. Discreta, mas presente em toda
+   tela: é o que impede confundir dado fictício com perda de dado real. */
+.faixa-demo {
+  margin-bottom: 16px; padding: 9px 14px; border-radius: 8px;
+  background: var(--orbital-fundo); border: 1px solid rgba(154, 123, 24, .3);
+  font-size: var(--t-1); color: var(--tinta-media);
+}
+.faixa-demo strong { color: var(--orbital); }
+
+/* Notebook de 768px com abas e barra de favoritos sobra ~640px de área
+   útil, e mesmo a 768 cheios o formulário fica 28px curto. O corte começa
+   acima disso: o rodapé institucional é a primeira coisa a sair, porque
+   entrar é a tarefa e os selos são enfeite. */
+@media (max-height: 820px) {
+  .acesso { grid-template-rows: auto minmax(0, 1fr); }
+  .acesso-rodape { display: none; }
+  .acesso-palco { padding: 18px 40px; }
+  .acesso-cartao { padding: 20px 26px 18px; }
+  .formulario h1 { font-size: var(--t-3); }
+  .abas { margin-bottom: 14px; }
+  .formulario > p { margin: 5px 0 14px; }
+  .campo { margin-bottom: 11px; }
+  .nota-seguranca { margin-top: 10px; padding: 7px 10px; }
+}
+
+/* Abaixo de 700px de altura o formulário de criar conta ainda estoura por uns
+   50px. A nota de protótipo é o que sai: ela informa, mas não é necessária
+   para preencher o formulário — e um botão fora da tela, sim, atrapalha. */
+@media (max-height: 700px) {
+  .nota-seguranca { display: none; }
+  .forca-texto { margin-top: 3px; }
+  .acesso-palco { padding: 14px 40px; }
+}
+
+/* ---------------------------------------------------------- abas de categoria
+   Professor e colaborador são folhas com regras diferentes. A aba escolhe qual
+   tabela faz sentido, em vez de mostrar colunas que não se aplicam à linha. */
+.abas-categoria { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.aba-categoria {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 13px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--borda); background: transparent;
+  color: var(--tinta-media); font: inherit; font-size: var(--t-1);
+}
+.aba-categoria:hover { border-color: var(--borda-forte); color: var(--tinta); }
+.aba-categoria[aria-selected="true"] {
+  background: var(--kpi-vidro-fundo); border-color: var(--kpi-borda);
+  color: var(--titulo); font-weight: 500;
+}
+.aba-categoria .conta {
+  font-size: var(--t-0); color: var(--tinta-fraca); font-variant-numeric: tabular-nums;
+}
+.aba-categoria[aria-selected="true"] .conta { color: var(--orbital); }
+
+/* Totais por categoria: professor e colaborador lado a lado, nunca somados. */
+.cat-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.cat-bloco { border: 1px solid var(--borda); border-radius: 10px; padding: 13px 15px; }
+.cat-nome {
+  display: flex; align-items: baseline; gap: 8px;
+  font-weight: 500; color: var(--titulo); margin-bottom: 9px;
+}
+.cat-conta {
+  font-size: var(--t-0); color: var(--tinta-fraca); font-variant-numeric: tabular-nums;
+}
+.cat-valores { display: flex; gap: 22px; margin: 0; }
+.cat-valores dt { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-fraca); }
+.cat-valores dd { margin: 3px 0 0; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--titulo); }
+
+/* ------------------------------------------------------------- relatório geral
+   Linha de resumo (subtotal por empresa, total geral) e cabeçalho de colunas
+   compartilham a mesma grade de 5 colunas — é o que faz os números caberem
+   embaixo do rótulo certo, tela e PDF. `minmax` deixava cada coluna sizar
+   pelo próprio conteúdo — como cada linha é a sua própria grade (não uma
+   tabela com colunas compartilhadas), "R$ 43.940,14" numa linha e
+   "R$ 3.220,24" na linha de baixo caíam em larguras diferentes: números não
+   alinhavam entre pessoas. Largura fixa faz todas as linhas repartirem o
+   espaço do mesmo jeito. */
+.rel-linha-resumo {
+  display: grid; grid-template-columns: 1fr repeat(4, 120px);
+  gap: 10px; padding: 10px 18px; align-items: center;
+}
+.rel-linha-resumo.forte { background: var(--superficie-alt); font-weight: 600; color: var(--titulo); }
+.rel-linha-resumo .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rel-cabecalho-colunas {
+  color: var(--tinta-fraca); font-size: var(--t-0); text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--borda);
+}
+.rel-cabecalho-impressao { padding: 16px 18px 0; }
+.rel-cabecalho-impressao h2 { font-size: var(--t-4); margin: 0 0 4px; }
+.rel-cabecalho-impressao p { margin: 0 0 4px; color: var(--tinta-media); }
+.rel-empresa { border-top: 2px solid var(--borda-forte); }
+.rel-empresa-titulo {
+  display: flex; align-items: baseline; gap: 10px; margin: 0; padding: 14px 18px 0;
+  font-size: var(--t-3); color: var(--titulo);
+}
+.rel-pessoa { border-top: 1px solid var(--borda); padding: 10px 0 4px; }
+.rel-pessoa-topo {
+  display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;
+  padding: 0 18px 8px;
+}
+.rel-pessoa-num { display: flex; gap: 18px; font-size: var(--t-1); color: var(--tinta-media); }
+.rel-pessoa-num b { color: var(--titulo); font-weight: 600; margin-left: 4px; }
+
+/* "Baixar em PDF" é a impressão do próprio navegador: sem backend gerando
+   arquivo, é o jeito real (não fingido) de produzir um PDF de verdade. O
+   que não faz sentido em papel — lateral, topo do app, filtros, botão —
+   some; o relatório em si vira a página inteira, em tinta preta sobre
+   branco independente do tema que a pessoa estava usando na tela.
+
+   A tabela do app usa "linha alta" de propósito (ver comentário em `td`) —
+   ótimo pra tela, ruim pro papel: uma pessoa com 8 rubricas sozinha já
+   passava de 950px de altura, e a folha carta imprimível tem por volta
+   disso de sobra TOTAL — qualquer segunda pessoa, ou até só o cabeçalho já
+   presente, estourava pra 2ª página, e com `page-break-inside:avoid`
+   tentando (sem conseguir) manter cada bloco inteiro numa página só, o
+   resultado prático virava 3-4 páginas por um relatório de uma pessoa.
+   Este bloco reduz padding/fonte especificamente aqui — não em `td`/`th`
+   globais, que continuam "linha alta" no resto do app — e troca o
+   preto-e-branco puro por um relatório com a mesma identidade navy/dourado
+   do sistema, só que em tons que sobrevivem bem a impressora doméstica. */
+@media print {
+  .lateral, .topo, .rel-nao-imprime, .aviso-tela, .capsula-popover { display: none !important; }
+  .area-principal { margin-left: 0 !important; }
+  .conteudo { padding: 0 !important; max-width: none !important; }
+  .cabecalho { display: none; }
+  body, .painel { background: #fff !important; color: #1a1a1a !important; box-shadow: none !important; }
+  .painel { border: 0 !important; }
+  .painel-topo { display: none; }
+
+  .rel-relatorio { font-size: 10.5px; }
+  .rel-cabecalho-impressao {
+    padding: 0 0 8px; margin-bottom: 4px; border-bottom: 2px solid #0B2547;
+  }
+  .rel-cabecalho-impressao h2 { font-size: 16px; color: #0B2547 !important; }
+  .rel-cabecalho-impressao p { font-size: 10px; margin: 0 0 2px; }
+
+  .rel-cabecalho-colunas { padding: 3px 6px; font-size: 8px; }
+  .rel-linha-resumo { padding: 4px 6px; grid-template-columns: 1fr repeat(4, 82px); gap: 6px; }
+  .rel-linha-resumo.forte { background: #F3EEE0 !important; color: #0B2547 !important; }
+
+  .rel-empresa { border-top: 1px solid #ccc; page-break-inside: avoid; break-inside: avoid; }
+  .rel-empresa-titulo { padding: 6px 6px 0; font-size: 11.5px; color: #0B2547 !important; }
+
+  .rel-pessoa { padding: 3px 0 2px; page-break-inside: avoid; break-inside: avoid; }
+  .rel-pessoa-topo { padding: 0 6px 3px; color: #1a1a1a !important; }
+  .rel-pessoa-num { font-size: 9px; gap: 12px; }
+  .rel-pessoa-num b { color: #0B2547 !important; }
+
+  .rel-relatorio table { font-size: 9.5px; }
+  .rel-relatorio th { padding: 4px 6px; font-size: 7.5px; }
+  .rel-relatorio td { padding: 4px 6px; }
+  .rel-relatorio .pastilha { padding: 1px 6px; font-size: 7px; }
+
+  .v-desconto { color: #A23349 !important; }
+}
+
+/* ------------------------------------------------------------ holerite
+   Só existe na impressão: um recibo por página A4, em preto sobre branco. */
+#impressao-holerite { display: none; }
+@media print {
+  body.imprimindo-holerite > *:not(#impressao-holerite) { display: none !important; }
+  body.imprimindo-holerite { background: #fff !important; }
+  body.imprimindo-holerite #impressao-holerite { display: block; }
+}
+@page { size: A4; margin: 14mm; }
+.holerite {
+  font: 10.5px/1.45 Manrope, system-ui, sans-serif; color: #111; background: #fff;
+  break-after: page; page-break-after: always;
+}
+.holerite:last-child { break-after: auto; page-break-after: auto; }
+.hol-topo {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+  padding-bottom: 8px; border-bottom: 2px solid #142b4b;
+}
+.hol-empresa { font-size: 15px; font-weight: 700; color: #142b4b; }
+.hol-titulo { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #555; }
+.hol-comp { text-align: right; }
+.hol-comp span, .hol-campo span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: #666; }
+.hol-comp strong { font-size: 13px; }
+.hol-previa { display: block; font-style: normal; font-weight: 700; color: #a3261b; font-size: 9.5px; margin-top: 2px; }
+.hol-dados, .hol-bases {
+  display: grid; grid-template-columns: 1fr 2.4fr 1.8fr 1fr; gap: 6px 14px;
+  padding: 8px 0; border-bottom: 1px solid #ccc;
+}
+.hol-bases { grid-template-columns: repeat(4, 1fr); border-bottom: 0; border-top: 1px solid #ccc; margin-top: 4px; }
+.hol-campo strong { font-weight: 600; }
+.hol-tabela { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.hol-tabela th {
+  text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: #555;
+  border-bottom: 1px solid #142b4b; padding: 4px 6px;
+}
+.hol-tabela td { padding: 3px 6px; border-bottom: 1px solid #eee; }
+.hol-tabela .n { text-align: right; white-space: nowrap; }
+.hol-tabela tfoot td { border-top: 1px solid #142b4b; border-bottom: 0; font-weight: 600; padding-top: 6px; }
+.hol-tabela .hol-liquido td { font-size: 13px; font-weight: 700; color: #142b4b; }
+.hol-assinatura { margin-top: 28px; }
+.hol-linhas { display: grid; grid-template-columns: 1fr 2fr; gap: 28px; margin-top: 30px; font-size: 9.5px; color: #555; }
+.hol-linhas span { display: block; border-top: 1px solid #333; margin-bottom: 3px; }
+.hol-rodape { margin-top: 14px; font-size: 8.5px; color: #888; }
+
+/* Prazos da folha: informativo, não clicável. */
+div.dash-vencimento { cursor: default; }
+div.dash-vencimento:hover { background: transparent; }
+.dash-vencimento.passado { opacity: .5; }
+.dash-vencimento.perto b { color: var(--ambar); }
+
+/* Valores por canal do vínculo (CLT / Ticket / MEI): um por linha, alinhados. */
+.vinculo-valores {
+  display: grid; grid-template-columns: auto auto; gap: 1px 10px; margin: 4px 0 0;
+  font-size: .72rem; color: var(--tinta-media); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.vinculo-valores dt { margin: 0; }
+.vinculo-valores dd { margin: 0; text-align: right; }
+
+/* Nome longo quebra em duas linhas em vez de alargar a tabela além da tela. */
+.nome-lista { min-width: 150px; max-width: 240px; white-space: normal; }
+
+/* Nome sem espaços (CPF/código colado, nome longo) não pode empurrar a página para o lado. */
+.principal { overflow-wrap: anywhere; }
+
+/* ---------------------------------------------------------------- lotação de aulas */
+.lot-anos { margin: -6px 0 12px; }
+.lot-resumo { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 0 0 10px; color: var(--tinta-media); font-size: var(--t-1); }
+.lot-resumo strong { color: var(--tinta); font-weight: 650; }
+.lot-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.lot-filtros .abas-categoria { margin: 0; }
+.lot-busca { flex: 1 1 220px; max-width: 320px; padding: 8px 12px; border: 1px solid var(--borda); border-radius: var(--raio-pequeno); background: var(--superficie); color: var(--tinta); font: inherit; }
+.lot-painel { padding-bottom: 10px; }
+.lot-rolagem { overflow: auto; max-height: calc(100vh - 260px); min-height: 240px; border: 1px solid var(--borda); border-radius: var(--raio-pequeno); }
+.grade-lot { border-collapse: separate; border-spacing: 0; font-size: var(--t-0); font-variant-numeric: tabular-nums; }
+.grade-lot th, .grade-lot td { border-right: 1px solid var(--borda); border-bottom: 1px solid var(--borda); padding: 0; background: var(--superficie); white-space: nowrap; }
+.grade-lot thead th { position: sticky; top: 0; z-index: 2; background: var(--superficie-alt); font-weight: 600; color: var(--tinta-media); padding: 6px 6px; text-align: center; }
+.grade-lot thead tr:nth-child(2) th { top: 29px; }
+.grade-lot th.etapa { color: var(--tinta); letter-spacing: .02em; }
+.grade-lot .fixa { position: sticky; z-index: 1; text-align: left; }
+.grade-lot thead .fixa { z-index: 3; }
+.grade-lot .f1 { left: 0; min-width: 170px; max-width: 170px; }
+.grade-lot .f2 { left: 170px; min-width: 150px; max-width: 150px; box-shadow: 2px 0 0 var(--borda); }
+.grade-lot td.disc { padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--tinta); }
+.grade-lot td.disc .repete { color: var(--tinta-fraca); font-weight: 400; }
+.grade-lot tr.nova-disc td { border-top: 2px solid var(--borda-forte); }
+.lot-prof { all: unset; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; color: var(--tinta); }
+.lot-prof:hover, .lot-prof:focus-visible { color: var(--marinho-claro); text-decoration: underline; }
+.lot-prof .sem-vinculo { color: var(--ambar); font-weight: 700; }
+.cel-lot { width: 38px; height: 28px; box-sizing: border-box; border: 0; background: transparent; text-align: center; font: inherit; font-variant-numeric: tabular-nums; color: var(--tinta); }
+.cel-lot:focus { outline: 2px solid var(--marinho-claro); outline-offset: -2px; background: var(--superficie); }
+.cel-lot.salvando { opacity: .5; }
+.cel-lot.salvo { background: var(--verde-fundo); transition: background .6s; }
+.grade-lot td.cel:has(.cel-lot:not([value=""])) { background: var(--orbital-fundo); }
+.grade-lot td.tot, .grade-lot th.tot { padding: 4px 7px; text-align: right; color: var(--tinta-media); background: var(--superficie-alt); }
+.grade-lot th.tot-cab { background: var(--superficie-alt); }
+.grade-lot .total { color: var(--tinta); font-weight: 650; }
+.grade-lot tfoot th, .grade-lot tfoot td { position: sticky; background: var(--superficie-alt); font-weight: 600; padding: 4px 6px; text-align: center; }
+.grade-lot tfoot tr.rod-total > * { bottom: 58px; }
+.grade-lot tfoot tr.rod-meta > * { bottom: 29px; }
+.grade-lot tfoot tr.rod-saldo > * { bottom: 0; }
+.grade-lot tfoot th.fixa { z-index: 3; text-align: left; left: 0; }
+.grade-lot tfoot td { z-index: 1; }
+.grade-lot tfoot .cel-lot.meta { width: 34px; height: 22px; }
+.saldo { font-weight: 650; }
+.saldo.ok { color: var(--verde); }
+.saldo.falta { color: var(--vermelho); }
+.saldo.sobra { color: var(--ambar); }
+.lot-dica { margin: 10px 2px 0; color: var(--tinta-fraca); font-size: var(--t-0); }
+.lot-previa { margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--borda); border-radius: var(--raio-pequeno); background: var(--superficie-alt); }
+.lot-previa p { margin: 4px 0; }
+.lot-previa .erro { color: var(--vermelho); }
+.lot-avisos { margin: 4px 0 0; padding-left: 18px; max-height: 160px; overflow: auto; font-size: var(--t-0); color: var(--tinta-media); }
+.lot-substituir { display: flex; gap: 8px; align-items: flex-start; font-size: var(--t-0); color: var(--tinta-media); }
+@media (max-width: 640px) {
+  .grade-lot .f1 { min-width: 110px; max-width: 110px; }
+  .grade-lot .f2 { left: 110px; min-width: 110px; max-width: 110px; }
+  .lot-rolagem { max-height: 70vh; }
+}
+.lot-chip { border: 0; cursor: pointer; font: inherit; font-size: var(--t-0); }
+.lot-chip:hover { filter: brightness(.96); text-decoration: underline; }
+.lot-ajustes { margin-bottom: 14px; }
+.lot-seg { display: inline-block; margin: 1px 6px 1px 0; padding: 1px 7px; border-radius: 6px; background: var(--ambar-fundo); color: var(--ambar); font-size: var(--t-0); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.grade-prev td.prev { position: relative; text-align: center; min-width: 42px; }
+.grade-prev td.prev .cel-lot { height: 22px; font-weight: 600; }
+.grade-prev td.prev .dist { display: block; font-size: 10px; line-height: 12px; padding-bottom: 2px; color: var(--tinta-fraca); }
+.grade-prev td.prev.ok { background: var(--verde-fundo); }
+.grade-prev td.prev.falta { background: var(--vermelho-fundo); }
+.grade-prev td.prev.falta .dist { color: var(--vermelho); font-weight: 600; }
+.grade-prev td.prev.sobra { background: var(--ambar-fundo); }
+.grade-prev td.prev.sobra .dist { color: var(--ambar); font-weight: 600; }
+.grade-prev td.prev.sem-prev .cel-lot::placeholder { color: var(--ambar); font-weight: 700; }
+.grade-prev td.falta.tot { color: var(--vermelho); font-weight: 600; }
+.grade-prev td.sobra.tot { color: var(--ambar); }

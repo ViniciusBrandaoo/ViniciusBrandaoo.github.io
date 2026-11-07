@@ -1,0 +1,57 @@
+/* Telas do hotel. Status: verde regular · âmbar atenção · vermelho problema · azul informação. */
+.pastilha.atencao { background: var(--ambar-fundo); color: var(--ambar); }
+:root { --azul-info: #1F5FA8; --azul-info-fundo: #E3EEFA; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; } }
+:root[data-theme="dark"] { --azul-info: #8DBDF2; --azul-info-fundo: #10243A; }
+.pastilha.info { background: var(--azul-info-fundo); color: var(--azul-info); }
+.grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grade-2 { grid-template-columns: 1fr; } }
+.hotel-filtro { font: inherit; padding: 6px 10px; border: 1px solid var(--borda); border-radius: 8px; background: var(--superficie); color: var(--tinta); }
+.cal-grade { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; padding: 0 20px 18px; }
+.cal-cab { font-size: var(--t-0); color: var(--tinta-media); text-align: center; padding: 4px 0; }
+.cal-dia { min-height: 78px; border: 1px solid var(--borda); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; font-size: var(--t-0); background: var(--superficie); }
+.cal-dia.vazio { border: 0; background: transparent; }
+.cal-dia.ok { border-color: var(--verde); background: var(--verde-fundo); }
+.cal-dia.atencao { border-color: var(--ambar); background: var(--ambar-fundo); }
+.cal-dia.critico { border-color: var(--vermelho); background: var(--vermelho-fundo); }
+.cal-n { font-weight: 600; }
+.cal-v { font-weight: 600; }
+.cal-q, .cal-s { color: var(--tinta-media); }
+.cal-s.neg { color: var(--vermelho); font-weight: 600; }
+@media (max-width: 760px) { .cal-dia { min-height: 56px; padding: 4px; } .cal-q, .cal-s { display: none; } }
+@media print {
+  .lateral, nav, .topo, .barra-ferramentas, .cabecalho-acoes, button { display: none !important; }
+  body, .conteudo, #conteudo { background: #fff !important; color: #000 !important; }
+  .painel { break-inside: avoid; box-shadow: none !important; }
+}
+
+/* Importação em três passos */
+.imp-painel { padding: 6px 0; }
+.imp-passo { display: flex; gap: 16px; padding: 18px 24px; border-bottom: 1px solid var(--borda); }
+.imp-passo:last-child { border-bottom: 0; }
+.imp-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: var(--t-1);
+  background: var(--orbital-fundo); color: var(--orbital); border: 1px solid var(--orbital); }
+.imp-passo-corpo { flex: 1; min-width: 0; }
+.imp-passo-corpo h3 { margin: 3px 0 12px; font-size: var(--t-2); font-weight: 600; color: var(--tinta); }
+.imp-tipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.imp-tipo { text-align: left; font: inherit; cursor: pointer; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--borda-forte);
+  background: var(--superficie); color: var(--tinta); display: flex; flex-direction: column; gap: 4px; transition: border-color .2s, background .2s; }
+.imp-tipo span { font-size: var(--t-0); color: var(--tinta-media); line-height: 1.4; }
+.imp-tipo:hover { border-color: var(--orbital); }
+.imp-tipo.ativo { border-color: var(--orbital); background: var(--orbital-fundo); box-shadow: inset 0 0 0 1px var(--orbital); }
+.imp-drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
+  padding: 28px 16px; border: 1.5px dashed var(--borda-forte); border-radius: 14px; background: var(--superficie-alt); color: var(--tinta-media);
+  cursor: pointer; transition: border-color .2s, background .2s; }
+.imp-drop:hover, .imp-drop.sobre { border-color: var(--orbital); background: var(--orbital-fundo); }
+.imp-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.imp-drop svg { color: var(--orbital); }
+.imp-drop-titulo { font-weight: 500; color: var(--tinta); }
+.imp-drop-dica { font-size: var(--t-0); }
+.imp-colunas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 14px; }
+.imp-colunas-rotulo { font-size: var(--t-0); text-transform: uppercase; letter-spacing: .08em; color: var(--tinta-fraca); margin-right: 4px; }
+.imp-chip { font-size: var(--t-0); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--borda); background: var(--superficie); color: var(--tinta-media); }
+.imp-chip.obrig { border-color: var(--orbital); color: var(--tinta); font-weight: 500; }
+.imp-nota { font-size: var(--t-0); color: var(--tinta-fraca); margin: 10px 0 0; line-height: 1.5; }
+@media (max-width: 760px) { .imp-passo { padding: 16px; gap: 12px; } }
+/* Filtros de data no mesmo desenho dos demais campos da barra */
+.hotel-filtro { padding: 7px 10px; border: 1px solid var(--borda-forte); border-radius: 7px; font-size: var(--t-1); }
