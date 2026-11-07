@@ -14,7 +14,7 @@
   var quando = function (iso) { return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }); };
   var esc = U.esc;
   var FORMAS = { DINHEIRO: "Dinheiro", PIX: "Pix", CARTAO_CREDITO: "Cartão de crédito", CARTAO_DEBITO: "Cartão de débito",
-    FATURADO: "Faturado (empresa)", TRANSFERENCIA: "Transferência", BOLETO: "Boleto", DEPOSITO: "Depósito", OUTRO: "Outro" };
+    FATURADO: "Faturado (empresa)", TRANSFERENCIA: "Transferência", BOLETO: "Boleto", DEPOSITO: "Depósito", DEBITO: "Cartão de débito", CREDITO: "Cartão de crédito", OUTRO: "Outro" };
   var nomeForma = function (f) { return FORMAS[f] || String(f || "Outro").replace(/_/g, " ").toLowerCase().replace(/^./, function (c) { return c.toUpperCase(); }); };
   var SIT = { OK: "Bate", DIVERGENTE: "Divergente", ATENCAO: "Atenção" };
 
@@ -136,7 +136,7 @@
 
     html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return esc(x.h.apartamento); } },
-      { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
+      { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigoOrigem || x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
       { rotulo: "Total", direita: true, conteudo: function (x) { return brl(x.total); } },
       { rotulo: "Pago", direita: true, conteudo: function (x) { return brl(x.pago); } },
       { rotulo: "Falta", direita: true, conteudo: function (x) { return "<strong>" + brl(x.pendente) + "</strong>" + (x.situacao === "FATURAR" ? '<div class="secundario">faturar</div>' : ""); } }
@@ -277,7 +277,7 @@
     }
     if (s.saldos) {
       h += "<h2>Hospedagens com saldo a receber</h2>" + tabela(["Apto", "Hóspede", "Reserva", "Período", "Total", "Pago", "Falta"], c.saldos.map(function (x) {
-        return [esc(x.h.apartamento), esc(x.h.hospede || "—"), esc(x.h.codigo || ""), diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout),
+        return [esc(x.h.apartamento), esc(x.h.hospede || "—"), esc(x.h.codigoOrigem || x.h.codigo || ""), diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout),
           brl(x.total), brl(x.pago), "<strong>" + brl(x.pendente) + "</strong>" + (x.situacao === "FATURAR" ? " (faturar)" : "")];
       }), [4, 5, 6]);
     }
