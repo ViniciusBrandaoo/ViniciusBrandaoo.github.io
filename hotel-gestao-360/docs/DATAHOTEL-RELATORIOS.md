@@ -96,8 +96,13 @@ rodapé do próprio relatório.
 | `consumo_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Consumo (agrupado por Data) | 5 registros, R$ 36,00 (bate com o extrato) | Ainda não |
 | `vendas_itens_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Vendas Itens | Por dia e produto: quantidade, custo e preço (73 itens, custo R$ 161,98, venda R$ 330,50) | Ainda não |
 | `contas_a_receber_venc_2026-10-26_2026-12-06.csv` | Financeiro → Relatório de Contas a Receber | 1 conta: R$ 215,00 vence 15/11 (empresa) | Ainda não |
-| `estoque_atual_2026-11-06_transcrito.csv` | Estoque → Relatório Estoque Atual | 25 itens com saldo. **Transcrito da tela** (a sessão não compartilhava o disco). Saldos negativos: chocolate −30, sprite −1, hóspede adicional −76, lavanderia −2.247 | Ainda não |
+| `estoque_atual_2026-11-06.csv` | Estoque → Relatório Estoque Atual | 25 itens com saldo. Saldos negativos: chocolate −30, sprite −1, hóspede adicional −76, impressão −432, lavanderia −2.247 e −1.058 | Ainda não |
 | `cadastro_apartamentos_transcrito.csv` | Cadastros → Apartamentos (aba Pesquisa) | 31 apartamentos, todos categoria LUXO, bloco 1, andar T (101–113) ou 1 (114–131); 79 leitos (confere com o total do DataHotel). **Transcrito da tela** | Ainda não |
+| `reservas_futuras_extrato_2026-11-07_2026-12-31.csv` | Hospedagem → Relatório de Reservas (futuras, com extrato) | 1 reserva: 12/11 a 13/11, apto 112, R$ 215,00 | Sim (tipo Hospedagens) |
+| `creditos_debitos_por_forma_2026-10-26_2026-11-06.csv` | Financeiro → Créditos x Débitos por Forma Pgto. | Por forma: créditos, débitos e saldo. Saldo de "Faturar empresa" R$ 5.130,00 (a receber das empresas) | Ainda não |
+| `recebimentos_caixa_por_forma_2026-10-26_2026-11-06.csv` | Financeiro → Recebimentos do Caixa por Forma de Pgto. | Por caixa (1365, 1366) e forma; total R$ 17.367,50 | Ainda não (conferência) |
+| `faturamento_diario_resumo_2026-10-26_2026-11-06.csv` | Gerencial → Resumo de Faturamento Diário | Por dia: diária, consumo e venda de balcão (total R$ 13.140,00). É a receita por competência | Ainda não |
+| `rds_relatorio_diario_2026-11-06.csv` | Hospedagem → Relatório Diário (RDS) | Retrato de 06/11: 5 ocupados, 21 livres, 5 bloqueados; taxa 16,13%; receita do dia R$ 554,50 | Ainda não |
 | `receitas_x_despesas_2026-10-26_2026-11-06.csv` | Financeiro → Receitas x Despesas, com *Sangrias e Suprimentos* | Receita por dia (total R$ 14.570,50 = Contas Recebidas) e despesas só de sangria (R$ 370,00) | Ainda não (serve de conferência) |
 
 ### O que isso respondeu das perguntas da Etapa 1
@@ -123,3 +128,10 @@ rodapé do próprio relatório.
 - **Empresas:** 121 cadastradas, com CNPJ, endereço, telefone, e-mail, limite de crédito, comissão e prazo de pagamento. Não transcritas: o sistema só precisa das que aparecem nas reservas. Para exportar a lista inteira, use Imprimir → Salvar → CSV com o compartilhamento de unidades ativo.
 - **Tarifário:** por calendário e por número de adultos e crianças ("Cobrança por Adultos e Crianças"); a tabela do dia consultado estava vazia. Diárias observadas nas reservas: R$ 135,00 (1 hóspede) e R$ 215,00 (2).
 - **Fornecedores, Plano de Contas e Centro de Custo existem no DataHotel**, mas as contas a pagar estão vazias; o hotel não os usa para despesas.
+
+### Achados dos relatórios de 06/11/2026
+
+- **Taxa de ocupação do DataHotel inclui os bloqueados no denominador:** 5 ocupados de 31 apartamentos = 16,13%. O padrão do Hotel 360 (bloqueados fora do denominador) dá 19,23% (5 de 26). Confirmar qual vale para a direção e ajustar em Cadastros do Hotel.
+- **Relatórios que vieram vazios:** Contas a Pagar e Comissão por Reservas (26/10 a 06/11). O hotel não usa nenhum dos dois no DataHotel.
+- **Ficha da empresa:** o botão Imprimir do cadastro de empresas imprime só a empresa selecionada, não a lista das 121.
+- **Não exportados por serem derivados ou telas de operação:** Mapa de Disponibilidade, Ranking de Reservas, Indicadores e gráficos (calculados das mesmas reservas), Mala Direta, Tarifador Telefônico, Day Use, NFS-e e Conta Corrente (telas de lançamento, sem relatório próprio).
