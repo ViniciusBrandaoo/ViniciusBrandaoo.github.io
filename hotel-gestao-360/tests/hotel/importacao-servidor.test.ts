@@ -281,3 +281,62 @@ describe("Contas Recebidas do DataHotel (número de lançamento como chave)", ()
     expect(lerContasRecebidasDataHotel(CSV_HOSP)).toBeNull();
   });
 });
+
+describe("Lista de café e Lista de Camareira do DataHotel", () => {
+  const CAFE = [
+    "Lista de Café da Manhã;;;;",
+    "Período: 26/10/2026 até: 27/10/2026;;;",
+    "APTO.;;HÓSPEDE;;;GRUPO;;ADULTOS;CRIANÇAS;",
+    "26/10/2026;",
+    "102;;FULANO UM;;;;;2;0;",
+    "Adultos;;;",
+    "ACOMPANHANTE UM;;;",
+    "106;;;;FULANO DOIS;;;;;1;1;",
+    "27/10/2026;",
+    "102;;FULANO UM;;;;;2;0;",
+    "Check-in Antecipado;",
+    "26/10/2026;",
+    "107;;FULANO TRES;;;;;2;0;",
+    "Total de Hóspedes: ;;;;;;7;1;",
+  ].join("\r\n");
+
+  it("café: separa a lista principal do check-in antecipado e confere com o rodapé", async () => {
+    const { lerListaCafeDataHotel } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerListaCafeDataHotel(CAFE)!;
+    expect(r.erro).toBeNull();
+    expect(r.linhas).toHaveLength(4);
+    expect(r.linhas[0]).toMatchObject({ data: "26/10/2026", apartamento: "102", hospede: "FULANO UM", adultos: "2", criancas: "0", tipo: "LISTA" });
+    expect(r.linhas[1]).toMatchObject({ apartamento: "106", hospede: "FULANO DOIS", adultos: "1", criancas: "1" });
+    expect(r.linhas[3]).toMatchObject({ tipo: "ANTECIPADO", apartamento: "107" });
+    const p = preverImportacao("cafe", r.colunas, r.linhas, semNada, r.erro);
+    expect(p.resumo).toMatchObject({ novo: 4, rejeitado: 0 });
+    expect(p.itens[1]?.registro).toMatchObject({ data: "2026-10-26", adultos: 1, criancas: 1 });
+  });
+
+  it("café: total do rodapé diferente recusa o arquivo", async () => {
+    const { lerListaCafeDataHotel } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerListaCafeDataHotel(CAFE.replace(";7;1;", ";9;1;"))!;
+    expect(r.erro).toMatch(/9 adulto/);
+    expect(preverImportacao("cafe", r.colunas, r.linhas, semNada, r.erro).resumo.novo).toBe(0);
+  });
+
+  const CAMAREIRA = [
+    "Lista de Camareira;",
+    "Apto.;Hóspede;Nº Hóspedes;Situação;Check-in;Check-out;",
+    "101;Livre;",
+    "105;FULANO;Ocupado;",
+    "108;Bloqueado;",
+    "112;FULANO;1;Ocupado;05/11/2026 20:45;07/11/2026 12:00;",
+    ";Próxima Reserva;",
+    ";OUTRO;2;Reserva;12/11/2026 13:30;13/11/2026 12:00;",
+  ].join("\r\n");
+
+  it("camareira: um registro por apartamento, com bloqueados, ignorando a próxima reserva", async () => {
+    const { lerApartamentosCamareiraDataHotel } = await import("../../src/dominio/hotel/importacao.js");
+    const r = lerApartamentosCamareiraDataHotel(CAMAREIRA)!;
+    expect(r.linhas.map((l) => [l.apartamento, l.situacao])).toEqual([["101", "Livre"], ["105", "Ocupado"], ["108", "Bloqueado"], ["112", "Ocupado"]]);
+    const p = preverImportacao("apartamentos", r.colunas, r.linhas, semNada, r.erro);
+    expect(p.resumo).toMatchObject({ novo: 4, rejeitado: 0 });
+    expect(p.itens[2]?.registro).toMatchObject({ numero: "108", situacaoOrigem: "Bloqueado" });
+  });
+});

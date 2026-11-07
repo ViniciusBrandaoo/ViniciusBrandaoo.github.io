@@ -79,9 +79,38 @@ async function recebimentosImportados(q: Consulta, unidadeId: string, id?: strin
   return m;
 }
 
+/** Apartamentos da Lista de Camareira do DataHotel (os cadastrados à mão ficam em hotel_registros). */
+async function apartamentosImportados(q: Consulta, unidadeId: string, id?: string): Promise<Map<string, Dados>> {
+  const rows = await q(
+    `SELECT id, origem, codigo_origem, numero, tipo, situacao, situacao_origem
+       FROM hotel_apartamentos
+      WHERE unidade_id = $1 AND origem IS NOT NULL AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
+  const m = new Map<string, Dados>();
+  for (const r of rows) {
+    m.set(String(r.id), limpar({
+      id: r.id, origem: r.origem, codigoOrigem: r.codigo_origem, importado: true,
+      numero: r.numero, tipo: r.tipo, situacaoOrigem: r.situacao_origem,
+      ativo: r.situacao !== "INATIVO", bloqueado: r.situacao === "BLOQUEADO",
+    }));
+  }
+  return m;
+}
+
+/** Lista de café do DataHotel: só leitura (a equipe ajusta com os "extras" do café). */
+async function cafeListaImportada(unidadeId: string): Promise<Dados[]> {
+  const rows = await consultar<Record<string, unknown>>(
+    `SELECT id, to_char(data,'YYYY-MM-DD') AS data, apartamento, hospede, adultos, criancas, tipo
+       FROM hotel_cafe_dia WHERE unidade_id = $1 ORDER BY data, apartamento`, [unidadeId]);
+  return rows.map((r) => ({
+    id: r.id, importado: true, data: r.data, apartamento: r.apartamento, hospede: r.hospede,
+    adultos: Number(r.adultos), criancas: Number(r.criancas), tipo: r.tipo,
+  }));
+}
+
 async function baseImportada(q: Consulta, unidadeId: string, colecao: Colecao, id?: string): Promise<Map<string, Dados> | null> {
   if (colecao === "hospedagens") return hospedagensImportadas(q, unidadeId, id);
   if (colecao === "recebimentos") return recebimentosImportados(q, unidadeId, id);
+  if (colecao === "apartamentos") return apartamentosImportados(q, unidadeId, id);
   return null;
 }
 
@@ -117,6 +146,8 @@ export async function carregar(perfis: readonly string[]): Promise<Record<string
     }
     out[c] = lista;
   }
+  // Lista de café importada: mesma audiência dos ajustes de café.
+  if (podeLer(perfis, "cafeAjustes")) out.cafeLista = await cafeListaImportada(unidadeId);
   const cfg = rows.find((r) => r.colecao === "config" && r.id === "configHotel");
   return { colecoes: out, versoes, config: cfg ? cfg.dados : null, configVersao: cfg ? cfg.versao : 0 };
 }
@@ -149,7 +180,7 @@ export async function gravar(ator: Ator, perfis: readonly string[], g: Gravacao)
     // Registro importado: grava só a diferença, como complemento.
     let base: Dados | null = null;
     // Só id em formato UUID pode ser de registro importado; lançamento manual usa outro formato.
-    if ((colecao === "hospedagens" || colecao === "recebimentos") && UUID.test(g.id)) {
+    if ((colecao === "hospedagens" || colecao === "recebimentos" || colecao === "apartamentos") && UUID.test(g.id)) {
       const mapa = await baseImportada(peloCliente(db), unidadeId, colecao, g.id);
       base = mapa?.get(g.id) ?? null;
     }

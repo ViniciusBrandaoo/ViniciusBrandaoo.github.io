@@ -506,8 +506,13 @@
           ["Canal de Venda"], ["Funcionário"], ["Situação"], ["Vr. Total"]] },
       recebimentos: { nome: "Pagamentos / recebimentos", descr: "DataHotel: Financeiro → Relatório de Contas Recebidas → Salvar → Ficheiro CSV (recomendado: cada pagamento tem número de lançamento). O Resumo de Movimentação por Caixa também é aceito, mas use só um dos dois.",
         colunas: [["Código", 1], ["Data", 1], ["Forma de pagamento", 1], ["Valor", 1], ["Desconto"], ["Taxa"], ["Pagador"], ["Apartamento"],
-          ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] }
+          ["Reserva"], ["NSU / transação"], ["Bandeira"], ["Operadora"], ["Parcelas"]] },
+      cafe: { nome: "Lista de café da manhã", descr: "DataHotel: Hospedagem → Lista de Café da Manhã → Salvar → Ficheiro CSV. Traz adultos e crianças de cada apartamento, por dia.",
+        colunas: [["Apto.", 1], ["Hóspede", 1], ["Adultos", 1], ["Crianças"], ["Check-in Antecipado (seção)"]] },
+      apartamentos: { nome: "Apartamentos", descr: "DataHotel: Governança → Lista de Camareira → Salvar → Ficheiro CSV. Cadastra os apartamentos e marca os bloqueados.",
+        colunas: [["Apto.", 1], ["Situação", 1], ["Hóspede"]] }
     };
+    var tipoSrv = function () { return TIPOS_SRV[T.filtros.impTipo] ? T.filtros.impTipo : "hospedagens"; };
     var ROT_SIT = { NOVO: ["info", "Novo"], ATUALIZADO: ["atencao", "Atualizado"], IDENTICO: ["neutro", "Já existia"], REJEITADO: ["critico", "Recusado"] };
     var ROT_LOTE = { PREVIA: ["atencao", "Aguardando confirmação"], CONFIRMADO: ["ok", "Confirmado"], DESCARTADO: ["neutro", "Descartado"] };
     T._impSrv = { previa: null, hist: null, ultima: null, carregando: false, enviando: false, erroHist: null };
@@ -531,7 +536,7 @@
       if (!file) return;
       if (!/\.(csv|xlsx)$/i.test(file.name)) { U.avisar("Envie o relatório em .xlsx (Excel) ou .csv."); return; }
       if (file.size > 15 * 1024 * 1024) { U.avisar("Arquivo maior que 15 MB. Exporte um período menor."); return; }
-      var tipo = T.filtros.impTipo === "recebimentos" ? "recebimentos" : "hospedagens";
+      var tipo = tipoSrv();
       T._impSrv.enviando = true; T._impSrv.previa = null; T.renderizar();
       var campoDesde = U.el("imp-desde");
       var desde = campoDesde ? campoDesde.value : (T._impDesde || "");
@@ -548,7 +553,7 @@
     T.telas.importacoes = function () {
       var st = T._impSrv;
       if (st.hist === null) carregarHistorico();
-      var tipoAtual = T.filtros.impTipo === "recebimentos" ? "recebimentos" : "hospedagens";
+      var tipoAtual = tipoSrv();
       if (st.previa && st.previa.tipo !== tipoAtual) st.previa = null;
       var html = T.cabecalho("Importações DataHotel", "Envie o relatório exportado do DataHotel. Você confere a prévia antes de qualquer gravação no banco.");
       html += '<div class="painel imp-painel">' +
@@ -561,7 +566,7 @@
         }).join("") + "</div></div></div>" +
         '<div class="imp-passo"><span class="imp-num">2</span><div class="imp-passo-corpo"><h3>Arquivo</h3>' +
         '<p class="secundario" style="margin:0 0 10px"><label>Ignorar o que for anterior a <input type="date" id="imp-desde" value="' + U.esc(T._impDesde || "") + '"' + (st.enviando ? " disabled" : "") + '></label> ' +
-        '<span class="secundario">(vale para o livro-caixa; deixe em branco para importar tudo)</span></p>' +
+        '<span class="secundario">(vale para recebimentos e café; deixe em branco para importar tudo)</span></p>' +
         '<label class="imp-drop" id="imp-drop"><input type="file" id="imp-arquivo" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"' + (st.enviando ? " disabled" : "") + ">" +
         U.iconeSvg("documentos", 26) +
         '<span class="imp-drop-titulo">' + (st.enviando ? "Lendo o arquivo…" : "Arraste o arquivo aqui ou <u>clique para escolher</u>") + "</span>" +
@@ -589,7 +594,7 @@
           (p.amostraNovas || []).forEach(function (x) {
             var g = x.registro || {};
             var br = function (iso) { return iso ? String(iso).split("-").reverse().join("/") : ""; };
-            linhas.push({ linha: x.linha, codigo: x.codigo, sit: "NOVO", det: [g.hospede, g.apartamento, g.pagador, br(g.checkin), br(g.data)].filter(Boolean).join(" · ") });
+            linhas.push({ linha: x.linha, codigo: x.codigo, sit: "NOVO", det: [g.hospede, g.apartamento || g.numero, g.situacaoOrigem, g.pagador, br(g.checkin), br(g.data), g.adultos !== undefined && g.checkin === undefined ? g.adultos + " adulto(s), " + (g.criancas || 0) + " criança(s)" : ""].filter(Boolean).join(" · ") });
           });
           linhas.sort(function (a, b) { return a.linha - b.linha; });
           var podeConfirmar = r.novo + r.atualizado > 0;

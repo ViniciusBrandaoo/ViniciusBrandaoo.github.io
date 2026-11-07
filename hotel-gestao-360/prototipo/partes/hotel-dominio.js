@@ -19,7 +19,7 @@
 // vazias, sem perder nada do que já estava lá.
 [
   "apartamentos", "hospedagens", "empresas", "importacoes",
-  "cafeAjustes", "enxovalItens", "enxovalMovimentos",
+  "cafeAjustes", "cafeLista", "enxovalItens", "enxovalMovimentos",
   "frigobarProdutos", "frigobarConsumos",
   "recebimentos", "fechamentosCaixa", "transacoesCartao", "boletos",
   "notasFiscais", "cobrancas", "contasRecorrentes", "contasBancarias",
@@ -366,7 +366,13 @@ H.extratoDiario = function (data) {
  */
 H.listaCafe = function (data) {
   var ontem = H.addDias(data, -1);
-  var linhas = L.estado.hospedagens.filter(function (h) { return H.pernoita(h, ontem); }).map(function (h) {
+  // Lista de café importada do DataHotel (adultos e crianças reais). Só a lista principal:
+  // o "Check-in Antecipado" repete hóspedes e não entra na previsão.
+  var doDataHotel = (L.estado.cafeLista || []).filter(function (r) { return r.data === data && r.tipo !== "ANTECIPADO"; });
+  var origemLinhas = doDataHotel.length
+    ? doDataHotel.map(function (r) { return { apartamento: r.apartamento, hospede: r.hospede, adultos: r.adultos, criancas: r.criancas, cafeIncluido: true, id: null }; })
+    : L.estado.hospedagens.filter(function (h) { return H.pernoita(h, ontem); });
+  var linhas = origemLinhas.map(function (h) {
     // O Relatório de Reservas do DataHotel traz só o total de hóspedes: sem a
     // separação, todos contam como adultos (a recepção ajusta na lista).
     var adultos = h.adultos || (h.adultos === undefined && h.criancas === undefined && h.hospedes) || 1, criancas = h.criancas || 0;
