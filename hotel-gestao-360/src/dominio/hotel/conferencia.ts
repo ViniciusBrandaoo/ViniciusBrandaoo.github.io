@@ -210,6 +210,8 @@ export interface DadosConferencia {
   cafe: CafeLinha[];
   apartamentos: { numero: string; situacao: string }[];
   estoque: ReturnType<typeof lerEstoque>;
+  /** Entradas do livro-caixa (Movimentação de Caixa), por dia e forma. */
+  livroCaixa?: { dia: string; forma: string; valor: number }[];
   /** Quais relatórios foram enviados. Ausente = todos (modo do script). */
   tem?: Partial<Record<Fonte, boolean>>;
 }
@@ -265,36 +267,40 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
       situacao: erros.length ? "DIVERGENTE" : "OK", detalhes: erros.length ? erros : [`${d.receitasDespesas.length} dia(s) conferidos, todos batem.`] });
   }
 
-  // C3 — recebimentos por forma de pagamento × Créditos x Débitos (créditos que ficaram no saldo)
-  {
-    const porForma = new Map<string, number>();
-    for (const r of d.recebimentos) if (noPeriodo(d, r.dia)) porForma.set(r.forma, (porForma.get(r.forma) ?? 0) + r.valor);
-    const detalhes: string[] = [];
-    let ok = true;
-    for (const c of d.creditosDebitos) {
-      // O que o caixa registrou entrou em "créditos"; o que foi fechado/transferido sai em "débitos".
-      // O recebimento do período deve ser igual aos débitos fechados (ou ao crédito, se tudo foi fechado).
-      const rec = porForma.get(c.forma) ?? 0;
-      if (rec !== c.debitos && rec !== c.creditos) { ok = false; detalhes.push(`${c.forma}: recebido ${brl(rec)}; Créditos ${brl(c.creditos)}, Débitos ${brl(c.debitos)}, Saldo ${brl(c.saldo)}.`); }
+  // C3 — recebimentos por dia e forma de pagamento: Contas Recebidas × livro-caixa (Movimentação de Caixa)
+  if (d.livroCaixa) {
+    const chave = (dia: string, forma: string) => `${dia}|${forma}`;
+    const ultimoDiaCaixa = d.livroCaixa.reduce((m, x) => (x.dia > m ? x.dia : m), "");
+    const cx = new Map<string, number>();
+    const rc = new Map<string, number>();
+    for (const x of d.livroCaixa) if (noPeriodo(d, x.dia)) cx.set(chave(x.dia, x.forma), (cx.get(chave(x.dia, x.forma)) ?? 0) + x.valor);
+    for (const r of d.recebimentos) if (noPeriodo(d, r.dia) && r.dia <= ultimoDiaCaixa) rc.set(chave(r.dia, r.forma), (rc.get(chave(r.dia, r.forma)) ?? 0) + r.valor);
+    const erros: string[] = [];
+    for (const k of [...new Set([...cx.keys(), ...rc.keys()])].sort()) {
+      const a = cx.get(k) ?? 0, b = rc.get(k) ?? 0;
+      if (a !== b) { const [dia, forma] = k.split("|"); erros.push(`${dia} ${forma}: livro-caixa ${brl(a)}, Contas Recebidas ${brl(b)} (dif. ${brl(b - a)}).`); }
     }
-    out.push({ regra: "C3", titulo: "Recebido por forma de pagamento", entre: "Contas Recebidas × Créditos e Débitos por Forma",
-      situacao: ok ? "OK" : "ATENCAO",
-      detalhes: ok ? ["Todas as formas batem com créditos ou débitos."] : ["O livro-caixa abre antes do período (turno em andamento), então a diferença por forma pede conferência do turno:", ...detalhes] });
+    out.push({ regra: "C3", titulo: "Recebido por dia e forma de pagamento", entre: "Contas Recebidas × Movimentação de Caixa",
+      situacao: erros.length ? "DIVERGENTE" : "OK", esperado: soma([...cx.values()]), encontrado: soma([...rc.values()]),
+      diferenca: soma([...rc.values()]) - soma([...cx.values()]),
+      detalhes: erros.length ? erros : [`${cx.size} combinação(ões) de dia e forma conferidas até ${ultimoDiaCaixa}, todas batem.`] });
   }
 
   // C4 — competência: faturamento diário × faturamento analítico (por dia)
   {
     const analiticoPorDia = new Map<string, number>();
-    for (const x of d.faturamentoAnalitico.diarias) analiticoPorDia.set(x.dia, (analiticoPorDia.get(x.dia) ?? 0) + x.valor);
+    for (const x of d.faturamentoAnalitico.diarias) if (x.dia < d.hoje) analiticoPorDia.set(x.dia, (analiticoPorDia.get(x.dia) ?? 0) + x.valor);
     const erros: string[] = [];
-    for (const f of d.faturamentoDiario) {
+    const fechados = d.faturamentoDiario.filter((f) => f.dia < d.hoje);
+    for (const f of fechados) {
       const a = analiticoPorDia.get(f.dia) ?? 0;
       if (a !== f.diaria) erros.push(`${f.dia}: Resumo diário ${brl(f.diaria)}, Analítico ${brl(a)} (dif. ${brl(a - f.diaria)}).`);
     }
     out.push({ regra: "C4", titulo: "Diária por dia (competência)", entre: "Faturamento Diário × Faturamento Analítico",
-      situacao: erros.length ? "DIVERGENTE" : "OK", esperado: soma(d.faturamentoDiario.map((x) => x.diaria)), encontrado: soma([...analiticoPorDia.values()]),
-      diferenca: soma([...analiticoPorDia.values()]) - soma(d.faturamentoDiario.map((x) => x.diaria)),
-      detalhes: erros.length ? erros : [`${d.faturamentoDiario.length} dia(s) conferidos, todos batem.`] });
+      situacao: erros.length ? "DIVERGENTE" : "OK", esperado: soma(fechados.map((x) => x.diaria)), encontrado: soma([...analiticoPorDia.values()]),
+      diferenca: soma([...analiticoPorDia.values()]) - soma(fechados.map((x) => x.diaria)),
+      detalhes: [...(erros.length ? erros : [`${fechados.length} dia(s) fechados conferidos, todos batem.`]),
+        `O dia ${d.hoje} fica de fora: está em andamento e os relatórios do dia são tirados em horários diferentes.`] });
   }
 
   // C5 — consumo: extrato das reservas × analítico × consumo por data
@@ -318,13 +324,6 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
       out.push(comparar("C6b", "Vendas por item (consumo + balcão)", "Vendas Itens × (Analítico: consumo + vendas)",
         d.faturamentoAnalitico.subConsumo + d.faturamentoAnalitico.subVendas, d.vendasItensVenda));
     }
-  }
-
-  // C7 — total do faturamento: resumo diário × analítico
-  if (d.faturamentoAnalitico.total !== null) {
-    out.push(comparar("C7", "Total faturado no período", "Faturamento Diário × Faturamento Analítico (total geral)",
-      soma(d.faturamentoDiario.map((x) => x.total)), d.faturamentoAnalitico.total,
-      ["O analítico pode ficar sem o dia de hoje; compare as linhas de C4 para achar o dia."]));
   }
 
   // C8 — a receber das empresas: faturado × contas a receber lançadas
@@ -388,7 +387,8 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
     const detalhes = [`RDS: ${d.rds.ocupados} ocupado(s). Mapa de Ocupação: ${d.mapa.length}. Reservas em Checked-in hoje: ${ocupadasReservas}.`];
     const iguais = d.rds.ocupados === d.mapa.length && d.rds.ocupados === ocupadasReservas;
     out.push({ regra: "C12", titulo: "Ocupação de hoje", entre: "RDS × Mapa de Ocupação × Relatório de Reservas",
-      situacao: iguais ? "OK" : "DIVERGENTE", unidade: "un", esperado: d.rds.ocupados, encontrado: d.mapa.length, diferenca: d.mapa.length - d.rds.ocupados, detalhes });
+      situacao: iguais ? "OK" : "ATENCAO", unidade: "un", esperado: d.rds.ocupados, encontrado: d.mapa.length, diferenca: d.mapa.length - d.rds.ocupados,
+      detalhes: iguais ? detalhes : [...detalhes, "Ocupação muda ao longo do dia: tire RDS, Mapa e Reservas no mesmo horário. Diferença aqui costuma ser check-in/out entre um relatório e outro."] });
     // pagamento dos ocupados hoje
     const naoPagos = d.mapa.filter((m) => /^n/i.test(m.pago) || /parcial/i.test(m.pago));
     out.push({ regra: "C12b", titulo: "Hóspedes em casa com pagamento pendente", entre: "Mapa de Ocupação",
@@ -436,7 +436,7 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
 /** Cada fonte (relatório do DataHotel) que uma regra precisa. */
 export type Fonte =
   | "reservas" | "recebidas" | "receitas" | "fatDiario" | "analitico" | "creditos" | "aReceber"
-  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque";
+  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque" | "caixa";
 
 export const NOME_FONTE: Record<Fonte, string> = {
   reservas: "Relatório de Reservas (com extrato)", recebidas: "Relatório de Contas Recebidas",
@@ -444,13 +444,13 @@ export const NOME_FONTE: Record<Fonte, string> = {
   creditos: "Créditos e Débitos por Forma de Pgto.", aReceber: "Relatório de Contas a Receber",
   consumo: "Relatório de Consumo", vendas: "Relatório de Vendas Itens", rds: "Relatório Diário (RDS)",
   mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual",
+  caixa: "Resumo por Movimentação de Caixa",
 };
 
 const DEPENDE: Record<string, Fonte[]> = {
-  C1: ["recebidas", "receitas"], C2: ["recebidas", "receitas"], C3: ["recebidas", "creditos"],
+  C1: ["recebidas", "receitas"], C2: ["recebidas", "receitas"], C3: ["recebidas", "caixa"],
   C4: ["fatDiario", "analitico"], C5a: ["reservas", "analitico"], C5b: ["consumo", "analitico"],
-  C6a: ["fatDiario", "analitico"], C6b: ["vendas", "analitico"], C7: ["fatDiario", "analitico"],
-  C8: ["recebidas", "creditos", "aReceber"], C9a: ["reservas"], C9b: ["reservas"], C10: ["recebidas", "reservas"],
+  C6a: ["fatDiario", "analitico"], C6b: ["vendas", "analitico"],  C8: ["recebidas", "creditos", "aReceber"], C9a: ["reservas"], C9b: ["reservas"], C10: ["recebidas", "reservas"],
   C11: ["cafe", "reservas"], C12: ["rds", "mapa", "reservas"], C12b: ["mapa"], C13: ["rds", "camareira"],
   C14: ["estoque"], C15: ["reservas", "analitico"],
 };

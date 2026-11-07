@@ -11,7 +11,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  lerApartamentosCamareiraDataHotel, lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerRelatorioReservasDataHotel,
+  lerApartamentosCamareiraDataHotel, lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel,
 } from "../src/dominio/hotel/importacao.js";
 import {
   conferir, lerContasAReceber, lerCreditosDebitos, lerEstoque, lerFaturamentoAnalitico, lerFaturamentoDiario,
@@ -69,6 +69,9 @@ const dados: DadosConferencia = {
   apartamentos: (camareiraR?.linhas ?? []).map((l) => ({ numero: l.apartamento!, situacao: l.situacao! })),
   estoque: estoque ? lerEstoque(estoque) : [],
 };
+const caixa = opcional("movimentacao_caixa");
+const caixaR = caixa ? lerMovimentoCaixaDataHotel(caixa, inicio) : null;
+if (caixaR) dados.livroCaixa = recebimentosDeLinhas(caixaR.linhas).map((x) => ({ dia: x.dia, forma: x.forma, valor: x.valor }));
 // "vendas itens" soma consumo + balcão em "Total Geral" só no valor de venda: pega o último R$ = venda
 const resultados: Resultado[] = conferir(dados);
 const r = resumo(resultados);

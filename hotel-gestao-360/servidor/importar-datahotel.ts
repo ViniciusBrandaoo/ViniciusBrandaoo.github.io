@@ -64,7 +64,7 @@ for (const f of acha("cafe_manha")) await importar("cafe", f, desde);
 
 // Conferência com tudo o que a pasta tem (arquivos desconhecidos são ignorados e listados).
 const periodoFim = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
-const arquivos = todos.filter((n) => !n.startsWith("movimentacao_caixa")).map((n) => ({ nome: n, buffer: readFileSync(join(pasta, n)) }));
+const arquivos = todos.map((n) => ({ nome: n, buffer: readFileSync(join(pasta, n)) }));
 try {
   const r = await conferencia.executar(ator, arquivos, desde, periodoFim) as { resumo: { ok: number; divergentes: number; atencao: number }; naoReconhecidos: string[]; erros: string[] };
   console.log(`CONFERÊNCIA ${desde} a ${periodoFim}: ${r.resumo.ok} batem, ${r.resumo.divergentes} divergentes, ${r.resumo.atencao} com atenção.`);

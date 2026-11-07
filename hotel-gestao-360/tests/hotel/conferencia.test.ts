@@ -58,11 +58,31 @@ describe("regras de conferência", () => {
 
   it("C4: diária do dia no resumo diferente do analítico é divergência, e diz o dia", () => {
     const d = base();
+    d.hoje = "2026-11-03";
     d.faturamentoDiario = [{ dia: "2026-11-02", consumo: 0, diaria: 54000, venda: 0, total: 54000 }];
     d.faturamentoAnalitico.diarias = [{ reserva: "ABC123456", dia: "2026-11-02", valor: 40500 }];
     const r = regra(d, "C4");
     expect(r).toMatchObject({ situacao: "DIVERGENTE", diferenca: -13500 });
     expect(r.detalhes.join(" ")).toMatch(/2026-11-02.*R\$\s?540,00.*R\$\s?405,00/);
+  });
+
+  it("C3: Contas Recebidas × livro-caixa por dia e forma; o dia de hoje fica fora da C4", () => {
+    const d = base();
+    d.livroCaixa = [{ dia: "2026-11-01", forma: "PIX", valor: 10000 }, { dia: "2026-11-01", forma: "DINHEIRO", valor: 500 }];
+    d.recebimentos = [
+      { codigo: "LR1", dia: "2026-11-01", forma: "PIX", valor: 10000, reserva: "", apto: "", pagador: "" },
+      { codigo: "LR2", dia: "2026-11-01", forma: "CARTAO_CREDITO", valor: 500, reserva: "", apto: "", pagador: "" },
+      { codigo: "LR3", dia: "2026-11-02", forma: "PIX", valor: 999, reserva: "", apto: "", pagador: "" },
+    ];
+    const c3 = regra(d, "C3");
+    expect(c3.situacao).toBe("DIVERGENTE");
+    expect(c3.detalhes.join(" ")).toMatch(/DINHEIRO/);
+    expect(c3.detalhes.join(" ")).not.toMatch(/2026-11-02/);
+    d.recebimentos[1]!.forma = "DINHEIRO";
+    expect(regra(d, "C3").situacao).toBe("OK");
+    d.faturamentoDiario = [{ dia: "2026-11-02", consumo: 0, diaria: 54000, venda: 0, total: 54000 }];
+    expect(regra(d, "C4").situacao).toBe("OK");
+    expect(conferir(d).some((r) => r.regra === "C7")).toBe(false);
   });
 
   it("C8: faturado para empresas sem título a receber é divergência", () => {
@@ -102,7 +122,7 @@ describe("regras de conferência", () => {
     d.rds = { ocupados: 5, livres: 21, bloqueados: 5, receitaDiaria: 0, receitaConsumo: 0 };
     d.mapa = [{ apto: "105", reserva: "RAK261843", pago: "Não" }];
     const c12 = regra(d, "C12");
-    expect(c12).toMatchObject({ situacao: "DIVERGENTE", unidade: "un", esperado: 5, encontrado: 1 });
+    expect(c12).toMatchObject({ situacao: "ATENCAO", unidade: "un", esperado: 5, encontrado: 1 });
     d.apartamentos = Array.from({ length: 31 }, (_, i) => ({ numero: String(101 + i), situacao: i < 5 ? "Bloqueado" : "Livre" }));
     expect(regra(d, "C13")).toMatchObject({ situacao: "OK", unidade: "un" });
     expect(regra(d, "C12b").situacao).toBe("ATENCAO");

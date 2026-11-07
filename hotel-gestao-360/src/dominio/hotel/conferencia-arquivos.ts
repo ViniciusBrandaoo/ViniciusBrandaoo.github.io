@@ -3,7 +3,7 @@
  * dentro do arquivo, não pelo nome) e monta os dados que o motor de conferência usa.
  */
 import {
-  lerApartamentosCamareiraDataHotel, lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerRelatorioReservasDataHotel,
+  lerApartamentosCamareiraDataHotel, lerContasRecebidasDataHotel, lerMovimentoCaixaDataHotel, lerListaCafeDataHotel, lerRelatorioReservasDataHotel,
 } from "./importacao.js";
 import {
   lerContasAReceber, lerCreditosDebitos, lerEstoque, lerFaturamentoAnalitico, lerFaturamentoDiario, lerMapaOcupacao,
@@ -30,6 +30,7 @@ export function reconhecer(texto: string): Fonte | null {
   if (/Lista de Caf. da Manh./i.test(t)) return "cafe";
   if (/Lista de Camareira/i.test(t)) return "camareira";
   if (/Relat.rio de Estoque Atual/i.test(t)) return "estoque";
+  if (/Resumo por Movimenta..o de Caixa/i.test(t)) return "caixa";
   return null;
 }
 
@@ -54,7 +55,7 @@ export function montarDados(arquivos: ArquivoTexto[], inicio: string, fim: strin
   }
   const um = (f: Fonte): string | undefined => porFonte.get(f)?.[0];
   const tem: Partial<Record<Fonte, boolean>> = {};
-  for (const f of ["reservas", "recebidas", "receitas", "fatDiario", "analitico", "creditos", "aReceber", "consumo", "vendas", "rds", "mapa", "cafe", "camareira", "estoque"] as Fonte[]) {
+  for (const f of ["reservas", "recebidas", "receitas", "fatDiario", "analitico", "creditos", "aReceber", "consumo", "vendas", "rds", "mapa", "cafe", "camareira", "estoque", "caixa"] as Fonte[]) {
     tem[f] = porFonte.has(f);
   }
 
@@ -101,6 +102,11 @@ export function montarDados(arquivos: ArquivoTexto[], inicio: string, fim: strin
     dados.apartamentos = r.linhas.map((l) => ({ numero: l.apartamento!, situacao: l.situacao! }));
   });
   seguro("estoque", () => { dados.estoque = lerEstoque(um("estoque")!); });
+  seguro("caixa", () => {
+    const r = lerMovimentoCaixaDataHotel(um("caixa")!, inicio);
+    if (!r) throw new Error("formato inesperado");
+    dados.livroCaixa = recebimentosDeLinhas(r.linhas).map((x) => ({ dia: x.dia, forma: x.forma, valor: x.valor }));
+  });
 
   return { dados, reconhecidos, naoReconhecidos, erros };
 }
