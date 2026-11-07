@@ -63,7 +63,7 @@ for (const f of acha("contas_recebidas")) await importar("recebimentos", f, desd
 for (const f of acha("cafe_manha")) await importar("cafe", f, desde);
 
 // Conferência com tudo o que a pasta tem (arquivos desconhecidos são ignorados e listados).
-const periodoFim = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+const periodoFim = process.argv[5] ?? new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
 const arquivos = todos.map((n) => ({ nome: n, buffer: readFileSync(join(pasta, n)) }));
 try {
   const r = await conferencia.executar(ator, arquivos, desde, periodoFim) as { resumo: { ok: number; divergentes: number; atencao: number }; naoReconhecidos: string[]; erros: string[] };
