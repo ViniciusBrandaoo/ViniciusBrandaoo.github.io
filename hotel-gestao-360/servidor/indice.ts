@@ -54,6 +54,7 @@ import * as lotacao from "./lotacao.js";
 import * as hotel from "./hotel.js";
 import * as hotelDados from "./hotel-dados.js";
 import * as hotelConferencia from "./hotel-conferencia.js";
+import { registrarPrimeiroAcesso } from "./primeiro-acesso.js";
 import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
 import { lerLotacionogramaDeBuffer } from "../src/importacao/lotacionograma.js";
 import * as clipescola from "./conectores/clipescola.js";
@@ -320,6 +321,10 @@ app.get("/api/saude", async () => {
   await consultar("SELECT 1");
   return { ok: true, banco: `${Date.now() - inicio}ms` };
 });
+
+// ---------------------------------------------------------------- primeiro acesso (só com PRIMEIRO_ACESSO_TOKEN e sem usuários)
+
+registrarPrimeiroAcesso(app);
 
 // ---------------------------------------------------------------- acesso
 
