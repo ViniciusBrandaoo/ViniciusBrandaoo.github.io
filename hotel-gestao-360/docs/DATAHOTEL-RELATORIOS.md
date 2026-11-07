@@ -97,6 +97,7 @@ rodapé do próprio relatório.
 | `vendas_itens_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Vendas Itens | Por dia e produto: quantidade, custo e preço (73 itens, custo R$ 161,98, venda R$ 330,50) | Ainda não |
 | `contas_a_receber_venc_2026-10-26_2026-12-06.csv` | Financeiro → Relatório de Contas a Receber | 1 conta: R$ 215,00 vence 15/11 (empresa) | Ainda não |
 | `estoque_atual_2026-11-06_transcrito.csv` | Estoque → Relatório Estoque Atual | 25 itens com saldo. **Transcrito da tela** (a sessão não compartilhava o disco). Saldos negativos: chocolate −30, sprite −1, hóspede adicional −76, lavanderia −2.247 | Ainda não |
+| `cadastro_apartamentos_transcrito.csv` | Cadastros → Apartamentos (aba Pesquisa) | 31 apartamentos, todos categoria LUXO, bloco 1, andar T (101–113) ou 1 (114–131); 79 leitos (confere com o total do DataHotel). **Transcrito da tela** | Ainda não |
 | `receitas_x_despesas_2026-10-26_2026-11-06.csv` | Financeiro → Receitas x Despesas, com *Sangrias e Suprimentos* | Receita por dia (total R$ 14.570,50 = Contas Recebidas) e despesas só de sangria (R$ 370,00) | Ainda não (serve de conferência) |
 
 ### O que isso respondeu das perguntas da Etapa 1
@@ -115,3 +116,10 @@ rodapé do próprio relatório.
 - A exportação de relatórios longos leva minutos (uma página por vez). Não feche a pré-visualização até a barra "Exportando" sumir.
 
 - **Se a janela Salvar não mostrar "C on <seu computador>"**, a sessão foi aberta sem compartilhar unidades. Feche o DataHotel e abra de novo pelo atalho Hotel (Recursos Locais → Mais... → Unidades marcado e salvo). Em 06/11 isso aconteceu depois de uma reconexão; o estoque (uma página) foi lido da tela.
+
+### Cadastros do DataHotel (vistos em 06/11/2026, somente leitura)
+
+- **Menu Cadastros:** Hóspedes, Empresas, Fornecedores, Categorias, Apartamentos, Caixas/Bancos, Formas de Pagamento, Plano de Contas, Eventos/Feriados, Pacotes, Tipos de Tarifa, Tarifário, Canais de Venda, Tipos de Contas, Grupos de Produtos, Produtos/Serviços, Locais de Estoque, Centro de Custo, Funcionários, Usuários, Parâmetros. **Hóspedes e Funcionários não foram abertos** (dados pessoais).
+- **Empresas:** 121 cadastradas, com CNPJ, endereço, telefone, e-mail, limite de crédito, comissão e prazo de pagamento. Não transcritas: o sistema só precisa das que aparecem nas reservas. Para exportar a lista inteira, use Imprimir → Salvar → CSV com o compartilhamento de unidades ativo.
+- **Tarifário:** por calendário e por número de adultos e crianças ("Cobrança por Adultos e Crianças"); a tabela do dia consultado estava vazia. Diárias observadas nas reservas: R$ 135,00 (1 hóspede) e R$ 215,00 (2).
+- **Fornecedores, Plano de Contas e Centro de Custo existem no DataHotel**, mas as contas a pagar estão vazias; o hotel não os usa para despesas.
