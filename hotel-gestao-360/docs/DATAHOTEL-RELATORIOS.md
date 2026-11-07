@@ -96,6 +96,7 @@ rodapé do próprio relatório.
 | `consumo_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Consumo (agrupado por Data) | 5 registros, R$ 36,00 (bate com o extrato) | Ainda não |
 | `vendas_itens_por_data_2026-10-26_2026-11-06.csv` | Vendas → Relatório de Vendas Itens | Por dia e produto: quantidade, custo e preço (73 itens, custo R$ 161,98, venda R$ 330,50) | Ainda não |
 | `contas_a_receber_venc_2026-10-26_2026-12-06.csv` | Financeiro → Relatório de Contas a Receber | 1 conta: R$ 215,00 vence 15/11 (empresa) | Ainda não |
+| `estoque_atual_2026-11-06_transcrito.csv` | Estoque → Relatório Estoque Atual | 25 itens com saldo. **Transcrito da tela** (a sessão não compartilhava o disco). Saldos negativos: chocolate −30, sprite −1, hóspede adicional −76, lavanderia −2.247 | Ainda não |
 | `receitas_x_despesas_2026-10-26_2026-11-06.csv` | Financeiro → Receitas x Despesas, com *Sangrias e Suprimentos* | Receita por dia (total R$ 14.570,50 = Contas Recebidas) e despesas só de sangria (R$ 370,00) | Ainda não (serve de conferência) |
 
 ### O que isso respondeu das perguntas da Etapa 1
@@ -112,3 +113,5 @@ rodapé do próprio relatório.
 - O campo de data é por partes (dia, mês, ano): clique no dia, digite, setinha para a direita, digite o mês.
 - O relatório "Consumo agrupado por Apartamento" mostra o apartamento 112 como "12/04/1900" (defeito do DataHotel): não use.
 - A exportação de relatórios longos leva minutos (uma página por vez). Não feche a pré-visualização até a barra "Exportando" sumir.
+
+- **Se a janela Salvar não mostrar "C on <seu computador>"**, a sessão foi aberta sem compartilhar unidades. Feche o DataHotel e abra de novo pelo atalho Hotel (Recursos Locais → Mais... → Unidades marcado e salvo). Em 06/11 isso aconteceu depois de uma reconexão; o estoque (uma página) foi lido da tela.
