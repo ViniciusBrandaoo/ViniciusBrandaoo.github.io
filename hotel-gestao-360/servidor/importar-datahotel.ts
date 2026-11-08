@@ -65,7 +65,8 @@ for (const f of acha("cafe_manha")) await importar("cafe", f, desde);
 // Conferência com tudo o que a pasta tem (arquivos desconhecidos são ignorados e listados).
 const periodoFim = process.argv[5] ?? new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
 const arquivos = todos.map((n) => ({ nome: n, buffer: readFileSync(join(pasta, n)) }));
-try {
+if (process.argv.includes("--sem-conferencia")) console.log("Conferência não executada (--sem-conferencia).");
+else try {
   const r = await conferencia.executar(ator, arquivos, desde, periodoFim) as { resumo: { ok: number; divergentes: number; atencao: number }; naoReconhecidos: string[]; erros: string[] };
   console.log(`CONFERÊNCIA ${desde} a ${periodoFim}: ${r.resumo.ok} batem, ${r.resumo.divergentes} divergentes, ${r.resumo.atencao} com atenção.`);
   if (r.naoReconhecidos.length) console.log(`  não usados: ${r.naoReconhecidos.join(", ")}`);
