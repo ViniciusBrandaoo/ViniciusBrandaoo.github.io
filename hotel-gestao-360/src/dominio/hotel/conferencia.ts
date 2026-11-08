@@ -276,14 +276,22 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
     for (const x of d.livroCaixa) if (noPeriodo(d, x.dia)) cx.set(chave(x.dia, x.forma), (cx.get(chave(x.dia, x.forma)) ?? 0) + x.valor);
     for (const r of d.recebimentos) if (noPeriodo(d, r.dia) && r.dia <= ultimoDiaCaixa) rc.set(chave(r.dia, r.forma), (rc.get(chave(r.dia, r.forma)) ?? 0) + r.valor);
     const erros: string[] = [];
+    const caixaAberto: string[] = [];
     for (const k of [...new Set([...cx.keys(), ...rc.keys()])].sort()) {
       const a = cx.get(k) ?? 0, b = rc.get(k) ?? 0;
-      if (a !== b) { const [dia, forma] = k.split("|"); erros.push(`${dia} ${forma}: livro-caixa ${brl(a)}, Contas Recebidas ${brl(b)} (dif. ${brl(b - a)}).`); }
+      if (a === b) continue;
+      const [dia, forma] = k.split("|");
+      const linha = `${dia} ${forma}: livro-caixa ${brl(a)}, Contas Recebidas ${brl(b)} (dif. ${brl(b - a)}).`;
+      // No último dia do livro-caixa, recebimento a mais é o que entrou depois do fechamento
+      // do último caixa: fica no caixa ainda aberto, que o relatório só traz quando fechar.
+      if (dia === ultimoDiaCaixa && b > a) caixaAberto.push(linha); else erros.push(linha);
     }
+    const cxTotal = soma([...cx.values()]), rcTotal = soma([...rc.values()]);
     out.push({ regra: "C3", titulo: "Recebido por dia e forma de pagamento", entre: "Contas Recebidas × Movimentação de Caixa",
-      situacao: erros.length ? "DIVERGENTE" : "OK", esperado: soma([...cx.values()]), encontrado: soma([...rc.values()]),
-      diferenca: soma([...rc.values()]) - soma([...cx.values()]),
-      detalhes: erros.length ? erros : [`${cx.size} combinação(ões) de dia e forma conferidas até ${ultimoDiaCaixa}, todas batem.`] });
+      situacao: erros.length ? "DIVERGENTE" : caixaAberto.length ? "ATENCAO" : "OK", esperado: cxTotal, encontrado: rcTotal, diferenca: rcTotal - cxTotal,
+      detalhes: erros.length ? [...erros, ...caixaAberto]
+        : caixaAberto.length ? [`Até ${ultimoDiaCaixa} os caixas fechados batem. No dia ${ultimoDiaCaixa} há recebimentos depois do fechamento do último caixa: ficam no caixa aberto e entram no livro-caixa quando ele fechar. Confira no próximo fechamento:`, ...caixaAberto]
+        : [`${cx.size} combinação(ões) de dia e forma conferidas até ${ultimoDiaCaixa}, todas batem.`] });
   }
 
   // C4 — competência: faturamento diário × faturamento analítico (por dia)
