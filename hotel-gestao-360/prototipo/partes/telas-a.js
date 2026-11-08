@@ -168,7 +168,7 @@ T.montarNav = function () {
       "</button></div>";
   }
 
-  var visiveis = T.MODULOS.filter(function (m) { return !m.noMenuLateral && T.podeVer(m.chave); });
+  var visiveis = T.MODULOS.filter(function (m) { return !m.noMenuLateral && !m.oculto && T.podeVer(m.chave); });
   var porGrupo = {};
   visiveis.forEach(function (m) { (porGrupo[m.grupo] = porGrupo[m.grupo] || []).push(m); });
 
@@ -360,7 +360,7 @@ T.montarConfiguracoes = function () {
   var painel = U.el("popover-config");
   if (!botao || !painel) return;
   var caixa = botao.closest(".lateral-item-caixa");
-  var itens = T.MODULOS.filter(function (m) { return m.noMenuLateral && T.podeVer(m.chave); });
+  var itens = T.MODULOS.filter(function (m) { return m.noMenuLateral && !m.oculto && T.podeVer(m.chave); });
 
   if (!itens.length) { if (caixa) caixa.style.display = "none"; return; }
 
