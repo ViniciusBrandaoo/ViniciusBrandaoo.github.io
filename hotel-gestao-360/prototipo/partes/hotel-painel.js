@@ -41,12 +41,12 @@
   var dash = T.MODULOS.find(function (m) { return m.chave === "dashboard"; });
   if (dash) { dash.nome = "Painel do Hotel"; dash.grupo = "Hotel"; }
   // Hotel primeiro no menu, na ordem do dia a dia da Fernanda.
-  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "empresas", "cafe", "frigobar", "governanca"];
+  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "empresas", "cafe", "frigobar", "governanca", "fechamentomes"];
   var hotel = ORDEM.map(function (k) { return T.MODULOS.find(function (m) { return m.chave === k; }); }).filter(Boolean);
   hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
   T.MODULOS.unshift.apply(T.MODULOS, hotel);
   // Na barra lateral, só o que a Fernanda pediu: as telas do hotel.
-  T.MODULOS.forEach(function (m) { if (["dashboard", "conferencia", "relatorioshotel", "importacoes"].indexOf(m.chave) === -1 && ["acessos", "hotelconfig"].indexOf(m.chave) === -1) m.oculto = true; });
+  T.MODULOS.forEach(function (m) { if (ORDEM.indexOf(m.chave) === -1 && ["acessos", "hotelconfig"].indexOf(m.chave) === -1) m.oculto = true; });
 
   // ------------------------------------------------------------ dados
 
