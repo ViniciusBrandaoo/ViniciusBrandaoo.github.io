@@ -46,7 +46,7 @@
   hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
   T.MODULOS.unshift.apply(T.MODULOS, hotel);
   // Na barra lateral, só o que a Fernanda pediu: as telas do hotel.
-  T.MODULOS.forEach(function (m) { if (ORDEM.indexOf(m.chave) === -1 && ["acessos", "hotelconfig"].indexOf(m.chave) === -1) m.oculto = true; });
+  T.MODULOS.forEach(function (m) { if (["dashboard", "conferencia", "relatorioshotel", "importacoes"].indexOf(m.chave) === -1 && ["acessos", "hotelconfig"].indexOf(m.chave) === -1) m.oculto = true; });
 
   // ------------------------------------------------------------ dados
 
