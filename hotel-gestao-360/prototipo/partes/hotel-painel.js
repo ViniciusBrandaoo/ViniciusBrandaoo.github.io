@@ -33,6 +33,19 @@
     if (x && x.modulos !== "*") NOVOS.forEach(function (m) { if (x.modulos.indexOf(m.chave) === -1) x.modulos.push(m.chave); });
   });
 
+  // Sistema enxuto para o hotel: o início é o Painel do Hotel, e as telas herdadas
+  // da plataforma escolar que o hotel não usa saem do menu (continuam acessíveis
+  // pela busca e por Configuração, nada é apagado).
+  var FORA_DO_MENU = ["aprovacoes", "eventos", "contratos", "documentos", "relatorios", "fechamento", "solicitacoes", "ferias", "painelhotel"];
+  T.MODULOS.forEach(function (m) { if (FORA_DO_MENU.indexOf(m.chave) !== -1) m.noMenuLateral = true; });
+  var dash = T.MODULOS.find(function (m) { return m.chave === "dashboard"; });
+  if (dash) { dash.nome = "Painel do Hotel"; dash.grupo = "Hotel"; }
+  // Hotel primeiro no menu, na ordem do dia a dia da Fernanda.
+  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "empresas", "cafe", "frigobar", "governanca"];
+  var hotel = ORDEM.map(function (k) { return T.MODULOS.find(function (m) { return m.chave === k; }); }).filter(Boolean);
+  hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
+  T.MODULOS.unshift.apply(T.MODULOS, hotel);
+
   // ------------------------------------------------------------ dados
 
   var ST = T._painelHotel = { lista: null, ultima: null, carregando: false, erro: null };
@@ -44,7 +57,7 @@
       var u = ST.lista[0];
       return u ? L.api.get("/api/hotel/conferencias/" + u.id).then(function (c) { ST.ultima = c; }) : null;
     }).catch(function (e) { ST.lista = []; ST.erro = e.message; })
-      .then(function () { ST.carregando = false; if (T.atual === "painelhotel" || T.atual === "relatorioshotel") T.renderizar(); });
+      .then(function () { ST.carregando = false; if (T.atual === "painelhotel" || T.atual === "dashboard" || T.atual === "relatorioshotel") T.renderizar(); });
   }
 
   function periodo() {
@@ -76,7 +89,7 @@
       formas: Object.keys(porForma).map(function (f) { return { forma: f, valor: porForma[f] }; }).sort(function (a, b) { return b.valor - a.valor; }),
       dias: Object.keys(porDia).sort().map(function (d) { return { dia: d, valor: porDia[d] }; }),
       saldos: saldos, pendente: saldos.reduce(function (a, x) { return a + x.pendente; }, 0),
-      faturar: saldos.filter(function (x) { return x.situacao === "FATURAR"; }).reduce(function (a, x) { return a + x.pendente; }, 0),
+      faturar: recs.filter(function (r) { return r.forma === "FATURADO"; }).reduce(function (a, r) { return a + (r.valorBruto || 0); }, 0),
       hospedagens: hs.length, ocup: ocup, cafe: cafe, hoje: H.ocupacao(L.hoje())
     };
   }
@@ -116,7 +129,7 @@
       { rotulo: "Recebido no período", valor: brl(c.total), nota: c.qtd + " recebimento(s)", destino: "caixa" },
       { rotulo: "Ocupação hoje", valor: Math.round(c.hoje.taxa * 100) + "%", nota: c.hoje.ocupados + " de " + c.hoje.total + " aptos · " + c.hoje.hospedes + " hóspede(s)", destino: "hospedagem" },
       { rotulo: "Saldo a receber de hospedagens", valor: brl(c.pendente), nota: c.saldos.length + " hospedagem(ns)", tom: c.pendente ? "atencao" : "" },
-      { rotulo: "A faturar para empresas", valor: brl(c.faturar), nota: "dentro do saldo acima", destino: "empresas" },
+      { rotulo: "Faturado para empresas", valor: brl(c.faturar), nota: "a cobrar das empresas (conferir faturas)", tom: c.faturar ? "atencao" : "", destino: "empresas" },
       { rotulo: "Última conferência", valor: u ? u.divergentes + " divergente(s)" : "—", nota: u ? u.ok + " batem · " + u.atencao + " atenção · " + quando(u.criadoEm) : (ST.carregando ? "carregando…" : "nenhuma ainda"), tom: u && u.divergentes ? "critico" : "", destino: "conferencia" }
     ].map(U.kpiHtml).join("") + "</div>";
 
@@ -190,7 +203,7 @@
     var l = ["Relatório do hotel · " + diaBR(c.ini) + " a " + diaBR(c.fim), "",
       "Recebido: " + brl(c.total) + " (" + c.qtd + " recebimentos)"];
     c.formas.forEach(function (f) { l.push("  • " + nomeForma(f.forma) + ": " + brl(f.valor)); });
-    l.push("Saldo a receber de hospedagens: " + brl(c.pendente) + (c.faturar ? " (a faturar para empresas: " + brl(c.faturar) + ")" : ""));
+    l.push("Saldo a receber de hospedagens: " + brl(c.pendente) + (c.faturar ? " ; faturado para empresas no período: " + brl(c.faturar) + "" : ""));
     l.push("Ocupação hoje: " + Math.round(c.hoje.taxa * 100) + "% (" + c.hoje.ocupados + " de " + c.hoje.total + ")");
     if (conf) {
       l.push("", "Conferência do fechamento (" + diaBR(conf.inicio) + " a " + diaBR(conf.fim) + "): " + conf.ok + " batem, " + conf.divergentes + " divergente(s), " + conf.atencao + " com atenção.");
@@ -249,7 +262,7 @@
     h += '<div class="kpis">' +
       '<div class="k">Recebido<b>' + brl(c.total) + "</b>" + c.qtd + " recebimento(s)</div>" +
       '<div class="k">Saldo a receber<b>' + brl(c.pendente) + "</b>" + c.saldos.length + " hospedagem(ns)</div>" +
-      '<div class="k">A faturar empresas<b>' + brl(c.faturar) + "</b>dentro do saldo</div>" +
+      '<div class="k">Faturado p/ empresas<b>' + brl(c.faturar) + "</b>a cobrar das empresas</div>" +
       '<div class="k">Ocupação hoje<b>' + Math.round(c.hoje.taxa * 100) + "%</b>" + c.hoje.ocupados + " de " + c.hoje.total + " aptos</div></div>";
 
     if (s.conferencia) {
@@ -294,4 +307,6 @@
     h += "<footer>Valores conferidos a partir dos relatórios exportados do DataHotel. Nada foi alterado no DataHotel.</footer></body></html>";
     return h;
   }
+  // O início do sistema é o Painel do Hotel.
+  T.telas.dashboard = T.telas.painelhotel;
 })();

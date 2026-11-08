@@ -15,9 +15,9 @@ removido: cada um aparece abaixo com um destes status.
 
 | Camada | Onde | Situação |
 |---|---|---|
-| Tela + regras no navegador | `prototipo/partes/*.js` → `index.html` | Roda sem servidor; grava no `localStorage` do navegador. **Serve para validar o fluxo, não para produção multiusuário.** |
+| Tela + regras no navegador | `prototipo/partes/*.js` → HTML servido pelo servidor | Com o servidor ligado (`--com-backend`), tudo do hotel grava no PostgreSQL (`hotel-sync.js`); nada fica só no navegador. |
 | Regras do hotel | `hotel-dominio.js` | Funções puras em centavos, testadas. |
-| Servidor + PostgreSQL | `servidor/`, `db/migrations/` | Herdado: autenticação com sessão, auditoria por trigger, folha. **Ainda sem as tabelas do hotel** (ver Fase 1-B). |
+| Servidor + PostgreSQL | `servidor/`, `db/migrations/032–037` | No ar no Railway (projeto `hotel-gestao-360`). Tabelas do hotel, importação com prévia/quarentena/hash, conferência automática gravada (`hotel_conferencias`), auditoria por trigger, sem exclusão física. |
 
 Princípio aplicado em todo o código: **faturado ≠ recebido**, **vendido no
 cartão ≠ depositado**, **boleto emitido ≠ pago**, **nota emitida ≠ recebida**.
@@ -30,9 +30,9 @@ confirmação correspondente.
 |---|---|---|---|
 | 1 | Complementar ao DataHotel, sem substituí-lo | Feito | Nada escreve no DataHotel; tudo que vem dele guarda `origem` + `codigoOrigem`. |
 | 2 | Dashboard, menu lateral, login, perfis, auditoria, exportação, alertas, filtros, busca | Feito / Herdado | Grupo "Hotel" no menu; exportação CSV (abre no Excel) e PDF por impressão em todas as telas novas. |
-| 3.1–3.2 | Integração DataHotel (API, Excel, CSV, relatórios) | **Depende** + caminho manual feito | Importação de CSV pronta. API: não presumida (ver D1). Excel: hoje "Salvar como CSV"; leitura direta de .xlsx entra com o servidor (a biblioteca `exceljs` já está no projeto). |
+| 3.1–3.2 | Integração DataHotel (API, Excel, CSV, relatórios) | Feito por arquivo (sem API) | DataHotel não tem API; 17 relatórios mapeados em `DATAHOTEL-RELATORIOS.md`, importação CSV/XLSX no servidor e conferência automática (C1–C15). API: não presumida (ver D1). Excel: hoje "Salvar como CSV"; leitura direta de .xlsx entra com o servidor (a biblioteca `exceljs` já está no projeto). |
 | 3.3 | Central de importações: prévia, novos/atualizados/duplicados/inconsistentes, histórico, usuário, sem apagar dado interno | Feito | Tela "Importações DataHotel". Testes 1–3 e 26. |
-| 4 | Dashboard gerencial (hospedagem, financeiro, operacional) | Parcial | Bloco "Hotel hoje" no dashboard, com receita lançada, recebida e a receber separadas. Faltam gráficos de evolução e o filtro de período direto no dashboard (os filtros estão em cada tela). |
+| 4 | Dashboard gerencial (hospedagem, financeiro, operacional) | Feito | "Painel do Hotel": período escolhido, recebido por forma e por dia, ocupação, saldo das hospedagens, faturado para empresas e a última conferência. |
 | 5.1 | Extrato diário de hospedagem | Feito | "Hospedagem do Dia". |
 | 5.2 | Ocupação (bloqueados fora do denominador, configurável) | Feito | Regra em "Cadastros do Hotel". |
 | 5.3 | Relatório diário: elaboração → conferência → aprovação → fechamento, com auditoria | Feito | Aprovar e fechar é da Direção ou do Financeiro. |
@@ -51,10 +51,10 @@ confirmação correspondente.
 | 17 | Ponto: marcações, horas, atrasos, faltas, ajuste justificado, original preservada | Feito (gerencial) | Não é ponto oficial (Portaria 671/2021); está avisado na tela. |
 | 18 | Banco de horas com fórmula e hora paga fora do saldo | Herdado + Feito | Regra em `H.bancoDeHoras`; tela existente de Banco de Horas. Prazo de compensação: D9. |
 | 19 | Prévia da folha (CLT) e diárias | Herdado + Feito | Motor de folha herdado. Diárias: `H.fechamentoDiarias`, tela "Ponto e Diárias". As tabelas legais exigem conferência da contabilidade. |
-| 20 | Central de relatórios diário/semanal/mensal, agendamento e envio | Parcial | Cada tela exporta o próprio relatório. Agendamento e envio automático dependem do servidor (Fase 1-B). |
+| 20 | Central de relatórios diário/semanal/mensal, agendamento e envio | Parcial | "Relatórios em PDF": período livre, conferência, recebimentos, saldos, ocupação e café, e mensagem pronta para WhatsApp/e-mail. Falta o agendamento/envio automático (depende de canal autorizado, D7). |
 | 21 | Automações e regras de confiabilidade | Parcial | As regras estão no domínio e nos testes. As execuções programadas dependem do servidor. |
 | 22 | Perfis (Admin, Direção, Financeiro, Recepção, Governança, RH) | Feito | Perfis Recepção e Governança adicionados; permissões configuráveis em Controle de Acesso. |
-| 23 | Banco relacional com as entidades listadas | **Pendente (Fase 1-B)** | Coleções já modeladas no domínio. Falta a migration `032_hotel.sql`. |
+| 23 | Banco relacional com as entidades listadas | Feito | Migrations 032–037 no Railway. |
 | 24 | Interface: cores de status, tabelas com filtro, modais, responsivo | Feito | Verde, âmbar, vermelho e azul. |
 | 25 | Segurança, LGPD, auditoria com valor anterior | Parcial | A auditoria guarda antes, depois e justificativa (teste 24). Login seguro, sessão e backup ficam com o servidor; a política de retenção depende de D10. |
 | 26 | Rotina diária | Feito | Importar → hospedagem → café → governança → frigobar → caixa → relatório diário. |

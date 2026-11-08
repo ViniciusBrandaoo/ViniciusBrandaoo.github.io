@@ -140,8 +140,11 @@ export function lerContasAReceber(texto: string): { lancto: string; vencimento: 
 }
 
 /** "Relatório Diário (RDS)". */
-export function lerRds(texto: string): { ocupados: number; livres: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number } {
-  const r = { ocupados: 0, livres: 0, bloqueados: 0, receitaDiaria: 0, receitaConsumo: 0 };
+export function lerRds(texto: string): { ocupados: number; livres: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } {
+  const r: { ocupados: number; livres: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } =
+    { ocupados: 0, livres: 0, bloqueados: 0, receitaDiaria: 0, receitaConsumo: 0 };
+  const titulo = /\(RDS\)\s*-\s*(\d{2}\/\d{2}\/\d{4})/.exec(texto.slice(0, 2000));
+  if (titulo) r.dia = iso(titulo[1]!);
   for (const l of linhasDe(texto)) {
     const t = naoVazias(l);
     if (t[0] === "Ocupadas") r.ocupados = Number(t[1]);
@@ -390,9 +393,11 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
 
   // C12 — ocupação de hoje: RDS × Mapa de Ocupação × reservas
   if (d.rds) {
-    const hoje = d.hoje;
-    const ocupadasReservas = new Set(d.reservas.filter((r) => r.situacao.toLowerCase().startsWith("checked-in") && r.checkin <= hoje && r.checkout >= hoje).map((r) => r.apto)).size;
-    const detalhes = [`RDS: ${d.rds.ocupados} ocupado(s). Mapa de Ocupação: ${d.mapa.length}. Reservas em Checked-in hoje: ${ocupadasReservas}.`];
+    // A ocupação é a do dia do RDS (o relatório traz a data no título), não a de hoje.
+    const dia = d.rds.dia ?? d.hoje;
+    const ativa = (s: string) => /^checked-(in|out)/i.test(s);
+    const ocupadasReservas = new Set(d.reservas.filter((r) => ativa(r.situacao) && r.checkin <= dia && r.checkout > dia).map((r) => r.apto)).size;
+    const detalhes = [`Dia ${dia}. RDS: ${d.rds.ocupados} ocupado(s). Mapa de Ocupação: ${d.mapa.length}. Reservas hospedadas na noite: ${ocupadasReservas}.`];
     const iguais = d.rds.ocupados === d.mapa.length && d.rds.ocupados === ocupadasReservas;
     out.push({ regra: "C12", titulo: "Ocupação de hoje", entre: "RDS × Mapa de Ocupação × Relatório de Reservas",
       situacao: iguais ? "OK" : "ATENCAO", unidade: "un", esperado: d.rds.ocupados, encontrado: d.mapa.length, diferenca: d.mapa.length - d.rds.ocupados,
