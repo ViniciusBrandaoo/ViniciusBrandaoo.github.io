@@ -11,7 +11,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerRelatorioReservasDataHotel, lerValor, normalizarForma } from "../src/dominio/hotel/importacao.js";
+import { lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerValor, normalizarForma } from "../src/dominio/hotel/importacao.js";
 import {
   lerContasAReceber, lerEstoque, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Resultado,
 } from "../src/dominio/hotel/conferencia.js";
@@ -49,7 +49,9 @@ const fatDiario = lerFaturamentoDiario(texto("faturamento_diario_resumo") ?? "")
 const aReceber = lerContasAReceber(texto("contas_a_receber") ?? "");
 const estoque = lerEstoque(texto("estoque_atual") ?? "");
 const cafeR = lerListaCafeDataHotel(texto("cafe_manha") ?? "", inicio);
-const cafe = (cafeR?.linhas ?? []).filter((l) => l.tipo !== "ANTECIPADO").map((l) => ({ dia: l.data!.split("/").reverse().join("-"), pessoas: Number(l.adultos) + Number(l.criancas) }));
+const cafe = (cafeR?.linhas ?? []).filter((l) => l.tipo !== "ANTECIPADO").map((l) => ({ dia: l.data!.split("/").reverse().join("-"), adultos: Number(l.adultos), criancas: Number(l.criancas), pessoas: Number(l.adultos) + Number(l.criancas) }));
+// Livro-caixa: entradas por dia e forma (o que a recepção registrou no caixa).
+const livro = (() => { const t = texto("movimentacao_caixa"); const r = t ? lerMovimentoCaixaDataHotel(t, inicio) : null; return r ? recebimentosDeLinhas(r.linhas).filter((x) => x.dia >= inicio && x.dia <= fim) : []; })();
 const APTOS = 31, BLOQ = 5, VENDAVEIS = APTOS - BLOQ;
 
 // Fechamentos de caixa (Resumo por Movimentação de Caixa): sessão e o que foi fechado por forma.
@@ -181,9 +183,16 @@ const p3 = pagina("Financeiro", "recebimentos, caixa, faturamento e empresas",
     const g = (k: string) => c.formas.get(k) ?? 0;
     return [c.numero, c.abertura.slice(0, 16), c.fechamento ? c.fechamento.slice(0, 16) : "<i>aberto</i>", brl(g("DINHEIRO")), brl(g("PIX")), brl(g("CREDITO") + g("CARTAO_CREDITO")), brl(g("DEBITO") + g("CARTAO_DEBITO")), brl(g("FATURADO")), `<b>${brl(soma([...c.formas.values()]))}</b>`];
   }), [3, 4, 5, 6, 7, 8]) +
+  (livro.length ? `<h2>Caixa da recepção dia a dia</h2><p class="nota">Entradas registradas no caixa por dia e forma (livro-caixa do DataHotel, caixas fechados).</p>` +
+    tabela(["Dia", "Dinheiro", "Pix", "Crédito", "Débito", "Faturar emp.", "Total"], [...new Set(livro.map((x) => x.dia))].sort().map((d) => {
+      const g = (f: string[]) => soma(livro.filter((x) => x.dia === d && f.includes(x.forma)).map((x) => x.valor));
+      return [br(d), brl(g(["DINHEIRO"])), brl(g(["PIX"])), brl(g(["CREDITO", "CARTAO_CREDITO"])), brl(g(["DEBITO", "CARTAO_DEBITO"])), brl(g(["FATURADO"])), `<b>${brl(soma(livro.filter((x) => x.dia === d).map((x) => x.valor)))}</b>`];
+    }), [1, 2, 3, 4, 5, 6], ["Total", ...[["DINHEIRO"], ["PIX"], ["CREDITO", "CARTAO_CREDITO"], ["DEBITO", "CARTAO_DEBITO"], ["FATURADO"]].map((f) => brl(soma(livro.filter((x) => f.includes(x.forma)).map((x) => x.valor)))), brl(soma(livro.map((x) => x.valor)))]) : "") +
   `<h2>Receita lançada por dia</h2><p class="nota">Diárias, consumo e venda de balcão lançados em cada dia (até ${br(fatFim)}).</p>` +
   tabela(["Dia", "Diárias", "Consumo", "Balcão", "Total"], fatDiario.map((f) => [br(f.dia), brl(f.diaria), brl(f.consumo), brl(f.venda), brl(f.total)]), [1, 2, 3, 4], ["Total", brl(diariasPeriodo), brl(consumoPeriodo), brl(vendaPeriodo), brl(soma(fatDiario.map((f) => f.total)))]) +
   `<h2>Empresas</h2><div class="card"><b>Faturado para empresas sem fatura emitida</b><ul><li>${brl(faturado)} lançados como "Faturar empresa" de ${br(inicio)} a ${br(fim)}.</li><li>Faturas emitidas no DataHotel: nenhuma. Contas a receber lançadas: ${brl(aReceberTotal)}.</li><li><b>O que fazer:</b> ${ACAO.C8}</li></ul></div>` +
+  `<p class="nota">Hospedagens lançadas como "Faturar empresa" (o relatório do DataHotel traz o hóspede e a reserva; o nome da empresa não vem nele).</p>` +
+  tabela(["Data", "Reserva", "Hóspede", "Valor"], rec.filter((r) => r.forma === "FATURADO").sort((a, b) => a.dia.localeCompare(b.dia)).map((r) => [br(r.dia), esc(r.reserva || "—"), esc(titulo((r.reserva && nomeDe.get(r.reserva)) || r.pagador || "")), brl(r.valor)]), [3], ["Total", "", "", brl(faturado)]) +
   (aReceber.length ? tabela(["Lançamento", "Vencimento", "Descrição", "Valor"], aReceber.map((a) => [esc(a.lancto), br(a.vencimento), esc(a.descricao), brl(a.valor)]), [3]) : ""));
 
 // ------------------------------------------------------------------ 4) hospedagem e operação
@@ -200,6 +209,11 @@ const p4 = pagina("Hospedagem e operação", "ocupação, hospedagens, café, fr
     return [br(n.d), barra(n.aptos, VENDAVEIS, 150), String(n.aptos), pct(n.aptos, VENDAVEIS), String(n.hosp), c !== undefined ? String(c) : "—"];
   }), [2, 3, 4, 5]) +
   `<p class="fraco">Café = pessoas na lista de café do DataHotel na manhã seguinte à noite (lista disponível até ${br(cafe.length ? cafe.map((c) => c.dia).sort().pop()! : fim)}).</p>` +
+  `<h2>Café da manhã</h2><p class="nota">Lista de Café da Manhã do DataHotel: quem pernoitou e toma café no dia.</p>` +
+  tabela(["Dia", "Apartamentos", "Adultos", "Crianças", "Total"], [...new Set(cafe.map((c) => c.dia))].filter((d) => d >= inicio && d <= fim).sort().map((d) => {
+    const x = cafe.filter((c) => c.dia === d);
+    return [br(d), String(x.length), String(soma(x.map((c) => c.adultos))), String(soma(x.map((c) => c.criancas))), `<b>${soma(x.map((c) => c.pessoas))}</b>`];
+  }), [1, 2, 3, 4], ["Total", String(cafe.filter((c) => c.dia >= inicio && c.dia <= fim).length), String(soma(cafe.filter((c) => c.dia >= inicio && c.dia <= fim).map((c) => c.adultos))), String(soma(cafe.filter((c) => c.dia >= inicio && c.dia <= fim).map((c) => c.criancas))), String(soma(cafe.filter((c) => c.dia >= inicio && c.dia <= fim).map((c) => c.pessoas)))]) +
   `<h2 class="quebra">Extrato das hospedagens</h2>` + tabela(["Apto", "Hóspede", "Entrada", "Saída", "Diárias", "Consumo", "Pago", "Saldo"], hospedagens.map((r) => {
     const s = r.diariaLancada + r.consumo - r.recebido;
     return [esc(r.apto), `${esc(nomeDe.get(r.codigo) ?? "")}<div class="fraco">${esc(r.codigo)} · ${esc(r.situacao)}</div>`, brCurto(r.checkin), brCurto(r.checkout), brl(r.diariaLancada), r.consumo ? brl(r.consumo) : "—", brl(r.recebido), s > 0 ? `<b style="color:#b42318">${brl(s)}</b>` : s < 0 ? `<span class="fraco">${brl(s)}</span>` : "—"];

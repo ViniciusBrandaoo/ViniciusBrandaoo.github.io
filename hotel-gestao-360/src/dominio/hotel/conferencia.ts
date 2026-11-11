@@ -259,6 +259,7 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
   {
     const porDia = new Map<string, number>();
     for (const r of d.recebimentos) if (noPeriodo(d, r.dia)) porDia.set(r.dia, (porDia.get(r.dia) ?? 0) + r.valor);
+    d = { ...d, receitasDespesas: d.receitasDespesas.filter((x) => noPeriodo(d, x.dia)), faturamentoDiario: d.faturamentoDiario.filter((x) => noPeriodo(d, x.dia)) };
     out.push(comparar("C1", "Total recebido no período", "Contas Recebidas × Receitas x Despesas (receitas)",
       soma(d.receitasDespesas.map((x) => x.receitas)), soma([...porDia.values()])));
     const erros: string[] = [];
