@@ -58,9 +58,12 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
   const produtos = new Map<string, { qtd: number; custo: number; venda: number }>();
   for (const linha of (texto("vendas") ?? "").split(/\r?\n/)) {
     const c = linha.split(";").map((x) => x.trim()).filter(Boolean);
-    const iUn = c.indexOf("UN");
-    if (iUn < 1) continue;
-    const nome = c[0]!, qtd = Number(c[iUn + 1]), rs = c.filter((x) => /^R\$/.test(x)).map((x) => lerValor(x) ?? 0);
+    // Linha de produto: nome + quantidade + custo (R$) + venda (R$). A unidade (UN) às vezes não vem.
+    const ehValor = (x: string) => x.startsWith("R$");
+    const iRs = c.findIndex(ehValor);
+    if (iRs < 2 || /^(TOTAL|Data:|Produto|Per|Filtros|Emitido)/i.test(c[0]!) || c.filter(ehValor).length < 2) continue;
+    const nome = c[0]!.trim(), qtd = Number(c[iRs - 1]), rs = c.filter(ehValor).map((x) => lerValor(x) ?? 0);
+    if (!Number.isFinite(qtd)) continue;
     const p = produtos.get(nome) ?? { qtd: 0, custo: 0, venda: 0 };
     p.qtd += qtd; p.custo += rs[0] ?? 0; p.venda += rs[1] ?? 0; produtos.set(nome, p);
   }
@@ -162,7 +165,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     kpis([["Recebido", brl(total), `${rec.length} recebimentos`], ["Média por dia", brl(Math.round(total / dias(inicio, fim).length)), `${dias(inicio, fim).length} dias`],
       ["Faturado (empresas)", brl(faturado), pct(faturado, total) + " do recebido", faturado ? "alerta" : ""], ["Contas a receber lançadas", brl(aReceberTotal), `${aReceber.length} título(s)`]]) +
     `<h2>Recebido por dia</h2>` + tabela(["Dia", "", "Valor"], dias(inicio, fim).map((d) => { const v = porDia.get(d) ?? 0; return [br(d), barra(v, maxDia, 260), brl(v)]; }), [2], ["Total", "", brl(total)]) +
-    `<h2>Recebido por forma de pagamento</h2>` + tabela(["Forma", "", "Valor", "%"], [...porForma].sort((a, b) => b[1] - a[1]).map(([f, v]) => [esc(nomeForma(f)), barra(v, Math.max(...porForma.values()), 200), brl(v), pct(v, total)]), [2, 3], ["Total", "", brl(total), "100%"]) +
+    `<div style="page-break-inside:avoid"><h2>Recebido por forma de pagamento</h2>` + tabela(["Forma", "", "Valor", "%"], [...porForma].sort((a, b) => b[1] - a[1]).map(([f, v]) => [esc(nomeForma(f)), barra(v, Math.max(...porForma.values()), 200), brl(v), pct(v, total)]), [2, 3], ["Total", "", brl(total), "100%"]) + "</div>" +
     `<h2 class="quebra">Fechamentos de caixa</h2><p class="nota">O que cada caixa da recepção fechou e mandou para a conta, por forma.</p>` +
     tabela(["Caixa", "Aberto em", "Fechado em", "Dinheiro", "Pix", "Crédito", "Débito", "Faturar emp.", "Total"], caixas.map((c) => {
       const g = (k: string) => c.formas.get(k) ?? 0;
@@ -202,7 +205,8 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     `<h2 class="quebra">Extrato das hospedagens</h2>` + tabela(["Apto", "Hóspede", "Entrada", "Saída", "Diárias", "Consumo", "Pago", "Saldo"], hospedagens.map((r) => {
       const s = r.diariaLancada + r.consumo - r.recebido;
       return [esc(r.apto), `${esc(nomeDe.get(r.codigo) ?? "")}<div class="fraco">${esc(r.codigo)} · ${esc(r.situacao)}</div>`, brCurto(r.checkin), brCurto(r.checkout), brl(r.diariaLancada), r.consumo ? brl(r.consumo) : "—", brl(r.recebido), s > 0 ? `<b style="color:#b42318">${brl(s)}</b>` : s < 0 ? `<span class="fraco">${brl(s)}</span>` : "—"];
-    }), [4, 5, 6, 7], ["", "Total", "", "", brl(soma(hospedagens.map((r) => r.diariaLancada))), brl(soma(hospedagens.map((r) => r.consumo))), brl(soma(hospedagens.map((r) => r.recebido))), brl(pendente)]) +
+    }), [4, 5, 6, 7], ["", "Total", "", "", brl(soma(hospedagens.map((r) => r.diariaLancada))), brl(soma(hospedagens.map((r) => r.consumo))), brl(soma(hospedagens.map((r) => r.recebido))), brl(soma(hospedagens.map((r) => r.diariaLancada + r.consumo - r.recebido)))]) +
+  `<p class="fraco">Saldo total = a receber ${brl(pendente)} menos pago a mais ${brl(soma(hospedagens.map((r) => r.diariaLancada + r.consumo - r.recebido).filter((s) => s < 0)).toString().startsWith("-") ? -soma(hospedagens.map((r) => r.diariaLancada + r.consumo - r.recebido).filter((s) => s < 0)) : 0)} (hóspede que pagou adiantado e segue hospedado).</p>` +
     `<p class="fraco">Valores do extrato de cada reserva no DataHotel (a estadia inteira, mesmo quando começa antes ou termina depois do período).</p>` +
     `<h2>Frigobar e balcão — mais vendidos</h2>` + (prods.length ? tabela(["Produto", "Qtde.", "Custo", "Venda", "Margem"], prods.slice(0, 12).map(([n, p]) => [esc(titulo(n)), String(p.qtd), brl(p.custo), brl(p.venda), pct(p.venda - p.custo, p.venda)]), [1, 2, 3, 4],
       ["Total", String(soma(prods.map(([, p]) => p.qtd))), brl(soma(prods.map(([, p]) => p.custo))), brl(soma(prods.map(([, p]) => p.venda))), pct(soma(prods.map(([, p]) => p.venda - p.custo)), soma(prods.map(([, p]) => p.venda)))]) : "<p>Sem vendas no período.</p>") +
