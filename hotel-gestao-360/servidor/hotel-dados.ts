@@ -100,7 +100,7 @@ async function apartamentosImportados(q: Consulta, unidadeId: string, id?: strin
 async function cafeListaImportada(unidadeId: string): Promise<Dados[]> {
   const rows = await consultar<Record<string, unknown>>(
     `SELECT id, to_char(data,'YYYY-MM-DD') AS data, apartamento, hospede, adultos, criancas, tipo
-       FROM hotel_cafe_dia WHERE unidade_id = $1 ORDER BY data, apartamento`, [unidadeId]);
+       FROM hotel_cafe_dia WHERE unidade_id = $1 AND ausente_na_origem_desde IS NULL ORDER BY data, apartamento`, [unidadeId]);
   return rows.map((r) => ({
     id: r.id, importado: true, data: r.data, apartamento: r.apartamento, hospede: r.hospede,
     adultos: Number(r.adultos), criancas: Number(r.criancas), tipo: r.tipo,

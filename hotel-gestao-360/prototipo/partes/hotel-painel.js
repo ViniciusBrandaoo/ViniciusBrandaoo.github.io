@@ -174,7 +174,16 @@
 
   T.telas.relatorioshotel = function () {
     if (ST.lista === null) carregarConferencia();
-    var html = T.cabecalho("Relatórios em PDF", "Escolha o período e o que entra. O relatório abre pronto para imprimir ou salvar em PDF (no Edge: Imprimir → Salvar como PDF).");
+    var html = T.cabecalho("Relatórios em PDF", "Os relatórios completos da Direção saem de cada Conferência do Fechamento (relatórios do DataHotel). Abaixo, também um relatório rápido com os dados do sistema.");
+    var u = ST.ultima;
+    if (u && u.relatorios && u.relatorios.length) {
+      T._confRelatorios = u.relatorios;
+      html += U.painelHtml("Relatórios completos para a Direção", "da conferência de " + diaBR(u.inicio) + " a " + diaBR(u.fim) + " · feita em " + quando(u.criadoEm),
+        '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px">' + u.relatorios.map(function (x, i) { return '<button class="botao" data-acao="hotel-rel-abrir" data-id="' + i + '">' + esc(x.titulo) + "</button>"; }).join("") +
+        '</div><p class="secundario" style="padding:0 20px 14px">Para um período novo, faça a Conferência do Fechamento com os relatórios exportados do DataHotel: os 5 relatórios são gerados junto.</p>');
+    } else {
+      html += '<div class="painel" style="padding:14px 20px">Os relatórios completos aparecem aqui depois de uma Conferência do Fechamento. <button class="botao miudo" data-ir="conferencia">Ir para a Conferência</button></div>';
+    }
     html += filtroPeriodo("rh");
     var sel = T.filtros.relSecoes;
     var confs = ST.lista || [];

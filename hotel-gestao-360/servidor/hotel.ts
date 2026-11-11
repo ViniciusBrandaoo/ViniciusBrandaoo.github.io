@@ -304,6 +304,16 @@ export async function confirmar(ator: Ator, loteId: string): Promise<Record<stri
             ELSE 'ATIVA' END
           WHERE lote_id = $1`, [loteId]);
     }
+    if (tipo === "cafe") {
+      // A lista de café é a foto do DataHotel no período do arquivo: linha que estava
+      // no banco nesse período e saiu da lista (reserva alterada lá) fica marcada como
+      // ausente na origem e deixa de contar. Nada é apagado.
+      await db.query(
+        `WITH doLote AS (SELECT to_date(substring(codigo_origem from 6 for 8), 'YYYYMMDD') AS data, codigo_origem FROM hotel_import_linhas WHERE lote_id = $1 AND situacao <> 'REJEITADO'),
+              faixa AS (SELECT min(data) AS ini, max(data) AS fim FROM doLote)
+         UPDATE hotel_cafe_dia c SET ausente_na_origem_desde = CASE WHEN c.codigo_origem IN (SELECT codigo_origem FROM doLote) THEN NULL ELSE coalesce(c.ausente_na_origem_desde, now()) END
+           FROM faixa WHERE c.data BETWEEN faixa.ini AND faixa.fim`, [loteId]);
+    }
     if (tipo === "apartamentos") {
       await db.query(
         `UPDATE hotel_apartamentos SET situacao = CASE

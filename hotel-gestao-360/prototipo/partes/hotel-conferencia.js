@@ -96,6 +96,11 @@
         { rotulo: "Encontrado", direita: true, conteudo: function (x) { return valor(x.encontrado, x.unidade); } },
         { rotulo: "Situação", direita: true, conteudo: function (x) { var t = ROT[x.situacao]; return pastilha(t[0], t[1]); } }
       ], lista, { tituloVazio: "Sem regras" }));
+      if (r.relatorios && r.relatorios.length) {
+        T._confRelatorios = r.relatorios;
+        html += U.painelHtml("Relatórios para a Direção", "abra e use Imprimir → Salvar como PDF", '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px">' +
+          r.relatorios.map(function (x, i) { return '<button class="botao" data-acao="hotel-rel-abrir" data-id="' + i + '">' + U.esc(x.titulo) + "</button>"; }).join("") + "</div>");
+      }
       if (r.naoReconhecidos && r.naoReconhecidos.length) html += '<p class="secundario" style="padding:0 20px">Arquivos que a conferência ainda não usa: ' + U.esc(r.naoReconhecidos.join(", ")) + ".</p>";
       if (r.erros && r.erros.length) html += '<p style="padding:0 20px">' + U.esc(r.erros.join(" ")) + "</p>";
     }
@@ -114,10 +119,19 @@
 
   T.acoes["hotel-conf-abrir"] = function (id) {
     L.api.get("/api/hotel/conferencias/" + id).then(function (c) {
-      ST.resultado = { id: c.id, criadoEm: c.criadoEm, inicio: c.inicio, fim: c.fim, resumo: { ok: c.ok, divergentes: c.divergentes, atencao: c.atencao }, resultados: c.resultado, naoReconhecidos: [], erros: [], doHistorico: true };
+      ST.resultado = { id: c.id, criadoEm: c.criadoEm, inicio: c.inicio, fim: c.fim, resumo: { ok: c.ok, divergentes: c.divergentes, atencao: c.atencao }, resultados: c.resultado, relatorios: c.relatorios || [], naoReconhecidos: [], erros: [], doHistorico: true };
       T.renderizar();
     }).catch(function (e) { U.avisar(e.message); });
   };
+
+  /** Abre um relatório da Direção numa janela própria, já pedindo a impressão (Salvar como PDF). */
+  T._abrirRelatorioHtml = function (html) {
+    var w = window.open("", "_blank");
+    if (!w) { U.avisar("O navegador bloqueou a janela do relatório. Permita pop-ups para este site."); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* imprime pelo menu */ } }, 500);
+  };
+  T.acoes["hotel-rel-abrir"] = function (i) { var r = (T._confRelatorios || [])[Number(i)]; if (r) T._abrirRelatorioHtml(r.html); };
 
   // Envio por clique e por arrastar. Encadeia no gancho de eventos existente.
   var ligar0 = T.ligarEventos;

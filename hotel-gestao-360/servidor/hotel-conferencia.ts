@@ -9,6 +9,9 @@ import { consultar, transacao, type Ator } from "./banco.js";
 import { montarDados } from "../src/dominio/hotel/conferencia-arquivos.js";
 import { conferir, resumo, type Resultado } from "../src/dominio/hotel/conferencia.js";
 import { sha256 } from "../src/dominio/hotel/importacao.js";
+import { reconhecer } from "../src/dominio/hotel/conferencia-arquivos.js";
+import { gerarRelatorios } from "../src/dominio/hotel/relatorios.js";
+import type { Fonte } from "../src/dominio/hotel/conferencia.js";
 
 function erro(status: number, mensagem: string): Error {
   const e = new Error(mensagem) as Error & { statusCode?: number };
@@ -42,10 +45,15 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   for (const a of arquivos) {
     if (!/\.csv$/i.test(a.nome)) throw erro(422, `"${a.nome}" não é .csv. Exporte do DataHotel em Ficheiro CSV.`);
   }
-  const m = montarDados(arquivos.map((a) => ({ nome: a.nome, texto: texto(a.buffer) })), inicio, fim, fim > hojeSP() ? hojeSP() : fim);
+  const textos = arquivos.map((a) => ({ nome: a.nome, texto: texto(a.buffer) }));
+  const m = montarDados(textos, inicio, fim, fim > hojeSP() ? hojeSP() : fim);
   if (!m.reconhecidos.length) throw erro(422, "Nenhum dos arquivos é um relatório que a conferência conhece. Confira se exportou do DataHotel em CSV.");
   const resultados: Resultado[] = conferir(m.dados);
   const r = resumo(resultados);
+  // Os 5 relatórios da Direção saem dos mesmos arquivos (o mais recente de cada relatório vale).
+  const porFonte = new Map<Fonte, string>();
+  for (const t of [...textos].sort((a, b) => a.nome.localeCompare(b.nome))) { const f = reconhecer(t.texto); if (f) porFonte.set(f, t.texto); }
+  const relatorios = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: { inicio, fim, resumo: r, resultados }, inicio, fim, hoje: hojeSP() });
   const unidadeId = await unidadePadrao();
   const lista = arquivos.map((a) => ({
     nome: a.nome.slice(0, 200), sha256: sha256(a.buffer),
@@ -54,12 +62,12 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   return transacao(ator, async (db) => {
     const ins = await db.query<{ id: string; criado_em: string }>(
       `INSERT INTO hotel_conferencias
-         (unidade_id, periodo_inicio, periodo_fim, arquivos, resultado, qtd_ok, qtd_divergente, qtd_atencao, criado_por)
-       VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7,$8,$9) RETURNING id, criado_em`,
-      [unidadeId, inicio, fim, JSON.stringify(lista), JSON.stringify(resultados), r.ok, r.divergentes, r.atencao, ator.userId]);
+         (unidade_id, periodo_inicio, periodo_fim, arquivos, resultado, qtd_ok, qtd_divergente, qtd_atencao, criado_por, relatorios)
+       VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7,$8,$9,$10::jsonb) RETURNING id, criado_em`,
+      [unidadeId, inicio, fim, JSON.stringify(lista), JSON.stringify(resultados), r.ok, r.divergentes, r.atencao, ator.userId, JSON.stringify(relatorios)]);
     return {
       id: ins.rows[0]!.id, criadoEm: ins.rows[0]!.criado_em, inicio, fim, resumo: r, resultados,
-      naoReconhecidos: m.naoReconhecidos, erros: m.erros,
+      naoReconhecidos: m.naoReconhecidos, erros: m.erros, relatorios,
     };
   });
 }
@@ -77,7 +85,7 @@ export async function listar(): Promise<Record<string, unknown>[]> {
 export async function obter(id: string): Promise<Record<string, unknown>> {
   const r = await consultar<Record<string, unknown>>(
     `SELECT c.id, to_char(c.periodo_inicio,'YYYY-MM-DD') AS inicio, to_char(c.periodo_fim,'YYYY-MM-DD') AS fim,
-            c.arquivos, c.resultado, c.qtd_ok AS "ok", c.qtd_divergente AS "divergentes", c.qtd_atencao AS "atencao",
+            c.arquivos, c.resultado, c.relatorios, c.qtd_ok AS "ok", c.qtd_divergente AS "divergentes", c.qtd_atencao AS "atencao",
             c.criado_em AS "criadoEm", u.nome AS "criadoPor"
        FROM hotel_conferencias c LEFT JOIN users u ON u.id = c.criado_por WHERE c.id = $1`, [id]);
   if (!r[0]) throw erro(404, "Conferência não encontrada.");
