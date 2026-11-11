@@ -93,4 +93,5 @@ const csv = ["regra;titulo;situacao;esperado;encontrado;diferenca;entre", ...res
 
 writeFileSync(join(pasta, `conferencia_${inicio}_${fim}.md`), md, "utf8");
 writeFileSync(join(pasta, `conferencia_${inicio}_${fim}.csv`), "\uFEFF" + csv, "utf8");
+writeFileSync(join(pasta, `conferencia_${inicio}_${fim}.json`), JSON.stringify({ inicio, fim, resumo: r, resultados }, null, 1), "utf8");
 console.log(md);
