@@ -19,6 +19,7 @@ export interface ExtrasRelatorio {
   pendencias: { data: string; apto: string; tipo: string; descricao: string; solucao: string; responsavel: string; prazo: string; status: string }[];
   folha: { competencia: string; nome: string; funcao: string; vinculo: string; valorSalario: number; valorProdutividade: number; valorTicket: number; he50: string; he100: string; noturnas: string; atrasos: string; faltas: number; dataPagamento: string; observacoes: string }[];
   empresas: { total: number; incompletas: number };
+  recorrentes?: { descricao: string; tipoConta: string; categoria: string; valorPrevisto: number; dia: number; fim?: string; observacoes?: string; ativa?: boolean }[];
 }
 
 export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: ConferenciaResumo; inicio: string; fim: string; hoje: string; contas?: ContaRelatorio[]; extras?: ExtrasRelatorio }): Relatorio[] {
@@ -231,6 +232,17 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     return `<h2 class="quebra">Empresas a receber</h2><p class="nota">Notas emitidas para empresas e ainda não pagas (lançadas no Hotel 360). ${ex.empresas.total} empresas conveniadas cadastradas, ${ex.empresas.incompletas} com cadastro incompleto.</p>` +
       tabela(["Empresa", "NF", "Vencimento", "Previsão", "Valor", "Situação da cobrança"], ex.receber.map((r) => [esc(r.empresa), esc(r.nf), r.vencimento ? (r.vencimento < HOJE ? `<b style="color:#b42318">${br(r.vencimento)}</b>` : br(r.vencimento)) : "sem data", r.previsao ? br(r.previsao) : "—", brl(r.valor), `<span class="fraco">${esc(r.observacoes)}</span>`]), [4], ["Total", "", "", "", brl(t), ""]);
   }
+  function secaoRecorrentes(): string {
+    const rs = (ex?.recorrentes ?? []).filter((r) => r.ativa !== false && (!r.fim || r.fim >= HOJE)).sort((a, b) => a.dia - b.dia);
+    if (!rs.length) return "";
+    const mes = HOJE.slice(0, 7), prox = new Date(Date.parse(mes + "-01T12:00:00Z") + 32 * 86_400_000).toISOString().slice(0, 7);
+    const cal = (m: string) => rs.map((r) => [`${String(r.dia).padStart(2, "0")}/${m.slice(5)}/${m.slice(0, 4)}`, esc(r.descricao), r.tipoConta === "FIXA" ? "Fixa" : "Variável", esc(r.categoria), brl(r.valorPrevisto)]);
+    const total = soma(rs.map((r) => r.valorPrevisto));
+    return `<h2 class="quebra">Contas fixas e variáveis — calendário</h2><p class="nota">Previsão mensal com o valor e o dia de vencimento de setembro (planilha da Direção). Variável = o valor muda com o consumo. Pagar até o dia evita juros: em setembro foram R$ 162,68 de juros por atraso.</p>` +
+      `<h2>${mes.split("-").reverse().join("/")}</h2>` + tabela(["Vencimento", "Conta", "Tipo", "Categoria", "Previsto"], cal(mes), [4], ["Total", "", "", "", brl(total)]) +
+      `<h2>${prox.split("-").reverse().join("/")}</h2>` + tabela(["Vencimento", "Conta", "Tipo", "Categoria", "Previsto"], cal(prox), [4], ["Total", "", "", "", brl(total)]);
+  }
+
   function secaoPendencias(): string {
     if (!ex) return "";
     const ab = ex.pendencias.filter((p) => p.status !== "Resolvida");
@@ -275,6 +287,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     secaoBanco() +
     secaoContas() +
     secaoReceber() +
+    secaoRecorrentes() +
     `<h2 class="quebra">Fechamentos de caixa</h2><p class="nota">O que cada caixa da recepção fechou e mandou para a conta, por forma.</p>` +
     tabela(["Caixa", "Aberto em", "Fechado em", "Dinheiro", "Pix", "Crédito", "Débito", "Faturar emp.", "Total"], caixas.map((c) => {
       const g = (k: string) => c.formas.get(k) ?? 0;
@@ -346,7 +359,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     ["Frigobar (vendas, margem, não cobrados)", S.ok, "Relatório 4 · produtos vendidos, custo, venda e margem; consumo por hospedagem no extrato."],
     ["Estoque", S.parcial, `Relatório 4 · itens com saldo negativo (posição de ${br("2026-11-06")}).`],
     ["Fornecedores e contas a pagar", contas.length ? S.ok : S.sem, contas.length ? `Relatório 3 · Contas a pagar: em aberto, vencidas, pagas com juros e por categoria (${contas.length} contas lançadas no Hotel 360).` : "O Contas a Pagar do DataHotel está vazio. Precisa ser lançado no Hotel 360."],
-    ["Despesas fixas e variáveis / calendário", contas.length ? S.parcial : S.sem, contas.length ? "Relatório 3 · despesas por categoria e por mês, contas em aberto por vencimento. Falta marcar quais são fixas (internet, energia, água, solar, telefone) com o dia de vencimento." : "Sem despesas lançadas no DataHotel além das sangrias de caixa."],
+    ["Despesas fixas e variáveis / calendário", ex?.recorrentes?.length ? S.ok : contas.length ? S.parcial : S.sem, ex?.recorrentes?.length ? `Relatório 3 · calendário do mês e do próximo com ${ex.recorrentes.length} contas fixas/variáveis (valores de setembro), despesas por categoria e por mês. Telefone: sem conta na planilha.` : contas.length ? "Relatório 3 · despesas por categoria e por mês. Falta marcar quais são fixas com o dia de vencimento." : "Sem despesas lançadas."],
     ["Fluxo de caixa realizado × previsto", S.parcial, "Realizado: Relatório 3 (recebido por dia). Previsto depende das contas a pagar e a receber lançadas."],
     ["Conferência e divergências do fechamento", S.ok, "Relatório 2 · tudo o que bate, divergências e pontos de atenção com o que fazer."],
     ["Funcionários, ponto, banco de horas e diárias", ex && ex.folha.length ? S.parcial : S.sem, ex && ex.folha.length ? "Relatório 4 · folha do mês com salário, produtividade, ticket, horas extras, noturnas, atrasos e faltas. Falta: admissão, agência/conta e o saldo do banco de horas (EZPoint)." : "Não vêm do DataHotel; dependem do cadastro e do ponto lançados no Hotel 360."],

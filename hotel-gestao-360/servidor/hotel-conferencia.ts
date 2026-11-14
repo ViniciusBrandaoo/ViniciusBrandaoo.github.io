@@ -129,6 +129,7 @@ export async function extrasParaRelatorio(): Promise<ExtrasRelatorio> {
       .map((b) => ({ empresa: nomeEmp.get(b.empresaId) ?? "", nf: String(b.notaFiscal ?? ""), vencimento: b.vencimento ?? "", previsao: b.previsao ?? "", valor: (b.valor ?? 0) - (b.valorPago ?? 0), forma: b.formaCobranca ?? "", observacoes: b.observacoes ?? "" })),
     pendencias: de("pendencias") as ExtrasRelatorio["pendencias"],
     folha: de("folhaMes") as ExtrasRelatorio["folha"],
+    recorrentes: (await consultar<{ dados: Record<string, any> }>(`SELECT dados FROM hotel_registros WHERE colecao = 'contasRecorrentes' AND NOT excluido`)).map((r) => r.dados) as ExtrasRelatorio["recorrentes"],
     empresas: { total: ids.length, incompletas: ids.filter((x) => x.dados.pendenciaCadastro && x.dados.pendenciaCadastro !== "Completo").length },
   };
 }
