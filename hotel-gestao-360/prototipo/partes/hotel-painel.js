@@ -111,7 +111,7 @@
     return '<div class="painel" style="padding:12px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">' +
       '<label>De <input type="date" id="' + prefixo + '-ini" value="' + esc(p.ini) + '"></label>' +
       '<label>até <input type="date" id="' + prefixo + '-fim" value="' + esc(p.fim) + '"></label>' +
-      '<button class="botao miudo" data-acao="ph-periodo" data-id="' + prefixo + '">Aplicar</button></div>';
+      '<button class="botao primario" data-acao="ph-periodo" data-id="' + prefixo + '">Aplicar</button></div>';
   }
   T.acoes["ph-periodo"] = function (prefixo) {
     var i = U.el(prefixo + "-ini"), f = U.el(prefixo + "-fim");
