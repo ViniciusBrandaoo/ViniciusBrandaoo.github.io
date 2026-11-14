@@ -41,7 +41,7 @@
   var dash = T.MODULOS.find(function (m) { return m.chave === "dashboard"; });
   if (dash) { dash.nome = "Painel do Hotel"; dash.grupo = "Hotel"; }
   // Hotel primeiro no menu, na ordem do dia a dia da Fernanda.
-  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "contas", "aprovacoes", "fornecedores", "empresas", "cafe", "frigobar", "governanca", "fechamentomes"];
+  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "contas", "recorrentes", "aprovacoes", "fornecedores", "empresas", "ponto", "cafe", "frigobar", "governanca", "fechamentomes"];
   var hotel = ORDEM.map(function (k) { return T.MODULOS.find(function (m) { return m.chave === k; }); }).filter(Boolean);
   hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
   T.MODULOS.unshift.apply(T.MODULOS, hotel);
