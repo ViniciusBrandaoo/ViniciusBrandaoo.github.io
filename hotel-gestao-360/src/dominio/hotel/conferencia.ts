@@ -450,14 +450,14 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
 /** Cada fonte (relatório do DataHotel) que uma regra precisa. */
 export type Fonte =
   | "reservas" | "recebidas" | "receitas" | "fatDiario" | "analitico" | "creditos" | "aReceber"
-  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque" | "caixa";
+  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque" | "caixa" | "banco";
 
 export const NOME_FONTE: Record<Fonte, string> = {
   reservas: "Relatório de Reservas (com extrato)", recebidas: "Relatório de Contas Recebidas",
   receitas: "Receitas x Despesas", fatDiario: "Resumo de Faturamento Diário", analitico: "Relatório de Faturamento Analítico",
   creditos: "Créditos e Débitos por Forma de Pgto.", aReceber: "Relatório de Contas a Receber",
   consumo: "Relatório de Consumo", vendas: "Relatório de Vendas Itens", rds: "Relatório Diário (RDS)",
-  mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual",
+  mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual", banco: "Extrato bancário (BB)",
   caixa: "Resumo por Movimentação de Caixa",
 };
 
@@ -494,4 +494,32 @@ export function resumo(rs: Resultado[]): { ok: number; divergentes: number; aten
     divergentes: rs.filter((r) => r.situacao === "DIVERGENTE").length,
     atencao: rs.filter((r) => r.situacao === "ATENCAO").length,
   };
+}
+
+/** Extrato de conta corrente do Banco do Brasil (texto do PDF). Um ou mais meses colados. */
+export interface LancamentoBanco { dia: string; valor: number; historico: string; detalhe: string }
+export function lerExtratoBanco(texto: string): { lancamentos: LancamentoBanco[]; meses: { inicio: string; saldoAnterior: number; saldoFinal: number; soma: number }[] } {
+  const L = texto.split(/\r?\n/);
+  const lancamentos: LancamentoBanco[] = [];
+  const meses: { inicio: string; saldoAnterior: number; saldoFinal: number; soma: number }[] = [];
+  const iso = (d: string) => d.split("/").reverse().join("-");
+  const cent = (v: string, s: string) => Number(v.replace(/\./g, "").replace(",", "")) * (s === "+" ? 1 : -1);
+  const cab = /^(Extrato|Cliente|Ag.ncia|Lan.amentos|Dia Documento|Informa..es)/;
+  for (let i = 0; i < L.length; i++) {
+    const m = /^(\d\d\/\d\d\/\d{4}) ([\d.]+,\d\d) \(([+-])\)(.*)$/.exec(L[i]!.trim());
+    if (!m) continue;
+    const [, d, v, s, resto] = m;
+    let hist = resto!.replace(/^(\d+\s*)+/, "").trim(); // tira lote e documento
+    if (/^Saldo Anterior/.test(hist)) { meses.push({ inicio: iso(d!), saldoAnterior: cent(v!, s!), saldoFinal: 0, soma: 0 }); continue; }
+    if (/S A L D O/.test(hist)) { const u = meses[meses.length - 1]; if (u) u.saldoFinal = cent(v!, s!); continue; }
+    if (/^Saldo do dia/.test(hist)) continue;
+    let det = "";
+    const prox = L[i + 1]?.trim() ?? "";
+    if (prox && !/^\d\d\/\d\d\/\d{4} /.test(prox) && !cab.test(prox)) { det = prox; i++; }
+    if (!hist) { hist = det; det = ""; }
+    const valor = cent(v!, s!);
+    lancamentos.push({ dia: iso(d!), valor, historico: hist, detalhe: det });
+    const u = meses[meses.length - 1]; if (u) u.soma += valor;
+  }
+  return { lancamentos, meses };
 }

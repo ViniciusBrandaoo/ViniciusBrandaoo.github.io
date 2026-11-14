@@ -31,7 +31,7 @@ const autor = usuarios[0]!;
 console.log(`Autor da importação: ${autor.nome} <${autor.email}>`);
 const ator = { userId: autor.id };
 
-const todos = readdirSync(pasta).filter((n) => n.toLowerCase().endsWith(".csv") && !n.includes("transcrito") && !n.startsWith("conferencia_")).sort();
+const todos = readdirSync(pasta).filter((n) => /\.(csv|txt)$/i.test(n) && !n.includes("transcrito") && !n.startsWith("conferencia_")).sort();
 const acha = (prefixo: string) => todos.filter((n) => n.startsWith(prefixo));
 
 let parou = false;

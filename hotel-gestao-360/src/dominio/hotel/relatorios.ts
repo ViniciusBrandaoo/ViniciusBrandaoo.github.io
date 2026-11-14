@@ -5,7 +5,7 @@
  * Só lê: nenhum número é estimado; o que não vem do DataHotel aparece como "sem dado".
  */
 import { lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerValor, normalizarForma } from "./importacao.js";
-import { lerContasAReceber, lerEstoque, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Fonte, type Resultado } from "./conferencia.js";
+import { lerContasAReceber, lerEstoque, lerExtratoBanco, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Fonte, type Resultado } from "./conferencia.js";
 
 export interface ConferenciaResumo { inicio: string; fim: string; resumo: { ok: number; divergentes: number; atencao: number }; resultados: Resultado[] }
 export interface Relatorio { nome: string; titulo: string; html: string }
@@ -159,6 +159,37 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     (aten.length ? `<h2>Pontos de atenção</h2>${aten.map(cardConf).join("")}` : "") +
     `<h2>O que foi conferido e bate</h2>` + tabela(["Conferência", "Relatórios cruzados", ""], ok.map((r) => [`<b>${esc(r.titulo)}</b>`, `<span class="fraco">${esc(r.entre)}</span>`, pill("OK")]), [2]));
 
+
+  // ------------------------------------------------------------------ banco (extrato BB × DataHotel)
+  const extrato = texto("banco") ? lerExtratoBanco(texto("banco")!) : null;
+  const somaPorDiaUtil = (a: string) => new Date(Date.parse(a + "T12:00:00Z") + 86_400_000).toISOString().slice(0, 10);
+  function secaoBanco(): string {
+    if (!extrato || !extrato.lancamentos.length) return `<h2>Conciliação bancária</h2><div class="card at"><b>Sem extrato bancário</b><ul><li>Envie o extrato do mês (PDF do BB) para conferir cartões, Pix e depósitos.</li></ul></div>`;
+    const ult = extrato.lancamentos.map((l) => l.dia).sort().pop()!;
+    const ini = somaPorDiaUtil(inicio), fimB = ult < somaPorDiaUtil(fim) ? ult : somaPorDiaUtil(fim);
+    const L = extrato.lancamentos.filter((l) => l.dia >= ini && l.dia <= fimB);
+    const bb = (re: RegExp) => soma(L.filter((l) => l.valor > 0 && re.test(l.historico)).map((l) => l.valor));
+    const dh = (fs: string[]) => soma(rec.filter((r) => fs.includes(r.forma)).map((r) => r.valor));
+    const linhas: [string, number, number, string][] = [
+      ["Cartão de débito", dh(["DEBITO", "CARTAO_DEBITO"]), bb(/^Cielo Vendas D.bito/), "Cielo deposita no dia útil seguinte, já sem a taxa."],
+      ["Cartão de crédito", dh(["CREDITO", "CARTAO_CREDITO"]), bb(/^Cielo (Antecipa|Vendas Cr)/), "Antecipação: cai no dia útil seguinte, com taxa maior."],
+      ["Pix / transferência", dh(["PIX"]), bb(/^Pix - Recebido|^TED/), "No extrato todo Pix vem como ACACIA EMPR, sem o nome de quem pagou."],
+      ["Dinheiro", dh(["DINHEIRO"]), bb(/^Dep dinheiro/), "Depósito no caixa eletrônico; pode juntar dias anteriores."],
+    ];
+    const conc = tabela(["Forma", "Vendido (DataHotel)", "Entrou no BB", "Diferença", "%", "Observação"], linhas.map(([f, a, b, o]) => [esc(f), brl(a), brl(b), `<b>${brl(b - a)}</b>`, a ? pct(b - a, a) : "—", `<span class="fraco">${esc(o)}</span>`]), [1, 2, 3, 4],
+      ["Total", brl(soma(linhas.map((x) => x[1]))), brl(soma(linhas.map((x) => x[2]))), brl(soma(linhas.map((x) => x[2] - x[1]))), "", ""]);
+    const grandes = L.filter((l) => l.valor >= 100_000 && /^Pix - Recebido|^TED/.test(l.historico));
+    const saidas = new Map<string, number>();
+    for (const l of L.filter((x) => x.valor < 0)) { const k = l.historico.replace(/\s+/g, " "); saidas.set(k, (saidas.get(k) ?? 0) + l.valor); }
+    const saldos = extrato.meses.map((m) => [br(m.inicio), brl(m.saldoAnterior), brl(m.soma), brl(m.saldoFinal), m.saldoAnterior + m.soma === m.saldoFinal ? pill("OK") : pill("DIVERGENTE")]);
+    return `<h2 class="quebra">Conciliação bancária — BB Acácia</h2><p class="nota">Vendido no DataHotel de ${br(inicio)} a ${br(fim)} × o que entrou na conta de ${br(ini)} a ${br(fimB)} (o banco recebe no dia útil seguinte, já sem as taxas da maquininha). Faturado para empresas fica fora: entra quando a empresa pagar.</p>` +
+      conc +
+      (grandes.length ? `<div class="card at"><b>Entradas grandes sem identificação</b><ul>${grandes.map((g) => `<li>${br(g.dia)} · ${brl(g.valor)} · ${esc(g.historico)} ${esc(g.detalhe)}</li>`).join("")}<li><b>O que fazer:</b> confirmar quem pagou (empresa? hóspede adiantado?) e dar baixa no recebimento certo.</li></ul></div>` : "") +
+      `<p class="fraco">Para fechar centavo a centavo é preciso o relatório de vendas e recebíveis da Cielo (venda por venda, com taxa e data de crédito).</p>` +
+      `<h2>Saídas da conta no período</h2>` + tabela(["Histórico", "Valor"], [...saidas].sort((a, b) => a[1] - b[1]).map(([h, v]) => [esc(h), brl(v)]), [1], ["Total", brl(soma([...saidas.values()]))]) +
+      `<h2>Saldos do extrato</h2>` + tabela(["Mês desde", "Saldo anterior", "Lançamentos", "Saldo final", "Fecha?"], saldos, [1, 2, 3]);
+  }
+
   // ------------------------------------------------------------------ 3) financeiro
   const maxDia = Math.max(...porDia.values(), 1);
   const p3 = pagina("Financeiro", "recebimentos, caixa, faturamento e empresas",
@@ -166,6 +197,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
       ["Faturado (empresas)", brl(faturado), pct(faturado, total) + " do recebido", faturado ? "alerta" : ""], ["Contas a receber lançadas", brl(aReceberTotal), `${aReceber.length} título(s)`]]) +
     `<h2>Recebido por dia</h2>` + tabela(["Dia", "", "Valor"], dias(inicio, fim).map((d) => { const v = porDia.get(d) ?? 0; return [br(d), barra(v, maxDia, 260), brl(v)]; }), [2], ["Total", "", brl(total)]) +
     `<div style="page-break-inside:avoid"><h2>Recebido por forma de pagamento</h2>` + tabela(["Forma", "", "Valor", "%"], [...porForma].sort((a, b) => b[1] - a[1]).map(([f, v]) => [esc(nomeForma(f)), barra(v, Math.max(...porForma.values()), 200), brl(v), pct(v, total)]), [2, 3], ["Total", "", brl(total), "100%"]) + "</div>" +
+    secaoBanco() +
     `<h2 class="quebra">Fechamentos de caixa</h2><p class="nota">O que cada caixa da recepção fechou e mandou para a conta, por forma.</p>` +
     tabela(["Caixa", "Aberto em", "Fechado em", "Dinheiro", "Pix", "Crédito", "Débito", "Faturar emp.", "Total"], caixas.map((c) => {
       const g = (k: string) => c.formas.get(k) ?? 0;
@@ -225,7 +257,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     ["Enxoval e governança", S.sem, "O DataHotel não controla enxoval. Precisa ser lançado pela governança no Hotel 360."],
     ["Fechamento diário de caixa por forma de pagamento", S.ok, "Relatório 3 · Caixa dia a dia e Fechamentos de caixa (livro-caixa até o último caixa fechado)."],
     ["Faturado × recebido", S.ok, "Relatórios 1 e 3 · recebido em caixa e bancos separado do faturado para empresas."],
-    ["Conciliação de cartões e depósitos (taxas, antecipação)", S.sem, "Precisa do relatório da maquininha (adquirente) e do extrato bancário; não estão no DataHotel."],
+    ["Conciliação de cartões e depósitos (taxas, antecipação)", extrato ? S.parcial : S.sem, extrato ? "Relatório 3 · Conciliação bancária BB × DataHotel por forma. Falta o relatório da Cielo para fechar venda por venda." : "Precisa do extrato bancário e do relatório da maquininha (Cielo)."],
     ["Faturamento mensal das empresas", S.parcial, "Relatório 3 · faturado por hospedagem. O DataHotel não informa a empresa nesse relatório e não há fatura emitida."],
     ["Notas fiscais e boletos", S.sem, "Nenhuma fatura, NFS-e ou boleto emitido no DataHotel no período."],
     ["Cobrança das empresas", S.parcial, "Relatórios 1 e 3 · valor sem cobrança apontado; contas a receber lançadas listadas."],

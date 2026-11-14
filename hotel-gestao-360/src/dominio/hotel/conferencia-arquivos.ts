@@ -31,6 +31,7 @@ export function reconhecer(texto: string): Fonte | null {
   if (/Lista de Camareira/i.test(t)) return "camareira";
   if (/Relat.rio de Estoque Atual/i.test(t)) return "estoque";
   if (/Resumo por Movimenta..o de Caixa/i.test(t)) return "caixa";
+  if (/^\s*Extrato de Conta Corrente/i.test(t) && /S A L D O/.test(texto)) return "banco";
   return null;
 }
 
