@@ -982,6 +982,7 @@
       { rotulo: "Noturnas", direita: true, conteudo: function (x) { return U.esc(x.noturnas); } },
       { rotulo: "Atrasos", direita: true, conteudo: function (x) { return U.esc(x.atrasos); } },
       { rotulo: "Faltas", direita: true, conteudo: function (x) { return x.faltas; } },
+      { rotulo: "EZPoint", direita: true, conteudo: function (x) { var p = x.pontoEzpoint; return p ? U.esc(p.trabalhado) + " de " + U.esc(p.aTrabalhar) + '<div class="secundario">falta ' + U.esc(p.faltas) + " · DSR " + U.esc(p.dsrDescontar) + "</div>" : '<span class="secundario">não importado</span>'; } },
       { rotulo: "Pago em", conteudo: function (x) { return L.dataBR(x.dataPagamento) + '<div class="secundario">' + U.esc(x.observacoes || "") + "</div>"; } }
     ], folha));
     var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });
