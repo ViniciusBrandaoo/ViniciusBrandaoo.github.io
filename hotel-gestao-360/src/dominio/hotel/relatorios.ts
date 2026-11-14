@@ -199,6 +199,8 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
       (grandes.length ? `<div class="card at"><b>Entradas grandes sem identificação</b><ul>${grandes.map((g) => `<li>${br(g.dia)} · ${brl(g.valor)} · ${esc(g.historico)} ${esc(g.detalhe)}</li>`).join("")}<li><b>O que fazer:</b> confirmar quem pagou (empresa? hóspede adiantado?) e dar baixa no recebimento certo.</li></ul></div>` : "") +
       `<p class="fraco">Para fechar centavo a centavo é preciso o relatório de vendas e recebíveis da Cielo (venda por venda, com taxa e data de crédito).</p>` +
       `<h2>Saídas da conta no período</h2>` + tabela(["Histórico", "Valor"], [...saidas].sort((a, b) => a[1] - b[1]).map(([h, v]) => [esc(h), brl(v)]), [1], ["Total", brl(soma([...saidas.values()]))]) +
+      `<h2>Cada saída, com o favorecido</h2><p class="nota">Para conferir com as contas a pagar e a folha: quem recebeu cada Pix e cada débito.</p>` +
+      tabela(["Dia", "Histórico", "Favorecido / referência", "Valor"], L.filter((l) => l.valor < 0).sort((a, b) => a.dia.localeCompare(b.dia)).map((l) => [br(l.dia), esc(l.historico), esc(l.detalhe.replace(/^\d\d\/\d\d \d\d:\d\d\s*/, "")), brl(l.valor)]), [3], ["Total", "", "", brl(soma(L.filter((l) => l.valor < 0).map((l) => l.valor)))]) +
       `<h2>Saldos do extrato</h2>` + tabela(["Mês desde", "Saldo anterior", "Lançamentos", "Saldo final", "Fecha?"], saldos, [1, 2, 3]);
   }
 
@@ -354,7 +356,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     ["Conciliação de cartões e depósitos (taxas, antecipação)", extrato ? S.parcial : S.sem, extrato ? "Relatório 3 · Conciliação bancária BB × DataHotel por forma. Falta o relatório da Cielo para fechar venda por venda." : "Precisa do extrato bancário e do relatório da maquininha (Cielo)."],
     ["Faturamento mensal das empresas", empresaDe && ex ? S.ok : S.parcial, empresaDe ? `Relatório 3 · faturado por hospedagem com a empresa da reserva, soma por empresa e títulos a receber${ex ? `; ${ex.empresas.total} empresas com regras de faturamento cadastradas` : ""}.` : "Relatório 3 · faturado por hospedagem. Falta o Relatório de Reservas agrupado por Empresas para saber a empresa de cada uma."],
     ["Previsão de recebimento por reserva (dia, forma, valor)", res.length ? S.ok : S.sem, "Relatório 3 · Previsão de recebimento: cada reserva com a data de saída, se é faturada para empresa ou paga no check-out, e quanto falta receber."],
-    ["Notas fiscais e boletos", S.sem, "Nenhuma fatura, NFS-e ou boleto emitido no DataHotel no período."],
+    ["Notas fiscais e boletos", ex?.receber.length ? S.parcial : S.sem, ex?.receber.length ? `Relatório 3 · Empresas a receber: ${ex.receber.length} notas em aberto com número, valor, vencimento e cobrança. As notas e boletos são emitidos fora do DataHotel; a data de emissão de cada nota não veio.` : "Nenhuma fatura, NFS-e ou boleto emitido no DataHotel no período."],
     ["Cobrança das empresas", ex ? S.ok : S.parcial, ex ? "Relatório 3 · Empresas a receber: NF, vencimento, previsão e situação da cobrança de cada título." : "Relatórios 1 e 3 · valor sem cobrança apontado; contas a receber lançadas listadas."],
     ["Frigobar (vendas, margem, não cobrados)", S.ok, "Relatório 4 · produtos vendidos, custo, venda e margem; consumo por hospedagem no extrato."],
     ["Estoque", S.parcial, `Relatório 4 · itens com saldo negativo (posição de ${br("2026-11-06")}).`],
