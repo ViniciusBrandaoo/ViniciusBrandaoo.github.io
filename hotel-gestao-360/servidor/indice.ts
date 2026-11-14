@@ -2707,7 +2707,7 @@ for (const sinal of ["SIGINT", "SIGTERM"] as const) {
 try {
   await pool.query("SELECT 1");
   await app.listen({ port: porta, host });
-  app.log.info(`Hotel Gestão 360 em http://${host}:${porta}`);
+  app.log.info(`Acácia Hotel · Gestão em http://${host}:${porta}`);
 } catch (erro) {
   app.log.error(erro);
   process.exit(1);

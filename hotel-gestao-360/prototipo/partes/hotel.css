@@ -55,3 +55,21 @@
 @media (max-width: 760px) { .imp-passo { padding: 16px; gap: 12px; } }
 /* Filtros de data no mesmo desenho dos demais campos da barra */
 .hotel-filtro { padding: 7px 10px; border: 1px solid var(--borda-forte); border-radius: 7px; font-size: var(--t-1); }
+
+/* ============================================================ identidade Acácia Hotel
+   Verde-acácia de marca, flor dourada de acento, areia de fundo. Só troca o valor dos
+   tokens de estilo.css (os nomes --marinho etc. ficam): o sistema inteiro acompanha. */
+:root {
+  --tinta:#17251F; --tinta-media:#5C6B65; --tinta-fraca:#66746E;
+  --papel:#F1EFE6; --superficie:#FFFEFA; --superficie-alt:#F4F2EA; --borda:#DDE0D6; --borda-forte:#A3ADA6;
+  --topo-vidro-fundo:rgba(241,239,230,.96);
+  --kpi-borda:#DDE0D6; --kpi-hover-fundo:#F7F6F0; --kpi-rotulo-cor:#5C6B65; --kpi-valor-cor:#24493F; --kpi-nota-cor:#5C6B65;
+  --marinho-abissal:#12261F; --marinho:#2F5D50; --marinho-borda:#3E7A69; --titulo:#24493F; --marinho-claro:#3E7A69;
+  --dourado:#E3B93F; --orbital:#8A6A12; --orbital-luz:#D9B95A; --orbital-fundo:#FBF4DE;
+  --lateral-fundo:#16302A; --lateral-fundo-alt:#21453B; --lateral-mais-hover:#2B574B;
+  --lateral-texto:#EEF0E6; --lateral-texto-fraca:#BFCCC4; --lateral-texto-fraca-ativo:#BFCCC4;
+  --lateral-dourado:#E3B93F; --lateral-dourado-ativo:#E3B93F; --lateral-dourado-fundo:rgba(227,185,63,.13);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tinta:#E7EDE9;--tinta-media:#AEBDB5;--tinta-fraca:#98A9A0;--papel:#0B1512;--superficie:#12201B;--superficie-alt:#1A2C26;--borda:#2A3D36;--borda-forte:#44594F;--topo-vidro-fundo:rgba(11,21,18,.96);--kpi-borda:#2A3D36;--kpi-vidro-fundo:#12201B;--kpi-hover-fundo:#1A2C26;--kpi-rotulo-cor:#AEBDB5;--kpi-valor-cor:#F1F5F2;--kpi-nota-cor:#AEBDB5;--marinho:#356F5F;--marinho-borda:#4A8A77;--titulo:#F1F5F2;--marinho-claro:#8CC7B3;--lateral-fundo:#08110E;--lateral-fundo-alt:#16302A;--lateral-mais-hover:#21453B; } }
+:root[data-theme="dark"] { --tinta:#E7EDE9;--tinta-media:#AEBDB5;--tinta-fraca:#98A9A0;--papel:#0B1512;--superficie:#12201B;--superficie-alt:#1A2C26;--borda:#2A3D36;--borda-forte:#44594F;--topo-vidro-fundo:rgba(11,21,18,.96);--kpi-borda:#2A3D36;--kpi-vidro-fundo:#12201B;--kpi-hover-fundo:#1A2C26;--kpi-rotulo-cor:#AEBDB5;--kpi-valor-cor:#F1F5F2;--kpi-nota-cor:#AEBDB5;--marinho:#356F5F;--marinho-borda:#4A8A77;--titulo:#F1F5F2;--marinho-claro:#8CC7B3;--lateral-fundo:#08110E;--lateral-fundo-alt:#16302A;--lateral-mais-hover:#21453B; }
+#atomo { display: none; }

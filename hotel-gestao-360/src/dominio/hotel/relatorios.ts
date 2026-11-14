@@ -107,30 +107,30 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
   // ------------------------------------------------------------------ visual
   const CSS = `@page{size:A4;margin:16mm 15mm}
   *{box-sizing:border-box}body{font:10pt/1.5 'Segoe UI',Arial,sans-serif;color:#1d2733;margin:0}
-  .topo{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0B2547;padding-bottom:10px;margin-bottom:18px}
-  .marca{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:#b08a1e;font-weight:600}
-  h1{font-size:20pt;margin:2px 0 0;color:#0B2547;font-weight:600}.periodo{text-align:right;font-size:8.5pt;color:#6b7684;line-height:1.4}.periodo b{color:#0B2547;font-size:10pt}
-  h2{font-size:12pt;color:#0B2547;margin:22px 0 8px;font-weight:600;page-break-after:avoid;display:flex;align-items:center;gap:8px}
-  h2:before{content:"";width:4px;height:14px;background:#c9a227;border-radius:2px}
+  .topo{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #24493F;padding-bottom:10px;margin-bottom:18px}
+  .marca{font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:#8A6A12;font-weight:600}
+  h1{font-size:20pt;margin:2px 0 0;color:#24493F;font-weight:600}.periodo{text-align:right;font-size:8.5pt;color:#6b7684;line-height:1.4}.periodo b{color:#24493F;font-size:10pt}
+  h2{font-size:12pt;color:#24493F;margin:22px 0 8px;font-weight:600;page-break-after:avoid;display:flex;align-items:center;gap:8px}
+  h2:before{content:"";width:4px;height:14px;background:#E3B93F;border-radius:2px}
   .nota{color:#6b7684;font-size:8.5pt;margin:-4px 0 8px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpis.tres{grid-template-columns:repeat(3,1fr)}
   .k{background:#f5f7fa;border-radius:8px;padding:10px 12px}.k span{display:block;font-size:7.8pt;color:#6b7684;text-transform:uppercase;letter-spacing:.04em}
-  .k b{display:block;font-size:15pt;color:#0B2547;font-weight:600;margin:2px 0}.k i{font-style:normal;font-size:8pt;color:#6b7684}
+  .k b{display:block;font-size:15pt;color:#24493F;font-weight:600;margin:2px 0}.k i{font-style:normal;font-size:8pt;color:#6b7684}
   .k.alerta{background:#fdf0ef}.k.alerta b{color:#b42318}.k.ok b{color:#1e7d3a}
-  table{width:100%;border-collapse:collapse;font-size:9pt}th{font-weight:600;color:#6b7684;font-size:7.6pt;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:5px 6px;border-bottom:1.5px solid #0B2547}
+  table{width:100%;border-collapse:collapse;font-size:9pt}th{font-weight:600;color:#6b7684;font-size:7.6pt;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:5px 6px;border-bottom:1.5px solid #24493F}
   td{padding:5px 6px;border-bottom:1px solid #e6e9ee;vertical-align:top}tr{page-break-inside:avoid}.d{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-  tfoot{display:table-row-group}tfoot td{font-weight:600;border-top:1.5px solid #0B2547;border-bottom:0}.fraco{color:#6b7684;font-size:8.3pt}
+  tfoot{display:table-row-group}tfoot td{font-weight:600;border-top:1.5px solid #24493F;border-bottom:0}.fraco{color:#6b7684;font-size:8.3pt}
   .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:7.8pt;font-weight:600;white-space:nowrap}.p-ok{background:#e7f5ec;color:#1e7d3a}.p-div{background:#fdecea;color:#b42318}.p-at{background:#fff4dc;color:#94600a}
-  .card{border:1px solid #e6e9ee;border-left:4px solid #b42318;border-radius:6px;padding:10px 12px;margin:8px 0;page-break-inside:avoid}.card.at{border-left-color:#c9a227}
-  .card b{color:#0B2547}.card ul{margin:4px 0 0;padding-left:16px;color:#3c4754;font-size:9pt}
+  .card{border:1px solid #e6e9ee;border-left:4px solid #b42318;border-radius:6px;padding:10px 12px;margin:8px 0;page-break-inside:avoid}.card.at{border-left-color:#E3B93F}
+  .card b{color:#24493F}.card ul{margin:4px 0 0;padding-left:16px;color:#3c4754;font-size:9pt}
   .grade{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .bar{height:8px;background:#c9a227;border-radius:4px;display:inline-block;vertical-align:middle}
+  .bar{height:8px;background:#E3B93F;border-radius:4px;display:inline-block;vertical-align:middle}
   .rodape{margin-top:22px;padding-top:6px;border-top:1px solid #e6e9ee;font-size:7.5pt;color:#8a94a1;display:flex;justify-content:space-between}
   .quebra{page-break-before:always}`;
   const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
   const pagina = (t: string, sub: string, corpo: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(t)}</title><style>${CSS}</style></head><body>
-  <div class="topo"><div><div class="marca">Hotel Polyanna · Hotel Gestão 360</div><h1>${esc(t)}</h1></div><div class="periodo"><b>${br(inicio)} a ${br(fim)}</b><br>${esc(sub)}<br>gerado em ${geradoEm}</div></div>
-  ${corpo}<div class="rodape"><span>Fonte: relatórios exportados do DataHotel (somente leitura; nada foi alterado lá).</span><span>Hotel Gestão 360</span></div></body></html>`;
+  <div class="topo"><div><div class="marca">Acácia Hotel · Gestão</div><h1>${esc(t)}</h1></div><div class="periodo"><b>${br(inicio)} a ${br(fim)}</b><br>${esc(sub)}<br>gerado em ${geradoEm}</div></div>
+  ${corpo}<div class="rodape"><span>Fonte: relatórios exportados do DataHotel (somente leitura; nada foi alterado lá).</span><span>Acácia Hotel · Gestão</span></div></body></html>`;
   const kpis = (xs: [string, string, string, string?][], cls = "") => `<div class="kpis ${cls}">${xs.map(([a, b, c, t]) => `<div class="k ${t ?? ""}"><span>${esc(a)}</span><b>${b}</b><i>${esc(c)}</i></div>`).join("")}</div>`;
   const tabela = (cab: string[], linhas: string[][], dir: number[] = [], rodape?: string[]) =>
     `<table><thead><tr>${cab.map((h, i) => `<th${dir.includes(i) ? ' class="d"' : ""}>${esc(h)}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((v, i) => `<td${dir.includes(i) ? ' class="d"' : ""}>${v}</td>`).join("")}</tr>`).join("")}</tbody>${rodape ? `<tfoot><tr>${rodape.map((v, i) => `<td${dir.includes(i) ? ' class="d"' : ""}>${v}</td>`).join("")}</tr></tfoot>` : ""}</table>`;

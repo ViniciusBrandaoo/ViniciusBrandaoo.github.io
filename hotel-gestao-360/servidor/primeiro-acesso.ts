@@ -67,7 +67,7 @@ export function registrarPrimeiroAcesso(app: FastifyInstance): void {
       return resp.code(404).send(pagina("<h1>Link indisponível</h1><p>Este link não está mais ativo. Se já criou o seu acesso, entre pela <a href=\"/\">página inicial</a>.</p>"));
     }
     const token = esc(String(req.query.token));
-    return pagina(`<h1>Primeiro acesso</h1><p>Crie a conta da Direção do Hotel Gestão 360. Este link só funciona uma vez.</p>
+    return pagina(`<h1>Primeiro acesso</h1><p>Crie a conta da Direção do Acácia Hotel. Este link só funciona uma vez.</p>
 <form id="f" autocomplete="on">
 <label for="nome">Seu nome</label><input id="nome" name="nome" autocomplete="name" required minlength="3" maxlength="120">
 <label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="200">

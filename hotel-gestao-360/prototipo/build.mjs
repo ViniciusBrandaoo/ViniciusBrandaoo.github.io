@@ -88,7 +88,7 @@ const FONTES = `<link rel="preconnect" href="https://fonts.googleapis.com">
 // traço, dourado no centro — a identidade do sistema é navy/dourado do
 // início ao fim, não as cores do átomo físico da fachada (testado à parte,
 // destoava do resto da marca).
-const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><g fill='none' stroke='%230B2547' stroke-width='2.8'><ellipse cx='20' cy='20' rx='17' ry='7'/><ellipse cx='20' cy='20' rx='17' ry='7' transform='rotate(60 20 20)'/><ellipse cx='20' cy='20' rx='17' ry='7' transform='rotate(120 20 20)'/></g><circle cx='20' cy='20' r='4.6' fill='%23D8B24E'/></svg>`;
+const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M3 18c0-7 7.6-12 17-12s17 5 17 12z' fill='%232F5D50'/><path d='M20 37V25m0 2-7-9m7 7 7-7' fill='none' stroke='%232F5D50' stroke-width='3.4' stroke-linecap='round'/><circle cx='27.5' cy='12' r='3.2' fill='%23E3B93F'/></svg>`;
 const FAVICON = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${FAVICON_SVG}">`;
 
 const MIOLO = `<style>
@@ -119,7 +119,7 @@ ${SCRIPTS.map((f) => (f === LIGA_BACKEND ? f : parte(f))).join("\n")}
 // no navegador e o que sobe para hospedagem — sem o `<meta viewport>` o
 // celular renderiza numa janela virtual de 980px e o layout responsivo
 // simplesmente não entra em ação.
-const fragmento = `<title>Hotel Gestão 360</title>
+const fragmento = `<title>Acácia Hotel · Gestão</title>
 ${FAVICON}
 ${FONTES}
 
@@ -131,11 +131,11 @@ const completo = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="Camada de gestão executiva do Hotel: folha, banco de horas, financeiro e aprovações.">
-<meta name="theme-color" content="#D9D0B9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#061527" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Gestão do Acácia Hotel: folha, banco de horas, financeiro e aprovações.">
+<meta name="theme-color" content="#F1EFE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1512" media="(prefers-color-scheme: dark)">
 ${FAVICON}
-<title>Hotel Gestão 360</title>
+<title>Acácia Hotel · Gestão</title>
 ${FONTES}
 </head>
 <body>
