@@ -88,7 +88,7 @@ const FONTES = `<link rel="preconnect" href="https://fonts.googleapis.com">
 // traço, dourado no centro — a identidade do sistema é navy/dourado do
 // início ao fim, não as cores do átomo físico da fachada (testado à parte,
 // destoava do resto da marca).
-const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M3 18c0-7 7.6-12 17-12s17 5 17 12z' fill='%233E7B33'/><path d='M20 37V25m0 2-7-9m7 7 7-7' fill='none' stroke='%233E7B33' stroke-width='3.4' stroke-linecap='round'/><circle cx='27.5' cy='12' r='3.2' fill='%23E3B93F'/></svg>`;
+const FAVICON_SVG = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M3 18c0-7 7.6-12 17-12s17 5 17 12z' fill='%239CCB8F'/><path d='M20 37V25m0 2-7-9m7 7 7-7' fill='none' stroke='%23171A16' stroke-width='3.4' stroke-linecap='round'/><circle cx='27.5' cy='12' r='3.2' fill='%23E3B93F'/></svg>`;
 const FAVICON = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${FAVICON_SVG}">`;
 
 const MIOLO = `<style>
@@ -132,8 +132,8 @@ const completo = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Gestão do Acácia Hotel: folha, banco de horas, financeiro e aprovações.">
-<meta name="theme-color" content="#EEF5EA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#EEF5EA" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F7F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#F6F7F3" media="(prefers-color-scheme: dark)">
 ${FAVICON}
 <title>Acácia Hotel · Gestão</title>
 ${FONTES}
