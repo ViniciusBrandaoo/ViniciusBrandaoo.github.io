@@ -2051,8 +2051,8 @@ app.get("/api/fornecedores", async (req) => {
 
 app.post<{ Body: FornecedorEntrada }>("/api/fornecedores", async (req, resp) => {
   const s = exigirPerfil(req, "DIRECAO", "FINANCEIRO");
-  if (!req.body?.razaoSocial || !req.body?.tipoDocumento || !req.body?.documento) {
-    return resp.code(400).send({ erro: "Informe razão social, tipo de documento e documento." });
+  if (!req.body?.razaoSocial) {
+    return resp.code(400).send({ erro: "Informe o nome do fornecedor." });
   }
   const d = validar.validarFornecedor(req.body, false) as unknown as FornecedorEntrada;
   try {

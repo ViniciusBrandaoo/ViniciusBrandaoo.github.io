@@ -1551,17 +1551,18 @@ async function categoriaIdPorNome(c: pg.PoolClient, nome: string): Promise<strin
 export interface FornecedorEntrada {
   razaoSocial: string;
   nomeFantasia?: string;
-  tipoDocumento: "CNPJ" | "CPF";
-  documento: string;
+  tipoDocumento?: "CNPJ" | "CPF";
+  documento?: string;
   categoria?: string;
   contatoNome?: string;
   telefone?: string;
   email?: string;
+  canalCobranca?: string;
 }
 
 const SELECAO_FORNECEDOR = `
   SELECT id, razao_social AS "razaoSocial", nome_fantasia AS "nomeFantasia",
-         tipo_documento AS "tipoDocumento", categoria,
+         tipo_documento AS "tipoDocumento", categoria, canal_cobranca AS "canalCobranca",
          contato_nome AS "contatoNome", telefone, email, ativo
     FROM fornecedores
 `;
@@ -1575,17 +1576,17 @@ export async function criarFornecedor(
   dados: FornecedorEntrada,
 ): Promise<{ id: string }> {
   return transacao(ator, async (c) => {
-    const documentoHash = hashDocumento(dados.documento);
+    const doc = dados.documento || null;
     const r = await c.query(
       `INSERT INTO fornecedores
          (razao_social, nome_fantasia, tipo_documento, documento_cifrado, documento_hash,
-          categoria, contato_nome, telefone, email, criado_por)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
+          categoria, contato_nome, telefone, email, criado_por, canal_cobranca)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
       [
-        dados.razaoSocial, dados.nomeFantasia || null, dados.tipoDocumento,
-        cifrarDocumento(dados.documento), documentoHash,
+        dados.razaoSocial, dados.nomeFantasia || null, doc ? dados.tipoDocumento : null,
+        doc ? cifrarDocumento(doc) : null, doc ? hashDocumento(doc) : null,
         dados.categoria || null, dados.contatoNome || null, dados.telefone || null,
-        dados.email || null, ator.userId,
+        dados.email || null, ator.userId, (dados as { canalCobranca?: string }).canalCobranca || null,
       ],
     );
     return { id: r.rows[0].id };
@@ -1607,6 +1608,7 @@ export async function atualizarFornecedor(
     if (dados.contatoNome !== undefined) add("contato_nome", dados.contatoNome || null);
     if (dados.telefone !== undefined) add("telefone", dados.telefone || null);
     if (dados.email !== undefined) add("email", dados.email || null);
+    if (dados.canalCobranca !== undefined) add("canal_cobranca", dados.canalCobranca || null);
     if (dados.documento !== undefined) {
       add("documento_cifrado", cifrarDocumento(dados.documento));
       add("documento_hash", hashDocumento(dados.documento));
@@ -1721,6 +1723,8 @@ export interface PagamentoEntrada {
   dataPagamento: string;
   formaPagamento: string;
   observacoes?: string;
+  /** Valor efetivamente pago, quando difere do documento (juros, multa, desconto). */
+  valorPagoCentavos?: number;
 }
 
 /**
@@ -1749,7 +1753,7 @@ export async function registrarPagamento(
     await c.query(
       `INSERT INTO pagamentos (conta_id, data_pagamento, valor_centavos, forma_pagamento, observacoes, registrado_por)
        VALUES ($1,$2,$3,$4,$5,$6)`,
-      [contaId, dados.dataPagamento, conta.valor, dados.formaPagamento, dados.observacoes || null, ator.userId],
+      [contaId, dados.dataPagamento, dados.valorPagoCentavos ?? conta.valor, dados.formaPagamento, dados.observacoes || null, ator.userId],
     );
     await c.query(
       `UPDATE contas_pagar SET status = 'PAGO', forma_pagamento = $2 WHERE id = $1`,

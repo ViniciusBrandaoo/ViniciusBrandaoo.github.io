@@ -220,8 +220,8 @@ export function validarFornecedor(b: unknown, parcial: boolean): Record<string, 
   const set = (k: string, v: unknown) => { if (v !== undefined) o[k] = v; };
   set("razaoSocial", texto(d.razaoSocial, "a razão social", { obrigatorio: !parcial || d.razaoSocial !== undefined, max: 200 }));
   set("nomeFantasia", texto(d.nomeFantasia, "o nome fantasia", { max: 200 }));
-  set("tipoDocumento", umDe(d.tipoDocumento, "o tipo de documento", ["CNPJ", "CPF"] as const, { obrigatorio: !parcial }));
-  if (!parcial || d.documento !== undefined) {
+  set("tipoDocumento", umDe(d.tipoDocumento, "o tipo de documento", ["CNPJ", "CPF"] as const));
+  if (d.documento !== undefined && d.documento !== null && d.documento !== "") {
     const tipo = (o.tipoDocumento as "CNPJ" | "CPF" | undefined) ?? (typeof d.documento === "string" && d.documento.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ");
     set("documento", documento(d.documento, tipo, "o documento"));
   }
@@ -229,6 +229,7 @@ export function validarFornecedor(b: unknown, parcial: boolean): Record<string, 
   set("contatoNome", texto(d.contatoNome, "o nome do contato", { max: 120 }));
   set("telefone", texto(d.telefone, "o telefone", { max: 40 }));
   set("email", email(d.email));
+  set("canalCobranca", umDe(d.canalCobranca, "o canal de cobrança", ["WhatsApp", "E-mail", "Portal", "Site"] as const));
   if (parcial) for (const k of ["nomeFantasia", "categoria", "contatoNome", "telefone", "email"]) {
     if (d[k] === "" || d[k] === null) o[k] = "";
   }

@@ -36,12 +36,12 @@
   // Sistema enxuto para o hotel: o início é o Painel do Hotel, e as telas herdadas
   // da plataforma escolar que o hotel não usa saem do menu (continuam acessíveis
   // pela busca e por Configuração, nada é apagado).
-  var FORA_DO_MENU = ["aprovacoes", "eventos", "contratos", "documentos", "relatorios", "fechamento", "solicitacoes", "ferias", "painelhotel"];
+  var FORA_DO_MENU = ["eventos", "contratos", "documentos", "relatorios", "fechamento", "solicitacoes", "ferias", "painelhotel"];
   T.MODULOS.forEach(function (m) { if (FORA_DO_MENU.indexOf(m.chave) !== -1) m.oculto = true; });
   var dash = T.MODULOS.find(function (m) { return m.chave === "dashboard"; });
   if (dash) { dash.nome = "Painel do Hotel"; dash.grupo = "Hotel"; }
   // Hotel primeiro no menu, na ordem do dia a dia da Fernanda.
-  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "empresas", "cafe", "frigobar", "governanca", "fechamentomes"];
+  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "importacoes", "hospedagem", "caixa", "contas", "aprovacoes", "fornecedores", "empresas", "cafe", "frigobar", "governanca", "fechamentomes"];
   var hotel = ORDEM.map(function (k) { return T.MODULOS.find(function (m) { return m.chave === k; }); }).filter(Boolean);
   hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
   T.MODULOS.unshift.apply(T.MODULOS, hotel);

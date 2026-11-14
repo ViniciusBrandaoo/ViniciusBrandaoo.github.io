@@ -924,11 +924,12 @@ T.acoes["novo-fornecedor"] = function (id) {
   U.abrirFormulario({
     titulo: atual ? "Editar fornecedor" : "Cadastrar fornecedor",
     campos: [
-      { id: "razaoSocial", rotulo: "Razão social", obrigatorio: true },
-      { id: "documento", rotulo: "CNPJ ou CPF", obrigatorio: true, par: true, dica: "Cifrado no banco." },
+      { id: "razaoSocial", rotulo: "Nome / razão social", obrigatorio: true },
+      { id: "documento", rotulo: "CNPJ ou CPF", par: true, dica: "Opcional. Cifrado no banco." },
       { id: "categoria", rotulo: "Categoria", tipo: "select",
-        opcoes: ["Enxoval e amenities", "Tecnologia", "Estrutura", "Manutenção", "Marketing", "Terceirizados", "Eventos", "Administrativo", "Outros"] },
+        opcoes: ["Alimentos e café da manhã", "Água, energia e gás", "Internet e telefone", "Contabilidade e honorários", "Impostos", "Enxoval e amenities", "Tecnologia", "Estrutura", "Manutenção", "Marketing", "Terceirizados", "Eventos", "Administrativo", "Outros"] },
       { id: "contato", rotulo: "Contato", par: true },
+      { id: "canalCobranca", rotulo: "Manda a cobrança por", tipo: "select", opcoes: ["", "WhatsApp", "E-mail", "Portal", "Site"] },
       { id: "telefone", rotulo: "Telefone" },
       { id: "email", rotulo: "E-mail" }
     ],
@@ -938,7 +939,7 @@ T.acoes["novo-fornecedor"] = function (id) {
         var corpo = {
           razaoSocial: v.razaoSocial, categoria: v.categoria || (atual ? "" : undefined),
           contatoNome: v.contato || (atual ? "" : undefined), telefone: v.telefone || (atual ? "" : undefined),
-          email: v.email || (atual ? "" : undefined),
+          email: v.email || (atual ? "" : undefined), canalCobranca: v.canalCobranca || undefined,
         };
         if (v.documento) { corpo.documento = v.documento; corpo.tipoDocumento = tipoDocumentoDe(v.documento); }
         var chamada = atual

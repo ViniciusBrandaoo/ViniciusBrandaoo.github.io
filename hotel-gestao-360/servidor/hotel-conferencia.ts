@@ -10,7 +10,7 @@ import { montarDados } from "../src/dominio/hotel/conferencia-arquivos.js";
 import { conferir, resumo, type Resultado } from "../src/dominio/hotel/conferencia.js";
 import { sha256 } from "../src/dominio/hotel/importacao.js";
 import { reconhecer } from "../src/dominio/hotel/conferencia-arquivos.js";
-import { gerarRelatorios } from "../src/dominio/hotel/relatorios.js";
+import { gerarRelatorios, type ContaRelatorio } from "../src/dominio/hotel/relatorios.js";
 import type { Fonte } from "../src/dominio/hotel/conferencia.js";
 
 function erro(status: number, mensagem: string): Error {
@@ -53,7 +53,8 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   // Os 5 relatórios da Direção saem dos mesmos arquivos (o mais recente de cada relatório vale).
   const porFonte = new Map<Fonte, string>();
   for (const t of [...textos].sort((a, b) => a.nome.localeCompare(b.nome))) { const f = reconhecer(t.texto); if (f) porFonte.set(f, t.texto); }
-  const relatorios = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: { inicio, fim, resumo: r, resultados }, inicio, fim, hoje: hojeSP() });
+  const contas = await contasParaRelatorio();
+  const relatorios = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: { inicio, fim, resumo: r, resultados }, inicio, fim, hoje: hojeSP(), contas });
   const unidadeId = await unidadePadrao();
   const lista = arquivos.map((a) => ({
     nome: a.nome.slice(0, 200), sha256: sha256(a.buffer),
@@ -101,4 +102,15 @@ export async function alertaDoDia(): Promise<{ hoje: string; feitaHoje: boolean;
     hoje, feitaHoje: !!ultima && ultima.diaCriado === hoje, ultima,
     divergentes: ultima ? Number(ultima.divergentes) : 0,
   };
+}
+
+/** Contas a pagar lançadas no Hotel 360, no formato dos relatórios da Direção. */
+export async function contasParaRelatorio(): Promise<ContaRelatorio[]> {
+  const linhas = await consultar<Record<string, unknown>>(`
+    SELECT cp.descricao, f.razao_social AS fornecedor, cat.nome AS categoria, to_char(cp.vencimento,'YYYY-MM-DD') AS vencimento,
+           cp.valor_centavos::int AS valor, cp.status, cp.competencia::text AS competencia,
+           (SELECT sum(p.valor_centavos)::int FROM pagamentos p WHERE p.conta_id = cp.id) AS pago,
+           (SELECT to_char(max(p.data_pagamento),'YYYY-MM-DD') FROM pagamentos p WHERE p.conta_id = cp.id) AS "dataPagamento"
+      FROM contas_pagar cp JOIN categorias_financeiras cat ON cat.id = cp.categoria_id LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id`);
+  return linhas as unknown as ContaRelatorio[];
 }
