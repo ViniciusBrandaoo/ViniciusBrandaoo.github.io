@@ -43,7 +43,7 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   if (!dataValida(inicio) || !dataValida(fim)) throw erro(400, "Informe o período da conferência (início e fim).");
   if (fim < inicio) throw erro(400, "O fim do período não pode ser antes do início.");
   for (const a of arquivos) {
-    if (!/\.csv$/i.test(a.nome)) throw erro(422, `"${a.nome}" não é .csv. Exporte do DataHotel em Ficheiro CSV.`);
+    if (!/.(csv|txt)$/i.test(a.nome)) throw erro(422, `"${a.nome}" não é .csv. Exporte do DataHotel em Ficheiro CSV (extrato do banco: .txt).`);
   }
   const textos = arquivos.map((a) => ({ nome: a.nome, texto: texto(a.buffer) }));
   const m = montarDados(textos, inicio, fim, fim > hojeSP() ? hojeSP() : fim);
