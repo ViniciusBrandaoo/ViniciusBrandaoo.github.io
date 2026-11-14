@@ -98,17 +98,17 @@
 
   function barras(itens, rot, val) {
     var max = itens.reduce(function (m, x) { return Math.max(m, val(x)); }, 0) || 1;
-    return '<div style="padding:8px 20px 16px">' + itens.map(function (x) {
+    return '<div class="barras">' + itens.map(function (x) {
       var w = Math.max(1, Math.round(val(x) / max * 100));
-      return '<div style="display:grid;grid-template-columns:minmax(90px,160px) 1fr auto;gap:10px;align-items:center;margin:6px 0">' +
-        '<span class="secundario">' + esc(rot(x)) + '</span><span style="height:12px;border-radius:6px;background:var(--orbital,#c9a227);width:' + w + '%"></span>' +
-        '<strong style="font-variant-numeric:tabular-nums">' + brl(val(x)) + "</strong></div>";
+      return '<div class="barra-linha"><span class="barra-rotulo">' + esc(rot(x)) + '</span>' +
+        '<span class="barra-trilho"><i style="width:' + w + '%"></i></span>' +
+        '<span class="barra-valor">' + brl(val(x)) + "</span></div>";
     }).join("") + "</div>";
   }
 
   function filtroPeriodo(prefixo) {
     var p = periodo();
-    return '<div class="painel" style="padding:12px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">' +
+    return '<div class="filtro-periodo">' +
       '<label>De <input type="date" id="' + prefixo + '-ini" value="' + esc(p.ini) + '"></label>' +
       '<label>até <input type="date" id="' + prefixo + '-fim" value="' + esc(p.fim) + '"></label>' +
       '<button class="botao primario" data-acao="ph-periodo" data-id="' + prefixo + '">Aplicar</button></div>';

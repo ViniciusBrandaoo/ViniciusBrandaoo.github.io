@@ -57,27 +57,29 @@
 .hotel-filtro { padding: 7px 10px; border: 1px solid var(--borda-forte); border-radius: 7px; font-size: var(--t-1); }
 
 /* ============================================================ identidade Acácia Hotel
-   Pistache (#9CCB8F, o tom escolhido pela Direção): menu e painéis em pistache, verde escuro do mesmo tom para botão e texto, flor dourada de acento.
+   Linha limpa: superfícies neutras quase brancas, texto em tinta escura e o pistache
+   (#9CCB8F) só como acento (item ativo, foco, marca). Botão principal em tinta.
    Só troca o valor dos tokens de estilo.css (os nomes --marinho etc. ficam). */
 :root {
-  --tinta:#1B2A18; --tinta-media:#50624B; --tinta-fraca:#5F7059;
-  --papel:#EEF5EA; --superficie:#FFFFFC; --superficie-alt:#F3F8EF; --borda:#D6E5CF; --borda-forte:#A3BA9A;
-  --topo-vidro-fundo:rgba(238,245,234,.96);
-  --kpi-borda:#D6E5CF; --kpi-vidro-fundo:#FFFFFC; --kpi-hover-fundo:#F6FAF3; --kpi-rotulo-cor:#50624B; --kpi-valor-cor:#26491F; --kpi-nota-cor:#50624B;
-  --marinho-abissal:#1B3316; --marinho:#3E7B33; --marinho-borda:#5C9A50; --titulo:#26491F; --marinho-claro:#4C8C40;
-  --dourado:#E3B93F; --orbital:#7C6410; --orbital-luz:#D9B95A; --orbital-fundo:#F6F1D8;
-  --lateral-fundo:#9CCB8F; --lateral-fundo-alt:#B5D9AA; --lateral-mais-hover:#C3E0BA;
-  --lateral-borda:rgba(27,51,22,.16);
-  --lateral-texto:#1B3316; --lateral-texto-fraca:#2C4A26; --lateral-texto-fraca-ativo:#1B3316; --lateral-texto-ativa:#12240F;
-  --lateral-dourado:#14320F; --lateral-dourado-ativo:#14320F; --lateral-dourado-fundo:rgba(255,255,252,.42);
-  --lateral-urgente:#8C1F35; --lateral-urgente-ativo:#8C1F35;
-  --sombra-1:0 1px 2px rgba(38,73,31,.05); --sombra-2:0 1px 3px rgba(38,73,31,.05), 0 8px 24px -12px rgba(38,73,31,.12); --sombra-3:0 16px 48px rgba(38,73,31,.12);
+  --pistache:#9CCB8F; --pistache-suave:#EAF4E6; --pistache-forte:#2F6B2B;
+  --tinta:#171A16; --tinta-media:#5F665C; --tinta-fraca:#6E756B;
+  --papel:#F6F7F3; --superficie:#FFFFFF; --superficie-alt:#F4F5F1; --borda:#E6E8E1; --borda-forte:#BFC4B9;
+  --topo-vidro-fundo:rgba(246,247,243,.92);
+  --kpi-borda:#E6E8E1; --kpi-vidro-fundo:#FFFFFF; --kpi-hover-fundo:#FAFBF8; --kpi-rotulo-cor:#5F665C; --kpi-valor-cor:#171A16; --kpi-nota-cor:#6E756B;
+  --marinho-abissal:#0F120E; --marinho:#1B1F1A; --marinho-borda:#343A31; --titulo:#171A16; --marinho-claro:#2F6B2B;
+  --dourado:#9CCB8F; --orbital:#2F6B2B; --orbital-luz:#9CCB8F; --orbital-fundo:#EAF4E6;
+  --lateral-fundo:#FFFFFF; --lateral-fundo-alt:#EEF5EA; --lateral-mais-hover:#E2EEDC;
+  --lateral-borda:rgba(23,26,22,.09);
+  --lateral-texto:#2A2F28; --lateral-texto-fraca:#5F665C; --lateral-texto-fraca-ativo:#2A2F28; --lateral-texto-ativa:#171A16;
+  --lateral-dourado:#2F6B2B; --lateral-dourado-ativo:#235420; --lateral-dourado-fundo:rgba(156,203,143,.30);
+  --lateral-urgente:#A32D43; --lateral-urgente-ativo:#A32D43;
+  --sombra-1:0 1px 2px rgba(23,26,22,.04); --sombra-2:0 1px 2px rgba(23,26,22,.04), 0 6px 20px -10px rgba(23,26,22,.10); --sombra-3:0 18px 48px -12px rgba(23,26,22,.14);
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme:dark;--tinta:#EAF0E2;--tinta-media:#B8C5AB;--tinta-fraca:#A1B093;--papel:#1B2317;--superficie:#232D1E;--superficie-alt:#2B3725;--borda:#38472F;--borda-forte:#586A4C;--topo-vidro-fundo:rgba(27,35,23,.96);--kpi-borda:#38472F;--kpi-vidro-fundo:#232D1E;--kpi-hover-fundo:#2B3725;--kpi-rotulo-cor:#B8C5AB;--kpi-valor-cor:#F1F6EA;--kpi-nota-cor:#B8C5AB;--marinho:#4C8C40;--marinho-borda:#7DB870;--titulo:#F1F6EA;--marinho-claro:#9CCB8F;--orbital:#D9C06A;--orbital-luz:#EBD98F;--orbital-fundo:#2E2A14;--lateral-fundo:#141B11;--lateral-fundo-alt:#27351F;--lateral-mais-hover:#31422A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E6EDDB;--lateral-texto-fraca:#B8C5AB;--lateral-texto-fraca-ativo:#B8C5AB;--lateral-texto-ativa:#FFFFFB;--lateral-dourado:#9CCB8F;--lateral-dourado-ativo:#9CCB8F;--lateral-dourado-fundo:rgba(156,203,143,.16);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0; } }
-:root[data-theme="dark"] { color-scheme:dark;--tinta:#EAF0E2;--tinta-media:#B8C5AB;--tinta-fraca:#A1B093;--papel:#1B2317;--superficie:#232D1E;--superficie-alt:#2B3725;--borda:#38472F;--borda-forte:#586A4C;--topo-vidro-fundo:rgba(27,35,23,.96);--kpi-borda:#38472F;--kpi-vidro-fundo:#232D1E;--kpi-hover-fundo:#2B3725;--kpi-rotulo-cor:#B8C5AB;--kpi-valor-cor:#F1F6EA;--kpi-nota-cor:#B8C5AB;--marinho:#4C8C40;--marinho-borda:#7DB870;--titulo:#F1F6EA;--marinho-claro:#9CCB8F;--orbital:#D9C06A;--orbital-luz:#EBD98F;--orbital-fundo:#2E2A14;--lateral-fundo:#141B11;--lateral-fundo-alt:#27351F;--lateral-mais-hover:#31422A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E6EDDB;--lateral-texto-fraca:#B8C5AB;--lateral-texto-fraca-ativo:#B8C5AB;--lateral-texto-ativa:#FFFFFB;--lateral-dourado:#9CCB8F;--lateral-dourado-ativo:#9CCB8F;--lateral-dourado-fundo:rgba(156,203,143,.16);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme:dark;--tinta:#ECEFE9;--tinta-media:#B3BAAF;--tinta-fraca:#98A094;--papel:#121411;--superficie:#1A1D19;--superficie-alt:#222621;--borda:#2E332C;--borda-forte:#4A5147;--topo-vidro-fundo:rgba(18,20,17,.94);--kpi-borda:#2E332C;--kpi-vidro-fundo:#1A1D19;--kpi-hover-fundo:#222621;--kpi-rotulo-cor:#B3BAAF;--kpi-valor-cor:#F4F6F2;--kpi-nota-cor:#B3BAAF;--marinho:#3F7A3A;--marinho-borda:#5C9A50;--titulo:#F4F6F2;--marinho-claro:#9CCB8F;--dourado:#9CCB8F;--orbital:#9CCB8F;--orbital-luz:#9CCB8F;--orbital-fundo:#1F2A1C;--lateral-fundo:#1A1D19;--lateral-fundo-alt:#263024;--lateral-mais-hover:#2C382A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E3E7DF;--lateral-texto-fraca:#B3BAAF;--lateral-texto-fraca-ativo:#E3E7DF;--lateral-texto-ativa:#FFFFFF;--lateral-dourado:#9CCB8F;--lateral-dourado-ativo:#9CCB8F;--lateral-dourado-fundo:rgba(156,203,143,.16);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0;--sombra-1:0 1px 2px rgba(0,0,0,.3);--sombra-2:0 2px 12px rgba(0,0,0,.25);--sombra-3:0 20px 56px -18px rgba(0,0,0,.6); } }
+:root[data-theme="dark"] { color-scheme:dark;--tinta:#ECEFE9;--tinta-media:#B3BAAF;--tinta-fraca:#98A094;--papel:#121411;--superficie:#1A1D19;--superficie-alt:#222621;--borda:#2E332C;--borda-forte:#4A5147;--topo-vidro-fundo:rgba(18,20,17,.94);--kpi-borda:#2E332C;--kpi-vidro-fundo:#1A1D19;--kpi-hover-fundo:#222621;--kpi-rotulo-cor:#B3BAAF;--kpi-valor-cor:#F4F6F2;--kpi-nota-cor:#B3BAAF;--marinho:#3F7A3A;--marinho-borda:#5C9A50;--titulo:#F4F6F2;--marinho-claro:#9CCB8F;--dourado:#9CCB8F;--orbital:#9CCB8F;--orbital-luz:#9CCB8F;--orbital-fundo:#1F2A1C;--lateral-fundo:#1A1D19;--lateral-fundo-alt:#263024;--lateral-mais-hover:#2C382A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E3E7DF;--lateral-texto-fraca:#B3BAAF;--lateral-texto-fraca-ativo:#E3E7DF;--lateral-texto-ativa:#FFFFFF;--lateral-dourado:#9CCB8F;--lateral-dourado-ativo:#9CCB8F;--lateral-dourado-fundo:rgba(156,203,143,.16);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0;--sombra-1:0 1px 2px rgba(0,0,0,.3);--sombra-2:0 2px 12px rgba(0,0,0,.25);--sombra-3:0 20px 56px -18px rgba(0,0,0,.6); }
 #atomo { display: none; }
-.acesso { --acesso-fundo:#EEF5EA; --acesso-brilho-frio:#DDEDD6; --acesso-brilho-quente:#F4ECC8; }
-:root[data-theme="dark"] .acesso { --acesso-fundo:#161D13; --acesso-brilho-frio:#26351E; --acesso-brilho-quente:#2A2610; }
+.acesso { --acesso-fundo:#F6F7F3; --acesso-brilho-frio:#EEF3EA; --acesso-brilho-quente:#F6F4E6; }
+:root[data-theme="dark"] .acesso { --acesso-fundo:#121411; --acesso-brilho-frio:#1B241A; --acesso-brilho-quente:#1F1E14; }
 
 /* ============================================================ tela de entrada Acácia
    Painel pistache com a acácia ao sol; o cartão de acesso ao lado.
@@ -85,7 +87,7 @@
 @media screen {
   .acesso .acesso-topo { padding: 16px 28px; border-bottom: 0; }
   .acesso .acesso-palco { max-width: none; padding: 4px 24px 20px; gap: 24px; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); align-items: stretch; }
-  .acesso .acesso-texto { display: flex; flex-direction: column; justify-content: flex-start; position: relative; overflow: hidden; border-radius: 26px; padding: clamp(28px, 5vw, 64px); background: linear-gradient(170deg, #C4E1BA 0%, #AFD6A3 55%, #9CCB8F 100%); min-height: 0; }
+  .acesso .acesso-texto { display: flex; flex-direction: column; justify-content: flex-start; position: relative; overflow: hidden; border-radius: 26px; padding: clamp(28px, 5vw, 64px); background: linear-gradient(170deg, #E3F1DD 0%, #CFE6C6 60%, #BBDCB0 100%); min-height: 0; }
   .acesso .acesso-texto::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 280%22 preserveAspectRatio=%22xMidYMax slice%22%3E%3Ccircle cx=%22486%22 cy=%22112%22 r=%2254%22 fill=%22%23F0C94F%22/%3E%3Cpath d=%22M0 232c90-26 170-30 260-18s190 4 380-22v88H0z%22 fill=%22%2386BB78%22/%3E%3Cpath d=%22M36 170c0-36 62-62 140-62s140 26 140 62z%22 fill=%22%233E7B33%22/%3E%3Cpath d=%22M176 268v-66m0 14-58-48m58 36 58-36%22 fill=%22none%22 stroke=%22%233E7B33%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%22246%22 cy=%22134%22 r=%229%22 fill=%22%23F0C94F%22/%3E%3Cpath d=%22M420 204c0-21 36-36 80-36s80 15 80 36z%22 fill=%22%234C8C40%22/%3E%3Cpath d=%22M500 266v-42m0 9-33-29m33 22 33-22%22 fill=%22none%22 stroke=%22%234C8C40%22 stroke-width=%226.5%22 stroke-linecap=%22round%22/%3E%3Crect y=%22262%22 width=%22640%22 height=%2218%22 fill=%22%236FA862%22/%3E%3C/svg%3E") center bottom / cover no-repeat; pointer-events: none; }
   .acesso .acesso-texto > * { position: relative; z-index: 1; }
   .acesso .acesso-eyebrow { color: #26591C; margin-bottom: 18px; }
@@ -113,3 +115,35 @@
 .conteudo input[type="date"]:hover { border-color: var(--marinho-claro); }
 .conteudo input[type="date"]:focus-visible { outline: 3px solid var(--marinho-claro); outline-offset: 2px; }
 .conteudo input[type="date"]:disabled { opacity: .55; }
+
+/* ============================================================ acabamento (linha limpa)
+   Ritmo vertical único, KPIs como cartões separados, filtros como barra leve,
+   barras finas em pistache com trilho. */
+@media screen {
+  .conteudo .cabecalho h1 { font-size: clamp(1.6rem, 2.2vw, 2rem); font-weight: 600; letter-spacing: -.03em; }
+  .conteudo .cabecalho p { color: var(--tinta-media); max-width: 62ch; }
+  .conteudo > .painel + .painel, .conteudo > .painel + .grade-kpi, .conteudo > .grade-kpi + .painel,
+  .conteudo > .grade-kpi + .grade-2, .conteudo > .grade-2 + .painel, .conteudo > .painel + .grade-2,
+  .conteudo > .filtro-periodo + *, .conteudo > .grade-2 + .grade-2 { margin-top: 16px; }
+  .conteudo .grade-2 > .painel { margin-top: 0; }
+  .conteudo .grade-2 { align-items: start; }
+
+  .conteudo .grade-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; border: 0; background: transparent; border-radius: 0; overflow: visible; }
+  .conteudo .grade-kpi .kpi { background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px; padding: 18px 20px; text-align: left; transition: border-color .15s, box-shadow .15s; }
+  .conteudo .grade-kpi button.kpi:hover { border-color: var(--borda-forte); box-shadow: var(--sombra-2); }
+  .conteudo .grade-kpi .kpi-rotulo { font-size: .78rem; font-weight: 600; color: var(--tinta-media); }
+  .conteudo .grade-kpi .kpi-valor { font-size: 1.55rem; font-weight: 600; letter-spacing: -.03em; margin: 6px 0 2px; }
+  .conteudo .grade-kpi .kpi-nota { font-size: .78rem; color: var(--tinta-fraca); }
+
+  .filtro-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 4px 0 16px; }
+  .filtro-periodo .botao { min-height: 40px; }
+
+  .painel { border-radius: 16px; }
+  .barras { padding: 6px 22px 18px; }
+  .barra-linha { display: grid; grid-template-columns: minmax(96px, 150px) 1fr auto; gap: 14px; align-items: center; padding: 7px 0; }
+  .barra-rotulo { font-size: var(--t-1); color: var(--tinta-media); }
+  .barra-trilho { height: 8px; border-radius: 99px; background: var(--superficie-alt); overflow: hidden; }
+  .barra-trilho i { display: block; height: 100%; border-radius: 99px; background: var(--pistache, #9CCB8F); }
+  .barra-valor { font-size: var(--t-1); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tinta); }
+}
+@media screen { .conteudo > * + .grade-kpi, .conteudo > .grade-kpi + * { margin-top: 16px; } }
