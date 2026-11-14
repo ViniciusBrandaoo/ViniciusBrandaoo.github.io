@@ -25,6 +25,7 @@ const EDGE = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 for (const r of rels) {
   const h = join(saida, r.nome + ".html");
   writeFileSync(h, r.html, "utf8");
+  rmSync(join(saida, r.nome + ".pdf"), { force: true }); // senão a espera abaixo acha o PDF antigo
   execFileSync(EDGE, ["--headless=new", "--disable-gpu", `--user-data-dir=${join(tmpdir(), "hotel-edge")}`, "--no-pdf-header-footer", `--print-to-pdf=${join(saida, r.nome + ".pdf")}`, pathToFileURL(h).href], { stdio: "ignore" });
   const pdf = join(saida, r.nome + ".pdf");
   // O Edge pode devolver o controle antes de terminar de gravar: espera o PDF aparecer.
