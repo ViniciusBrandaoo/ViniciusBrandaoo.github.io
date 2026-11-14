@@ -314,6 +314,15 @@ export async function confirmar(ator: Ator, loteId: string): Promise<Record<stri
          UPDATE hotel_cafe_dia c SET ausente_na_origem_desde = CASE WHEN c.codigo_origem IN (SELECT codigo_origem FROM doLote) THEN NULL ELSE coalesce(c.ausente_na_origem_desde, now()) END
            FROM faixa WHERE c.data BETWEEN faixa.ini AND faixa.fim`, [loteId]);
     }
+    if (tipo === "recebimentos") {
+      // Contas Recebidas é a foto do DataHotel no período do arquivo: recebimento que estava
+      // no banco nesse período e saiu do relatório (estornado lá) fica marcado, não apagado.
+      await db.query(
+        `WITH doLote AS (SELECT codigo_origem FROM hotel_import_linhas WHERE lote_id = $1 AND situacao <> 'REJEITADO'),
+              faixa AS (SELECT min(r.data) AS ini, max(r.data) AS fim FROM hotel_recebimentos r WHERE r.codigo_origem IN (SELECT codigo_origem FROM doLote))
+         UPDATE hotel_recebimentos r SET ausente_na_origem_desde = CASE WHEN r.codigo_origem IN (SELECT codigo_origem FROM doLote) THEN NULL ELSE coalesce(r.ausente_na_origem_desde, now()) END
+           FROM faixa WHERE r.data BETWEEN faixa.ini AND faixa.fim`, [loteId]);
+    }
     if (tipo === "apartamentos") {
       await db.query(
         `UPDATE hotel_apartamentos SET situacao = CASE

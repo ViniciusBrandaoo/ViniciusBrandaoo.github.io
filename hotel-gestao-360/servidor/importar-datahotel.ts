@@ -76,9 +76,9 @@ else try {
   parou = true;
 }
 
-const [t] = await consultar<{ apt: number; hosp: number; rec: number; cafe: number }>(
+const [t] = await consultar<{ apt: number; hosp: number; rec: number; recfora: number; cafe: number }>(
   `SELECT (SELECT count(*) FROM hotel_apartamentos)::int AS apt, (SELECT count(*) FROM hotel_hospedagens)::int AS hosp,
-          (SELECT count(*) FROM hotel_recebimentos)::int AS rec, (SELECT count(*) FROM hotel_cafe_dia)::int AS cafe`);
-console.log(`NO BANCO: ${t!.apt} apartamentos, ${t!.hosp} hospedagens, ${t!.rec} recebimentos, ${t!.cafe} linhas de café.`);
+          (SELECT count(*) FROM hotel_recebimentos WHERE ausente_na_origem_desde IS NULL)::int AS rec, (SELECT count(*) FROM hotel_recebimentos WHERE ausente_na_origem_desde IS NOT NULL)::int AS recfora, (SELECT count(*) FROM hotel_cafe_dia)::int AS cafe`);
+console.log(`NO BANCO: ${t!.apt} apartamentos, ${t!.hosp} hospedagens, ${t!.rec} recebimentos (${t!.recfora} saíram do DataHotel), ${t!.cafe} linhas de café.`);
 await encerrar();
 process.exit(parou ? 2 : 0);

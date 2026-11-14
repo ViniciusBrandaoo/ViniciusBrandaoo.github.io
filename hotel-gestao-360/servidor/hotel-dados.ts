@@ -65,7 +65,7 @@ async function recebimentosImportados(q: Consulta, unidadeId: string, id?: strin
   const rows = await q(
     `SELECT id, origem, codigo_origem, to_char(data,'YYYY-MM-DD') AS data, descricao, pagador, apartamento, reserva,
             forma, bruto_centavos, desconto_centavos, taxa_centavos, parcelas, codigo_transacao, bandeira, operadora, situacao
-       FROM hotel_recebimentos WHERE unidade_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
+       FROM hotel_recebimentos WHERE unidade_id = $1 AND ausente_na_origem_desde IS NULL AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
   const m = new Map<string, Dados>();
   for (const r of rows) {
     m.set(String(r.id), limpar({
