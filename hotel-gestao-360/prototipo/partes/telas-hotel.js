@@ -848,8 +848,7 @@
       { rotulo: "Última cobrança", conteudo: function (b) { return '<span class="secundario">' + U.esc(b.observacoes || "") + "</span>"; } }
     ], aReceber, { tituloVazio: "Nada a receber de empresas" }));
     if (sel) {
-      var ee = sel.empresa, regra = function (r, v) { return v ? "<p><strong>" + r + ":</strong> " + U.esc(v).replace(/
-/g, "<br>") + "</p>" : ""; };
+      var ee = sel.empresa, regra = function (r, v) { return v ? "<p><strong>" + r + ":</strong> " + U.esc(v).split("\n").join("<br>") + "</p>" : ""; };
       html += U.painelHtml("Regras do convênio · " + (ee.nomeFantasia || ee.razaoSocial), ee.pendenciaCadastro && ee.pendenciaCadastro !== "Completo" ? ee.pendenciaCadastro : "cadastro completo",
         '<div style="padding:4px 20px 14px">' + regra("Tabela", ee.tabelaDiarias) + regra("Reserva", ee.regraReserva) + regra("Voucher", ee.regraVoucher) + regra("Consumo e lavanderia", ee.regraConsumo) +
         regra("Faturamento", ee.regraFaturamento) + regra("Contato", ee.responsavel) + regra("Telefones", ee.telefones) + regra("E-mails", ee.emails) + "</div>");
