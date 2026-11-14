@@ -975,7 +975,7 @@
     var folha = L.estado.folhaMes.filter(function (x) { return x.competencia === comp; });
     if (folha.length) html += U.painelHtml("Folha do mês · " + comp, "planilha da Direção (ponto do EZPoint)", U.tabelaHtml([
       { rotulo: "Funcionário", conteudo: function (x) { return '<div class="principal">' + U.esc(x.nome) + '</div><div class="secundario">' + U.esc(x.funcao || "") + " · " + U.esc(x.vinculo || "") + "</div>"; } },
-      { rotulo: "Salário", direita: true, conteudo: function (x) { return brl(x.valorSalario); } },
+      { rotulo: "Salário", direita: true, conteudo: function (x) { return x.valorSalario ? brl(x.valorSalario) : "—"; } },
       { rotulo: "Produtividade", direita: true, conteudo: function (x) { return x.valorProdutividade ? brl(x.valorProdutividade) + '<div class="secundario">' + U.esc(x.formaProdutividade || "") + "</div>" : "—"; } },
       { rotulo: "Ticket", direita: true, conteudo: function (x) { return x.valorTicket ? brl(x.valorTicket) : "—"; } },
       { rotulo: "HE 50% / 100%", direita: true, conteudo: function (x) { return U.esc(x.he50 + " / " + x.he100); } },
