@@ -55,8 +55,7 @@ export function montarDados(arquivos: ArquivoTexto[], inicio: string, fim: strin
     reconhecidos.push({ nome: a.nome, fonte: f });
     porFonte.set(f, [...(porFonte.get(f) ?? []), a.texto]);
   }
-  // Relatório de Reservas agrupado por empresa é o mesmo relatório: vale o emitido por último.
-  if (porFonte.has("reservasEmpresa")) porFonte.set("reservas", [...(porFonte.get("reservas") ?? []), ...porFonte.get("reservasEmpresa")!]);
+  // O agrupado por empresa não traz a coluna Situação: serve só para saber a empresa de cada reserva.
   const um = (f: Fonte): string | undefined => maisRecente(porFonte.get(f) ?? []);
   const tem: Partial<Record<Fonte, boolean>> = {};
   for (const f of ["reservas", "recebidas", "receitas", "fatDiario", "analitico", "creditos", "aReceber", "consumo", "vendas", "rds", "mapa", "cafe", "camareira", "estoque", "caixa"] as Fonte[]) {

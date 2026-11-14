@@ -7,7 +7,6 @@
  * Padrão: C:\Users\<você>\Downloads\datahotel, de 2026-10-26 a 2026-11-06.
  * Só lê. Gera `conferencia_<início>_<fim>.md` e `.csv` na própria pasta.
  */
-import { maisRecente } from "../src/dominio/hotel/conferencia-arquivos.ts";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -39,7 +38,7 @@ const opcional = (prefixo: string): string | null => { try { return texto(prefix
 if (!existsSync(pasta)) throw new Error(`Pasta não encontrada: ${pasta}`);
 
 // O Relatório de Reservas agrupado por empresa é o mesmo relatório: vale o emitido por último.
-const reservasR = lerRelatorioReservasDataHotel(maisRecente([texto("reservas_extrato"), opcional("reservas_por_empresa")].filter((t): t is string => !!t))!);
+const reservasR = lerRelatorioReservasDataHotel(texto("reservas_extrato"));
 if (!reservasR) throw new Error("reservas_extrato não é um Relatório de Reservas do DataHotel.");
 const futuras = opcional("reservas_futuras");
 const futurasR = futuras ? lerRelatorioReservasDataHotel(futuras) : null;

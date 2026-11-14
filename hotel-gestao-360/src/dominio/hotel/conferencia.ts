@@ -317,7 +317,8 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
 
   // C5 — consumo: extrato das reservas × analítico × consumo por data
   {
-    const doExtrato = soma(d.reservas.map((r) => r.consumo));
+    // Só reservas que começaram até o fim do período: consumo de quem entrou depois não está no analítico.
+    const doExtrato = soma(d.reservas.filter((r) => r.checkin <= d.fim).map((r) => r.consumo));
     if (d.faturamentoAnalitico.subConsumo !== null) {
       out.push(comparar("C5a", "Consumo lançado nas reservas", "Extrato das reservas × Faturamento Analítico (consumo)", d.faturamentoAnalitico.subConsumo, doExtrato));
     }
