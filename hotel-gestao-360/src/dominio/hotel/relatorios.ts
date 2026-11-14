@@ -13,7 +13,15 @@ export interface Relatorio { nome: string; titulo: string; html: string }
 /** Conta a pagar como o sistema guarda (lançada no Hotel 360, não vem do DataHotel). */
 export interface ContaRelatorio { descricao: string; fornecedor: string | null; categoria: string; vencimento: string; valor: number; status: string; pago: number | null; dataPagamento: string | null; competencia: string }
 
-export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: ConferenciaResumo; inicio: string; fim: string; hoje: string; contas?: ContaRelatorio[] }): Relatorio[] {
+/** Registros lançados no Hotel 360 (vindos da Direção), para os relatórios. */
+export interface ExtrasRelatorio {
+  receber: { empresa: string; nf: string; vencimento: string; previsao: string; valor: number; forma: string; observacoes: string }[];
+  pendencias: { data: string; apto: string; tipo: string; descricao: string; solucao: string; responsavel: string; prazo: string; status: string }[];
+  folha: { competencia: string; nome: string; funcao: string; vinculo: string; valorSalario: number; valorProdutividade: number; valorTicket: number; he50: string; he100: string; noturnas: string; atrasos: string; faltas: number; dataPagamento: string; observacoes: string }[];
+  empresas: { total: number; incompletas: number };
+}
+
+export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: ConferenciaResumo; inicio: string; fim: string; hoje: string; contas?: ContaRelatorio[]; extras?: ExtrasRelatorio }): Relatorio[] {
   const { texto, conf, inicio, fim } = o;
   const HOJE = o.hoje;
   // ------------------------------------------------------------------ leitura
@@ -215,6 +223,30 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
       `<h2>Por mês de competência</h2>` + tabela(["Mês", "Contas pagas", "Documento", "Pago", "Juros"], [...porMes].sort().map(([m, x]) => [m.split("-").reverse().join("/"), String(x.n), brl(x.doc), brl(x.pago), brl(x.juros)]), [1, 2, 3, 4]);
   }
 
+  // ------------------------------------------------------------------ extras da Direção (Hotel 360)
+  const ex = o.extras;
+  function secaoReceber(): string {
+    if (!ex) return "";
+    const t = soma(ex.receber.map((r) => r.valor));
+    return `<h2 class="quebra">Empresas a receber</h2><p class="nota">Notas emitidas para empresas e ainda não pagas (lançadas no Hotel 360). ${ex.empresas.total} empresas conveniadas cadastradas, ${ex.empresas.incompletas} com cadastro incompleto.</p>` +
+      tabela(["Empresa", "NF", "Vencimento", "Previsão", "Valor", "Situação da cobrança"], ex.receber.map((r) => [esc(r.empresa), esc(r.nf), r.vencimento ? (r.vencimento < HOJE ? `<b style="color:#b42318">${br(r.vencimento)}</b>` : br(r.vencimento)) : "sem data", r.previsao ? br(r.previsao) : "—", brl(r.valor), `<span class="fraco">${esc(r.observacoes)}</span>`]), [4], ["Total", "", "", "", brl(t), ""]);
+  }
+  function secaoPendencias(): string {
+    if (!ex) return "";
+    const ab = ex.pendencias.filter((p) => p.status !== "Resolvida");
+    return `<h2 class="quebra">Pendências de hospedagem</h2><p class="nota">Apontadas pela Direção e pela conferência; cada uma com o que fazer, quem e até quando.</p>` +
+      (ab.length ? tabela(["Apto / data", "O que está errado", "O que fazer", "Quem / prazo"], ab.map((p) => [`<b>${esc(p.apto || "—")}</b><div class="fraco">${p.data ? br(p.data) : ""}</div>`, `<b>${esc(p.tipo)}</b><div>${esc(p.descricao)}</div>`, esc(p.solucao), `${esc(p.responsavel)}<div class="fraco">${p.prazo ? "até " + br(p.prazo) : ""}</div>`]), []) : "<p>Nenhuma pendência em aberto.</p>");
+  }
+  function secaoFolha(): string {
+    if (!ex || !ex.folha.length) return "";
+    const comps = [...new Set(ex.folha.map((f) => f.competencia))].sort();
+    return comps.map((c) => { const fs = ex.folha.filter((f) => f.competencia === c);
+      return `<h2 class="quebra">Funcionários e folha · ${c.split("-").reverse().join("/")}</h2><p class="nota">Planilha da Direção com o ponto do EZPoint. Horas em h:mm.</p>` +
+        tabela(["Funcionário", "Salário", "Produtiv.", "Ticket", "HE 50%", "HE 100%", "Noturnas", "Atrasos", "Faltas", "Pago em"], fs.map((f) => [`<b>${esc(f.nome)}</b><div class="fraco">${esc(f.funcao)} · ${esc(f.vinculo)}</div>`, brl(f.valorSalario), f.valorProdutividade ? brl(f.valorProdutividade) : "—", f.valorTicket ? brl(f.valorTicket) : "—", esc(f.he50), esc(f.he100), esc(f.noturnas), esc(f.atrasos), String(f.faltas), f.dataPagamento ? br(f.dataPagamento) : "—"]), [1, 2, 3, 4, 5, 6, 7, 8],
+          ["Total", brl(soma(fs.map((f) => f.valorSalario))), brl(soma(fs.map((f) => f.valorProdutividade))), brl(soma(fs.map((f) => f.valorTicket))), "", "", "", "", String(soma(fs.map((f) => f.faltas))), ""]) +
+        `<h2>Observações da folha</h2><ul>${fs.filter((f) => f.observacoes).map((f) => `<li><b>${esc(f.nome)}:</b> ${esc(f.observacoes)}</li>`).join("")}</ul>`; }).join("");
+  }
+
   // ------------------------------------------------------------------ 3) financeiro
   const maxDia = Math.max(...porDia.values(), 1);
   const p3 = pagina("Financeiro", "recebimentos, caixa, faturamento e empresas",
@@ -224,6 +256,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     `<div style="page-break-inside:avoid"><h2>Recebido por forma de pagamento</h2>` + tabela(["Forma", "", "Valor", "%"], [...porForma].sort((a, b) => b[1] - a[1]).map(([f, v]) => [esc(nomeForma(f)), barra(v, Math.max(...porForma.values()), 200), brl(v), pct(v, total)]), [2, 3], ["Total", "", brl(total), "100%"]) + "</div>" +
     secaoBanco() +
     secaoContas() +
+    secaoReceber() +
     `<h2 class="quebra">Fechamentos de caixa</h2><p class="nota">O que cada caixa da recepção fechou e mandou para a conta, por forma.</p>` +
     tabela(["Caixa", "Aberto em", "Fechado em", "Dinheiro", "Pix", "Crédito", "Débito", "Faturar emp.", "Total"], caixas.map((c) => {
       const g = (k: string) => c.formas.get(k) ?? 0;
@@ -270,7 +303,8 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
       ["Total", String(soma(prods.map(([, p]) => p.qtd))), brl(soma(prods.map(([, p]) => p.custo))), brl(soma(prods.map(([, p]) => p.venda))), pct(soma(prods.map(([, p]) => p.venda - p.custo)), soma(prods.map(([, p]) => p.venda)))]) : "<p>Sem vendas no período.</p>") +
     `<p class="fraco">Consumo dos quartos + venda de balcão, até ${br(fatFim)}.</p>` +
     (negativos.length ? `<h2>Estoque com saldo negativo</h2><div class="card at"><b>${negativos.length} itens com estoque abaixo de zero</b><ul><li><b>O que fazer:</b> ${ACAO.C14}</li></ul></div>` +
-      tabela(["Código", "Item", "Saldo"], negativos.sort((a, b) => a.saldo - b.saldo).map((e) => [esc(e.codigo), esc(titulo(e.descricao)), String(e.saldo)]), [2]) : ""));
+      tabela(["Código", "Item", "Saldo"], negativos.sort((a, b) => a.saldo - b.saldo).map((e) => [esc(e.codigo), esc(titulo(e.descricao)), String(e.saldo)]), [2]) : "") +
+    secaoPendencias() + secaoFolha());
 
   // ------------------------------------------------------------------ 5) todos os itens pedidos
   // Cada item do pedido da Fernanda: onde está nos relatórios ou por que ainda não tem dado.
@@ -284,16 +318,16 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     ["Fechamento diário de caixa por forma de pagamento", S.ok, "Relatório 3 · Caixa dia a dia e Fechamentos de caixa (livro-caixa até o último caixa fechado)."],
     ["Faturado × recebido", S.ok, "Relatórios 1 e 3 · recebido em caixa e bancos separado do faturado para empresas."],
     ["Conciliação de cartões e depósitos (taxas, antecipação)", extrato ? S.parcial : S.sem, extrato ? "Relatório 3 · Conciliação bancária BB × DataHotel por forma. Falta o relatório da Cielo para fechar venda por venda." : "Precisa do extrato bancário e do relatório da maquininha (Cielo)."],
-    ["Faturamento mensal das empresas", S.parcial, "Relatório 3 · faturado por hospedagem. O DataHotel não informa a empresa nesse relatório e não há fatura emitida."],
+    ["Faturamento mensal das empresas", S.parcial, ex ? `Relatório 3 · faturado por hospedagem e títulos a receber; ${ex.empresas.total} empresas com regras de faturamento cadastradas. O DataHotel não informa a empresa de cada hospedagem faturada.` : "Relatório 3 · faturado por hospedagem. O DataHotel não informa a empresa nesse relatório e não há fatura emitida."],
     ["Notas fiscais e boletos", S.sem, "Nenhuma fatura, NFS-e ou boleto emitido no DataHotel no período."],
-    ["Cobrança das empresas", S.parcial, "Relatórios 1 e 3 · valor sem cobrança apontado; contas a receber lançadas listadas."],
+    ["Cobrança das empresas", ex ? S.ok : S.parcial, ex ? "Relatório 3 · Empresas a receber: NF, vencimento, previsão e situação da cobrança de cada título." : "Relatórios 1 e 3 · valor sem cobrança apontado; contas a receber lançadas listadas."],
     ["Frigobar (vendas, margem, não cobrados)", S.ok, "Relatório 4 · produtos vendidos, custo, venda e margem; consumo por hospedagem no extrato."],
     ["Estoque", S.parcial, `Relatório 4 · itens com saldo negativo (posição de ${br("2026-11-06")}).`],
     ["Fornecedores e contas a pagar", contas.length ? S.ok : S.sem, contas.length ? `Relatório 3 · Contas a pagar: em aberto, vencidas, pagas com juros e por categoria (${contas.length} contas lançadas no Hotel 360).` : "O Contas a Pagar do DataHotel está vazio. Precisa ser lançado no Hotel 360."],
     ["Despesas fixas e variáveis / calendário", contas.length ? S.parcial : S.sem, contas.length ? "Relatório 3 · despesas por categoria e por mês, contas em aberto por vencimento. Falta marcar quais são fixas (internet, energia, água, solar, telefone) com o dia de vencimento." : "Sem despesas lançadas no DataHotel além das sangrias de caixa."],
     ["Fluxo de caixa realizado × previsto", S.parcial, "Realizado: Relatório 3 (recebido por dia). Previsto depende das contas a pagar e a receber lançadas."],
     ["Conferência e divergências do fechamento", S.ok, "Relatório 2 · tudo o que bate, divergências e pontos de atenção com o que fazer."],
-    ["Funcionários, ponto, banco de horas e diárias", S.sem, "Não vêm do DataHotel; dependem do cadastro e do ponto lançados no Hotel 360."],
+    ["Funcionários, ponto, banco de horas e diárias", ex && ex.folha.length ? S.parcial : S.sem, ex && ex.folha.length ? "Relatório 4 · folha do mês com salário, produtividade, ticket, horas extras, noturnas, atrasos e faltas. Falta: admissão, agência/conta e o saldo do banco de horas (EZPoint)." : "Não vêm do DataHotel; dependem do cadastro e do ponto lançados no Hotel 360."],
     ["Fechamento do mês", S.parcial, "Novembro ainda está em andamento; os relatórios cobrem de 26/10 até hoje."],
   ];
   const p5 = pagina("Itens pedidos pela Direção", "onde está cada item e o que ainda falta",

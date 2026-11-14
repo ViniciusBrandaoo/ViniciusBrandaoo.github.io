@@ -20,7 +20,8 @@ for (const n of readdirSync(pasta).filter((n) => /\.(csv|txt)$/.test(n)).sort())
 }
 const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
 const rels = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: JSON.parse(readFileSync(confJson, "utf8")), inicio, fim, hoje,
-  contas: existsSync(join(pasta, "contas_pagar.json")) ? JSON.parse(readFileSync(join(pasta, "contas_pagar.json"), "utf8")) : undefined });
+  contas: existsSync(join(pasta, "contas_pagar.json")) ? JSON.parse(readFileSync(join(pasta, "contas_pagar.json"), "utf8")) : undefined,
+  extras: existsSync(join(pasta, "extras_hotel.json")) ? JSON.parse(readFileSync(join(pasta, "extras_hotel.json"), "utf8")) : undefined });
 const EDGE = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 for (const r of rels) {
   const h = join(saida, r.nome + ".html");

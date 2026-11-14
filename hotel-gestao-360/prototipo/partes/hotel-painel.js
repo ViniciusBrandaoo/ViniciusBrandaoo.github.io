@@ -149,6 +149,13 @@
       ], probl, {}) : '<p style="padding:16px 20px">Tudo bateu.</p>');
     }
 
+    var pend = (L.estado.pendencias || []).filter(function (x) { return x.status !== "Resolvida"; }).sort(function (a, b) { return String(a.prazo || "").localeCompare(String(b.prazo || "")); });
+    if (pend.length) html += U.painelHtml("Pendências para resolver", pend.length + " em aberto", U.tabelaHtml([
+      { rotulo: "Apto / data", conteudo: function (x) { return '<div class="principal">' + U.esc(x.apto || "—") + '</div><div class="secundario">' + (x.data ? diaBR(x.data) : "") + "</div>"; } },
+      { rotulo: "O que está errado", conteudo: function (x) { return "<strong>" + U.esc(x.tipo) + "</strong><div>" + U.esc(x.descricao) + '</div><div class="secundario">' + U.esc(x.hospede || "") + "</div>"; } },
+      { rotulo: "O que fazer", conteudo: function (x) { return U.esc(x.solucao || "") + '<div class="secundario">' + U.esc(x.responsavel || "") + (x.prazo ? " · até " + diaBR(x.prazo) : "") + "</div>"; } },
+      { rotulo: "", direita: true, conteudo: function (x) { return '<button class="botao miudo" data-acao="hotel-pendencia-ok" data-id="' + x.id + '">Resolvida</button>'; } }
+    ], pend));
     html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return esc(x.h.apartamento); } },
       { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigoOrigem || x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
@@ -319,5 +326,9 @@
     return h;
   }
   // O início do sistema é o Painel do Hotel.
+  T.acoes["hotel-pendencia-ok"] = function (id) {
+    U.abrirFormulario({ titulo: "Marcar como resolvida", campos: [{ id: "decisao", rotulo: "O que foi feito", tipo: "textarea", obrigatorio: true }],
+      aoSalvar: function (v) { L.atualizar("pendencias", id, { status: "Resolvida", decisao: v.decisao, resolvidaEm: L.hoje() }); U.fecharModal(); T.renderizar(); } });
+  };
   T.telas.dashboard = T.telas.painelhotel;
 })();

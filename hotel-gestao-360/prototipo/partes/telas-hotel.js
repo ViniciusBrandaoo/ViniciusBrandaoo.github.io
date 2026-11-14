@@ -839,7 +839,20 @@
       { rotulo: "Saldo a faturar", direita: true, conteudo: function (c) { return "<strong>" + brl(c.saldoAFaturar) + "</strong>"; } },
       { rotulo: "", direita: true, conteudo: function (c) { return '<button class="botao miudo" data-acao="hotel-empresa-ver" data-id="' + c.empresa.id + '">Demonstrativo</button> ' + botaoEditar("empresas", c.empresa); } }
     ], cons, { tituloVazio: "Nenhuma empresa cadastrada" }));
+    var aReceber = L.estado.boletos.filter(function (b) { var st = H.statusBoleto(b, L.hoje()); return st !== "PAGO" && st !== "CANCELADO"; });
+    html += U.painelHtml("A receber das empresas", aReceber.length + " título(s) · " + brl(aReceber.reduce(function (a, b) { return a + H.saldoBoleto(b); }, 0)), U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (b) { var e = L.buscarPorId("empresas", b.empresaId); return '<div class="principal">' + U.esc(e ? (e.nomeFantasia || e.razaoSocial) : "—") + '</div><div class="secundario">' + (b.notaFiscal ? "NF " + U.esc(b.notaFiscal) + " · " : "") + U.esc(b.formaCobranca || "") + "</div>"; } },
+      { rotulo: "Vencimento", conteudo: function (b) { return b.vencimento ? L.dataBR(b.vencimento) : "sem data"; } },
+      { rotulo: "Previsão", conteudo: function (b) { return b.previsao ? L.dataBR(b.previsao) : "—"; } },
+      { rotulo: "Valor", direita: true, conteudo: function (b) { return brl(H.saldoBoleto(b)); } },
+      { rotulo: "Última cobrança", conteudo: function (b) { return '<span class="secundario">' + U.esc(b.observacoes || "") + "</span>"; } }
+    ], aReceber, { tituloVazio: "Nada a receber de empresas" }));
     if (sel) {
+      var ee = sel.empresa, regra = function (r, v) { return v ? "<p><strong>" + r + ":</strong> " + U.esc(v).replace(/
+/g, "<br>") + "</p>" : ""; };
+      html += U.painelHtml("Regras do convênio · " + (ee.nomeFantasia || ee.razaoSocial), ee.pendenciaCadastro && ee.pendenciaCadastro !== "Completo" ? ee.pendenciaCadastro : "cadastro completo",
+        '<div style="padding:4px 20px 14px">' + regra("Tabela", ee.tabelaDiarias) + regra("Reserva", ee.regraReserva) + regra("Voucher", ee.regraVoucher) + regra("Consumo e lavanderia", ee.regraConsumo) +
+        regra("Faturamento", ee.regraFaturamento) + regra("Contato", ee.responsavel) + regra("Telefones", ee.telefones) + regra("E-mails", ee.emails) + "</div>");
       html += U.painelHtml("Demonstrativo · " + (sel.empresa.nomeFantasia || sel.empresa.razaoSocial), comp, U.tabelaHtml([
         { rotulo: "Hóspede", conteudo: function (x) { return U.esc(x.hospedagem.hospede || ""); } },
         { rotulo: "Apto", conteudo: function (x) { return U.esc(x.hospedagem.apartamento); } },
@@ -960,6 +973,18 @@
       { rotulo: "Saldo", direita: true, conteudo: function (l) { return horas(l.saldo); } },
       { rotulo: "Diárias", direita: true, conteudo: function (l) { return l.diarias.quantidade ? l.diarias.quantidade + " · " + brl(l.diarias.base) + '<div class="secundario">pendente ' + brl(l.diarias.pendente) + "</div>" : "—"; } }
     ], linhas, { tituloVazio: "Nenhum funcionário ativo", textoVazio: "Cadastre a equipe em Pessoas → Funcionários." }));
+    var folha = L.estado.folhaMes.filter(function (x) { return x.competencia === comp; });
+    if (folha.length) html += U.painelHtml("Folha do mês · " + comp, "planilha da Direção (ponto do EZPoint)", U.tabelaHtml([
+      { rotulo: "Funcionário", conteudo: function (x) { return '<div class="principal">' + U.esc(x.nome) + '</div><div class="secundario">' + U.esc(x.funcao || "") + " · " + U.esc(x.vinculo || "") + "</div>"; } },
+      { rotulo: "Salário", direita: true, conteudo: function (x) { return brl(x.valorSalario); } },
+      { rotulo: "Produtividade", direita: true, conteudo: function (x) { return x.valorProdutividade ? brl(x.valorProdutividade) + '<div class="secundario">' + U.esc(x.formaProdutividade || "") + "</div>" : "—"; } },
+      { rotulo: "Ticket", direita: true, conteudo: function (x) { return x.valorTicket ? brl(x.valorTicket) : "—"; } },
+      { rotulo: "HE 50% / 100%", direita: true, conteudo: function (x) { return U.esc(x.he50 + " / " + x.he100); } },
+      { rotulo: "Noturnas", direita: true, conteudo: function (x) { return U.esc(x.noturnas); } },
+      { rotulo: "Atrasos", direita: true, conteudo: function (x) { return U.esc(x.atrasos); } },
+      { rotulo: "Faltas", direita: true, conteudo: function (x) { return x.faltas; } },
+      { rotulo: "Pago em", conteudo: function (x) { return L.dataBR(x.dataPagamento) + '<div class="secundario">' + U.esc(x.observacoes || "") + "</div>"; } }
+    ], folha));
     var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });
     html += U.painelHtml("Marcações", "", U.tabelaHtml([
       { rotulo: "Data", conteudo: function (m) { var f = L.buscarPorId("funcionarios", m.funcionarioId); return L.dataBR(m.data) + '<div class="secundario">' + U.esc(f ? f.nome : "") + "</div>"; } },

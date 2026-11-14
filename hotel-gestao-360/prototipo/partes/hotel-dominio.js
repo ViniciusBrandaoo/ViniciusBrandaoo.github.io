@@ -23,7 +23,7 @@
   "frigobarProdutos", "frigobarConsumos",
   "recebimentos", "fechamentosCaixa", "transacoesCartao", "boletos",
   "notasFiscais", "cobrancas", "contasRecorrentes", "contasBancarias",
-  "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes"
+  "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes", "pendencias", "folhaMes"
 ].forEach(function (c) { if (!Array.isArray(L.estado[c])) L.estado[c] = []; });
 
 L.hotel = {};

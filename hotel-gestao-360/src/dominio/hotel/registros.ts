@@ -9,7 +9,7 @@ export type Colecao =
   | "recebimentos" | "fechamentosCaixa" | "transacoesCartao" | "boletos"
   | "notasFiscais" | "cobrancas" | "contasRecorrentes" | "contasBancarias"
   | "relatoriosDiarios" | "diarias" | "marcacoesPonto" | "ajustesPonto"
-  | "fechamentosMes" | "config";
+  | "fechamentosMes" | "config" | "pendencias" | "folhaMes";
 
 interface RegraColecao {
   ler: readonly string[];
@@ -47,6 +47,8 @@ export const COLECOES: Record<Colecao, RegraColecao> = {
   ajustesPonto: { ler: RH_LER, gravar: RH_GRAVAR, semExclusao: true },
   fechamentosMes: { ler: ["DIRECAO", "FINANCEIRO", "AUDITOR"], gravar: FIN_GRAVAR, semExclusao: true },
   config: { ler: [...TODOS_OPERACAO, "RH"], gravar: ["DIRECAO"] },
+  pendencias: { ler: TODOS_OPERACAO, gravar: ["DIRECAO", "FINANCEIRO", "RECEPCAO"], semExclusao: true },
+  folhaMes: { ler: RH_LER, gravar: RH_GRAVAR, semExclusao: true },
 };
 
 export function colecaoValida(c: string): c is Colecao {

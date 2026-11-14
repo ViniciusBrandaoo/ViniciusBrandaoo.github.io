@@ -10,7 +10,7 @@ import { montarDados } from "../src/dominio/hotel/conferencia-arquivos.js";
 import { conferir, resumo, type Resultado } from "../src/dominio/hotel/conferencia.js";
 import { sha256 } from "../src/dominio/hotel/importacao.js";
 import { reconhecer } from "../src/dominio/hotel/conferencia-arquivos.js";
-import { gerarRelatorios, type ContaRelatorio } from "../src/dominio/hotel/relatorios.js";
+import { gerarRelatorios, type ContaRelatorio, type ExtrasRelatorio } from "../src/dominio/hotel/relatorios.js";
 import type { Fonte } from "../src/dominio/hotel/conferencia.js";
 
 function erro(status: number, mensagem: string): Error {
@@ -54,7 +54,8 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   const porFonte = new Map<Fonte, string>();
   for (const t of [...textos].sort((a, b) => a.nome.localeCompare(b.nome))) { const f = reconhecer(t.texto); if (f) porFonte.set(f, t.texto); }
   const contas = await contasParaRelatorio();
-  const relatorios = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: { inicio, fim, resumo: r, resultados }, inicio, fim, hoje: hojeSP(), contas });
+  const extras = await extrasParaRelatorio();
+  const relatorios = gerarRelatorios({ texto: (f) => porFonte.get(f) ?? null, conf: { inicio, fim, resumo: r, resultados }, inicio, fim, hoje: hojeSP(), contas, extras });
   const unidadeId = await unidadePadrao();
   const lista = arquivos.map((a) => ({
     nome: a.nome.slice(0, 200), sha256: sha256(a.buffer),
@@ -113,4 +114,21 @@ export async function contasParaRelatorio(): Promise<ContaRelatorio[]> {
            (SELECT to_char(max(p.data_pagamento),'YYYY-MM-DD') FROM pagamentos p WHERE p.conta_id = cp.id) AS "dataPagamento"
       FROM contas_pagar cp JOIN categorias_financeiras cat ON cat.id = cp.categoria_id LEFT JOIN fornecedores f ON f.id = cp.fornecedor_id`);
   return linhas as unknown as ContaRelatorio[];
+}
+
+/** Empresas a receber, pendências e folha lançadas no Hotel 360, para os relatórios. */
+export async function extrasParaRelatorio(): Promise<ExtrasRelatorio> {
+  const reg = await consultar<{ colecao: string; dados: Record<string, any> }>(
+    `SELECT colecao, dados FROM hotel_registros WHERE NOT excluido AND colecao IN ('empresas','boletos','pendencias','folhaMes')`);
+  const de = (c: string) => reg.filter((r) => r.colecao === c).map((r) => r.dados);
+  const ids = await consultar<{ id: string; dados: Record<string, any> }>(`SELECT id, dados FROM hotel_registros WHERE colecao = 'empresas' AND NOT excluido`);
+  const nomeEmp = new Map(ids.map((x) => [x.id, String(x.dados.nomeFantasia || x.dados.razaoSocial || "")]));
+  const boletos = await consultar<{ dados: Record<string, any> }>(`SELECT dados FROM hotel_registros WHERE colecao = 'boletos' AND NOT excluido`);
+  return {
+    receber: boletos.map((b) => b.dados).filter((b) => (b.valorPago ?? 0) < (b.valor ?? 0) && b.status !== "CANCELADO")
+      .map((b) => ({ empresa: nomeEmp.get(b.empresaId) ?? "", nf: String(b.notaFiscal ?? ""), vencimento: b.vencimento ?? "", previsao: b.previsao ?? "", valor: (b.valor ?? 0) - (b.valorPago ?? 0), forma: b.formaCobranca ?? "", observacoes: b.observacoes ?? "" })),
+    pendencias: de("pendencias") as ExtrasRelatorio["pendencias"],
+    folha: de("folhaMes") as ExtrasRelatorio["folha"],
+    empresas: { total: ids.length, incompletas: ids.filter((x) => x.dados.pendenciaCadastro && x.dados.pendenciaCadastro !== "Completo").length },
+  };
 }
