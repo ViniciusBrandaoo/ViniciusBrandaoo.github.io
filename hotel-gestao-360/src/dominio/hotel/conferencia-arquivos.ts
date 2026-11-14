@@ -55,7 +55,9 @@ export function montarDados(arquivos: ArquivoTexto[], inicio: string, fim: strin
     reconhecidos.push({ nome: a.nome, fonte: f });
     porFonte.set(f, [...(porFonte.get(f) ?? []), a.texto]);
   }
-  const um = (f: Fonte): string | undefined => porFonte.get(f)?.[0];
+  // Relatório de Reservas agrupado por empresa é o mesmo relatório: vale o emitido por último.
+  if (porFonte.has("reservasEmpresa")) porFonte.set("reservas", [...(porFonte.get("reservas") ?? []), ...porFonte.get("reservasEmpresa")!]);
+  const um = (f: Fonte): string | undefined => maisRecente(porFonte.get(f) ?? []);
   const tem: Partial<Record<Fonte, boolean>> = {};
   for (const f of ["reservas", "recebidas", "receitas", "fatDiario", "analitico", "creditos", "aReceber", "consumo", "vendas", "rds", "mapa", "cafe", "camareira", "estoque", "caixa"] as Fonte[]) {
     tem[f] = porFonte.has(f);
@@ -111,4 +113,16 @@ export function montarDados(arquivos: ArquivoTexto[], inicio: string, fim: strin
   });
 
   return { dados, reconhecidos, naoReconhecidos, erros };
+}
+
+/** Data de emissão ("Emitido em: dd/mm/aaaa") do relatório exportado; "" se não houver. */
+export function emitidoEm(texto: string): string {
+  const m = /Emitido em:\s*(\d\d)\/(\d\d)\/(\d{4})/.exec(texto);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+}
+/** Entre exportações do mesmo relatório, a emitida por último (empate: a que veio depois na lista). */
+export function maisRecente(textos: string[]): string | undefined {
+  let melhor: string | undefined, data = "";
+  for (const t of textos) { const d = emitidoEm(t); if (melhor === undefined || d >= data) { melhor = t; data = d; } }
+  return melhor;
 }

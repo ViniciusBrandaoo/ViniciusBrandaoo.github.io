@@ -6,6 +6,7 @@
  */
 import { lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerValor, normalizarForma } from "./importacao.js";
 import { lerContasAReceber, lerEstoque, lerExtratoBanco, lerReservasPorEmpresa, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Fonte, type Resultado } from "./conferencia.js";
+import { maisRecente } from "./conferencia-arquivos.js";
 
 export interface ConferenciaResumo { inicio: string; fim: string; resumo: { ok: number; divergentes: number; atencao: number }; resultados: Resultado[] }
 export interface Relatorio { nome: string; titulo: string; html: string }
@@ -39,7 +40,8 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
   const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 
   const rec = recebimentosDeLinhas(lerContasRecebidasDataHotel(texto("recebidas") ?? "", inicio)?.linhas ?? []).filter((r) => r.dia >= inicio && r.dia <= fim);
-  const resLinhas = texto("reservas") ? (lerRelatorioReservasDataHotel(texto("reservas")!)?.linhas ?? []) : [];
+  const textoReservas = maisRecente([texto("reservas"), texto("reservasEmpresa")].filter((t): t is string => !!t));
+  const resLinhas = textoReservas ? (lerRelatorioReservasDataHotel(textoReservas)?.linhas ?? []) : [];
   const nomeDe = new Map(resLinhas.map((l) => [l.codigo ?? "", titulo((l.hospede ?? "").trim().split(/\s+/).slice(0, 2).join(" "))]));
   const res = reservasDeLinhas(resLinhas).filter((r) => !/cancel/i.test(r.situacao));
   const fatDiario = lerFaturamentoDiario(texto("fatDiario") ?? "");
