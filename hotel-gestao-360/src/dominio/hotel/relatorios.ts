@@ -250,7 +250,11 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
   // ------------------------------------------------------------------ empresa de cada reserva e previsão de recebimento
   const empresaDe = texto("reservasEmpresa") ? lerReservasPorEmpresa(texto("reservasEmpresa")!) : null;
   function secaoPrevisao(): string {
-    const abertas = res.filter((r) => r.checkout >= HOJE && !/checked-out/i.test(r.situacao))
+    // Previsão usa a exportação de reservas mais recente (a agrupada por empresa, quando houver).
+    const tRes = texto("reservasEmpresa");
+    const resAtual = tRes ? reservasDeLinhas(lerRelatorioReservasDataHotel(tRes)?.linhas ?? []).filter((r) => !/cancel/i.test(r.situacao)) : res;
+    if (tRes) for (const l of lerRelatorioReservasDataHotel(tRes)?.linhas ?? []) if (!nomeDe.has(l.codigo ?? "")) nomeDe.set(l.codigo ?? "", titulo((l.hospede ?? "").trim().split(/\s+/).slice(0, 2).join(" ")));
+    const abertas = resAtual.filter((r) => r.checkout >= HOJE && !/checked-out/i.test(r.situacao))
       .map((r) => ({ r, previsto: Math.max(r.vrTotal, r.diariaLancada + r.consumo) - r.recebido })).filter((x) => x.previsto > 0)
       .sort((a, b) => a.r.checkout.localeCompare(b.r.checkout));
     if (!abertas.length) return "";
