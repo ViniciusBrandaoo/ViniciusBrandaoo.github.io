@@ -147,3 +147,19 @@
   .barra-valor { font-size: var(--t-1); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--tinta); }
 }
 @media screen { .conteudo > * + .grade-kpi, .conteudo > .grade-kpi + * { margin-top: 16px; } }
+
+/* Conferência: um cartão por verificação (lê bem no celular; sem códigos técnicos). */
+.conf-lista { display: grid; gap: 10px; padding: 14px 20px 20px; }
+.conf-item { display: block !important; grid-template-columns: none !important; border: 1px solid var(--borda); border-left-width: 4px; border-radius: 12px; padding: 14px 16px; background: var(--superficie); }
+.conf-item.conf-critico { border-left-color: var(--vermelho); }
+.conf-item.conf-atencao { border-left-color: var(--ambar); }
+.conf-item.conf-ok { border-left-color: var(--pistache, #9CCB8F); }
+.conf-item header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.conf-item h3 { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.35; }
+.conf-item > p { margin: 4px 0 0; font-size: var(--t-1); }
+.conf-item ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--t-1); line-height: 1.5; overflow-wrap: anywhere; }
+.conf-num { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; font-size: var(--t-1); color: var(--tinta-media); }
+.conf-num b { color: var(--tinta); font-variant-numeric: tabular-nums; }
+.pend-resps { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--superficie-alt); font-size: var(--t-1); display: grid; gap: 8px; }
+.pend-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.comp-foto { display: block; max-width: 220px; max-height: 220px; margin-top: 8px; border-radius: 8px; border: 1px solid var(--borda); object-fit: cover; }

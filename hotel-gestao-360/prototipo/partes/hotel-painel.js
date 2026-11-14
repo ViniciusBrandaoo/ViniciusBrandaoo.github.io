@@ -21,12 +21,16 @@
   // Menu: Painel abre o grupo Hotel; Relatórios logo depois da Conferência.
   var NOVOS = [
     { grupo: "Hotel", chave: "painelhotel", nome: "Painel do Hotel", icone: "relatorios" },
-    { grupo: "Hotel", chave: "relatorioshotel", nome: "Relatórios em PDF", icone: "documentos" }
+    { grupo: "Hotel", chave: "relatorioshotel", nome: "Relatórios em PDF", icone: "documentos" },
+    { grupo: "Hotel", chave: "pendencias", nome: "Pendências", icone: "aprovacoes" },
+    { grupo: "Hotel", chave: "comprovantes", nome: "Comprovantes do Dia", icone: "contas" }
   ];
   var iHotel = T.MODULOS.findIndex(function (m) { return m.grupo === "Hotel"; });
   T.MODULOS.splice(iHotel, 0, NOVOS[0]);
   var iConf = T.MODULOS.findIndex(function (m) { return m.chave === "conferencia"; });
   T.MODULOS.splice(iConf + 1, 0, NOVOS[1]);
+  T.MODULOS.splice(T.MODULOS.findIndex(function (m) { return m.chave === "painelhotel"; }) + 1, 0, NOVOS[2]);
+  T.MODULOS.push(NOVOS[3]);
   NOVOS.forEach(function (m) { T.ICONES_MODULO[m.chave] = m.icone; T.MODULOS_DELEGAVEIS.push(m); });
   ["FINANCEIRO", "RECEPCAO"].forEach(function (p) {
     var x = T.PERFIS[p];
@@ -41,7 +45,7 @@
   var dash = T.MODULOS.find(function (m) { return m.chave === "dashboard"; });
   if (dash) { dash.nome = "Painel do Hotel"; dash.grupo = "Hotel"; }
   // Hotel primeiro no menu, na ordem do dia a dia da Fernanda.
-  var ORDEM = ["dashboard", "conferencia", "relatorioshotel", "hospedagem", "caixa", "contas", "recorrentes", "aprovacoes", "fornecedores", "empresas", "ponto", "cafe", "frigobar", "governanca", "fechamentomes"];
+  var ORDEM = ["dashboard", "pendencias", "conferencia", "relatorioshotel", "hospedagem", "caixa", "comprovantes", "contas", "recorrentes", "aprovacoes", "fornecedores", "empresas", "ponto", "cafe", "frigobar", "governanca", "fechamentomes"];
   var hotel = ORDEM.map(function (k) { return T.MODULOS.find(function (m) { return m.chave === k; }); }).filter(Boolean);
   hotel.forEach(function (m) { m.grupo = "Hotel"; T.MODULOS.splice(T.MODULOS.indexOf(m), 1); });
   T.MODULOS.unshift.apply(T.MODULOS, hotel);
@@ -145,20 +149,20 @@
 
     if (u) {
       var probl = (u.resultado || []).filter(function (r) { return r.situacao !== "OK"; });
-      html += U.painelHtml("O que a última conferência apontou", diaBR(u.inicio) + " a " + diaBR(u.fim), probl.length ? U.tabelaHtml([
-        { rotulo: "Regra", conteudo: function (r) { return esc(r.regra); } },
-        { rotulo: "O quê", conteudo: function (r) { return "<strong>" + esc(r.titulo) + '</strong><div class="secundario">' + esc((r.detalhes || []).slice(0, 2).join(" ")) + "</div>"; } },
-        { rotulo: "Situação", direita: true, conteudo: function (r) { return '<span class="pastilha ' + (r.situacao === "DIVERGENTE" ? "critico" : "atencao") + '">' + SIT[r.situacao] + "</span>"; } }
-      ], probl, {}) : '<p style="padding:16px 20px">Tudo bateu.</p>');
+      html += U.painelHtml("O que a última conferência apontou", diaBR(u.inicio) + " a " + diaBR(u.fim), probl.length ?
+        '<div class="conf-lista">' + probl.map(function (r) {
+          var tom = r.situacao === "DIVERGENTE" ? "critico" : "atencao", d = r.detalhes || [];
+          return '<article class="conf-item conf-' + tom + '"><header><h3>' + esc(r.titulo) + '</h3><span class="pastilha ' + tom + '">' + SIT[r.situacao] + "</span></header>" +
+            (d.length ? "<ul>" + d.slice(0, 4).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + (d.length > 4 ? "<li>… e mais " + (d.length - 4) + "</li>" : "") + "</ul>" : "") + "</article>";
+        }).join("") + '<p class="secundario" style="margin:2px 0 0">Detalhes completos em Conferência do Fechamento.</p></div>'
+        : '<p style="padding:16px 20px">Tudo bateu.</p>');
     }
 
-    var pend = (L.estado.pendencias || []).filter(function (x) { return x.status !== "Resolvida"; }).sort(function (a, b) { return String(a.prazo || "").localeCompare(String(b.prazo || "")); });
-    if (pend.length) html += U.painelHtml("Pendências para resolver", pend.length + " em aberto", U.tabelaHtml([
-      { rotulo: "Apto / data", conteudo: function (x) { return '<div class="principal">' + U.esc(x.apto || "—") + '</div><div class="secundario">' + (x.data ? diaBR(x.data) : "") + "</div>"; } },
-      { rotulo: "O que está errado", conteudo: function (x) { return "<strong>" + U.esc(x.tipo) + "</strong><div>" + U.esc(x.descricao) + '</div><div class="secundario">' + U.esc(x.hospede || "") + "</div>"; } },
-      { rotulo: "O que fazer", conteudo: function (x) { return U.esc(x.solucao || "") + '<div class="secundario">' + U.esc(x.responsavel || "") + (x.prazo ? " · até " + diaBR(x.prazo) : "") + "</div>"; } },
-      { rotulo: "", direita: true, conteudo: function (x) { return '<button class="botao miudo" data-acao="hotel-pendencia-ok" data-id="' + x.id + '">Resolvida</button>'; } }
-    ], pend));
+    var pend = (L.estado.pendencias || []).filter(function (x) { return x.status !== "Resolvida"; });
+    if (pend.length) html += U.painelHtml("Pendências", pend.length + " em aberto",
+      '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between"><span>' +
+      pend.slice(0, 3).map(function (x) { return esc(x.tipo) + (x.apto ? " (" + esc(x.apto) + ")" : ""); }).join(" · ") + (pend.length > 3 ? " e mais " + (pend.length - 3) : "") +
+      '</span><button class="botao primario" data-acao="pend-ir">Responder pendências</button></div>');
     html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return esc(x.h.apartamento); } },
       { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigoOrigem || x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
@@ -294,13 +298,13 @@
         h += '<p class="sub">Período conferido ' + diaBR(conf.inicio) + " a " + diaBR(conf.fim) + " · feita em " + esc(quando(conf.criadoEm)) +
           " · <span class=\"ok\">" + conf.ok + " batem</span> · <span class=\"div\">" + conf.divergentes + " divergente(s)</span> · <span class=\"at\">" + conf.atencao + " com atenção</span></p>";
         var vl = function (v, un) { return v === undefined || v === null ? "" : un === "un" ? String(v) : brl(v); };
-        h += tabela(["Regra", "O que foi conferido", "Esperado", "Encontrado", "Situação"],
+        h += tabela(["O que foi conferido", "Esperado", "Encontrado", "Situação"],
           (conf.resultado || []).slice().sort(function (a, b) { return ord[a.situacao] - ord[b.situacao]; }).map(function (r) {
             var d = r.detalhes || [];
-            return [esc(r.regra), "<strong>" + esc(r.titulo) + '</strong><div class="sub">' + esc(r.entre) + "</div>" +
+            return ["<strong>" + esc(r.titulo) + '</strong><div class="sub">' + esc(r.entre) + "</div>" +
               (d.length ? "<ul>" + d.slice(0, 15).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + (d.length > 15 ? "<li>… e mais " + (d.length - 15) + "</li>" : "") + "</ul>" : ""),
               vl(r.esperado, r.unidade), vl(r.encontrado, r.unidade), '<span class="' + cls[r.situacao] + '">' + SIT[r.situacao] + "</span>"];
-          }), [2, 3, 4]);
+          }), [1, 2, 3]);
       }
     }
     if (s.recebimentos) {
@@ -332,6 +336,172 @@
   T.acoes["hotel-pendencia-ok"] = function (id) {
     U.abrirFormulario({ titulo: "Marcar como resolvida", campos: [{ id: "decisao", rotulo: "O que foi feito", tipo: "textarea", obrigatorio: true }],
       aoSalvar: function (v) { L.atualizar("pendencias", id, { status: "Resolvida", decisao: v.decisao, resolvidaEm: L.hoje() }); U.fecharModal(); T.renderizar(); } });
+  };
+
+  // ------------------------------------------------------------ pendências (por dia, resposta Sim/Não)
+  var RESP_ROT = { SIM: "Sim, resolvido", NAO: "Não resolvido" };
+  T.acoes["pend-ir"] = function () { T.ir("pendencias"); };
+  T.telas.pendencias = function () {
+    var todas = (L.estado.pendencias || []).slice();
+    var sit = T.filtros.pendSit || "ABERTAS";
+    var lista = todas.filter(function (p) { return sit === "TODAS" ? true : sit === "RESOLVIDAS" ? p.status === "Resolvida" : p.status !== "Resolvida"; });
+    var abertas = todas.filter(function (p) { return p.status !== "Resolvida"; }).length;
+    var html = T.cabecalho("Pendências", "O que precisa ser conferido ou corrigido, separado por dia. Responda Sim ou Não e escreva o que foi feito: fica registrado quem respondeu e quando.",
+      '<button class="botao primario" data-acao="pend-nova">Nova pendência</button>');
+    html += '<div class="filtro-periodo">' + ["ABERTAS", "RESOLVIDAS", "TODAS"].map(function (k) {
+      var n = k === "ABERTAS" ? abertas : k === "RESOLVIDAS" ? todas.length - abertas : todas.length;
+      return '<button class="botao' + (sit === k ? " primario" : "") + '" data-acao="pend-filtro" data-id="' + k + '">' + { ABERTAS: "Em aberto", RESOLVIDAS: "Resolvidas", TODAS: "Todas" }[k] + " (" + n + ")</button>";
+    }).join("") + "</div>";
+    if (!lista.length) return html + '<div class="painel"><p style="padding:20px">Nenhuma pendência aqui.</p></div>';
+    var porDia = {};
+    lista.forEach(function (p) { var d = p.data || "sem data"; (porDia[d] = porDia[d] || []).push(p); });
+    Object.keys(porDia).sort().reverse().forEach(function (d) {
+      var itens = porDia[d];
+      html += U.painelHtml(d === "sem data" ? "Sem data" : diaBR(d), itens.length + " pendência(s)", '<div class="conf-lista">' + itens.map(function (p) {
+        var resps = p.respostas || [];
+        var ult = resps[resps.length - 1];
+        var tom = p.status === "Resolvida" ? "ok" : (ult && ult.resposta === "NAO" ? "critico" : "atencao");
+        var rot = p.status === "Resolvida" ? "Resolvida" : (ult && ult.resposta === "NAO" ? "Não resolvida" : "Aguardando resposta");
+        return '<article class="conf-item conf-' + tom + '"><header><h3>' + esc(p.tipo || "Pendência") + (p.apto ? ' <span class="secundario">· ' + (/^\d/.test(p.apto) ? "Apto " : "") + esc(p.apto) + "</span>" : "") + "</h3>" +
+          '<span class="pastilha ' + tom + '">' + rot + "</span></header>" +
+          (p.hospede ? '<p class="secundario">' + esc(p.hospede) + "</p>" : "") +
+          "<ul><li>" + esc(p.descricao || "") + "</li>" + (p.solucao ? "<li><strong>O que fazer:</strong> " + esc(p.solucao) + "</li>" : "") +
+          (p.responsavel || p.prazo ? '<li class="secundario">Responsável: ' + esc(p.responsavel || "—") + (p.prazo ? " · até " + diaBR(p.prazo) : "") + "</li>" : "") +
+          (p.observacoes ? '<li class="secundario">' + esc(p.observacoes) + "</li>" : "") + "</ul>" +
+          (resps.length || p.decisao ? '<div class="pend-resps">' + resps.map(function (r) {
+            return "<div><strong>" + RESP_ROT[r.resposta] + "</strong> · " + esc(r.quem || "—") + " · " + esc(r.quando || "") + (r.observacao ? "<div>" + esc(r.observacao) + "</div>" : "") + "</div>";
+          }).join("") + (!resps.length && p.decisao ? "<div><strong>Resolvida</strong>" + (p.resolvidaEm ? " · " + diaBR(p.resolvidaEm) : "") + "<div>" + esc(p.decisao) + "</div></div>" : "") + "</div>" : "") +
+          '<div class="pend-acoes"><button class="botao" data-acao="pend-responder" data-id="SIM|' + p.id + '">Sim, resolvido</button>' +
+          '<button class="botao" data-acao="pend-responder" data-id="NAO|' + p.id + '">Não</button></div>' +
+          "</article>";
+      }).join("") + "</div>");
+    });
+    return html;
+  };
+  T.acoes["pend-filtro"] = function (k) { T.filtros.pendSit = k; T.renderizar(); };
+  T.acoes["pend-responder"] = function (arg) {
+    var resp = arg.split("|")[0], id = arg.slice(resp.length + 1);
+    var p = L.buscarPorId("pendencias", id); if (!p) return;
+    var u = L.estado.usuario || {};
+    U.abrirFormulario({ titulo: resp === "SIM" ? "Pendência resolvida" : "Pendência não resolvida", sub: (p.tipo || "") + (p.apto ? " · " + p.apto : ""),
+      campos: [{ id: "quem", rotulo: "Quem está respondendo (recepcionista)", obrigatorio: true, padrao: u.nome || "" },
+        { id: "observacao", rotulo: resp === "SIM" ? "O que foi feito" : "Por que não foi resolvida / o que falta", tipo: "textarea", obrigatorio: true }],
+      aoSalvar: function (v) {
+        var agora = new Date();
+        var quando = agora.toLocaleDateString("pt-BR") + " " + agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        var resps = (p.respostas || []).concat([{ resposta: resp, quem: v.quem, observacao: v.observacao, quando: quando, usuario: u.nome || "" }]);
+        var mud = { respostas: resps };
+        if (resp === "SIM") { mud.status = "Resolvida"; mud.resolvidaEm = L.hoje(); mud.decisao = v.observacao; } else { mud.status = "Aberta"; }
+        L.atualizar("pendencias", id, mud); U.fecharModal(); T.renderizar();
+      } });
+  };
+  T.acoes["pend-nova"] = function () {
+    U.abrirFormulario({ titulo: "Nova pendência", campos: [
+      { id: "data", rotulo: "Dia", tipo: "data", obrigatorio: true, padrao: L.hoje(), par: true }, { id: "apto", rotulo: "Apartamento" },
+      { id: "tipo", rotulo: "Assunto", obrigatorio: true }, { id: "hospede", rotulo: "Hóspede / pessoa" },
+      { id: "descricao", rotulo: "O que está errado", tipo: "textarea", obrigatorio: true }, { id: "solucao", rotulo: "O que fazer", tipo: "textarea" },
+      { id: "responsavel", rotulo: "Responsável", tipo: "select", opcoes: ["Recepção", "Governança", "Financeiro", "Direção"], par: true }, { id: "prazo", rotulo: "Prazo", tipo: "data" }],
+      aoSalvar: function (v) { v.status = "Aberta"; v.origem = "Lançada no sistema por " + ((L.estado.usuario || {}).nome || "—"); L.criar("pendencias", v); U.fecharModal(); T.renderizar(); } });
+  };
+
+  // ------------------------------------------------------------ comprovantes do dia e confirmação no banco
+  var FORMAS_COMP = [
+    { valor: "CREDITO", rotulo: "Cartão de crédito (filipeta)" }, { valor: "DEBITO", rotulo: "Cartão de débito (filipeta)" },
+    { valor: "PIX", rotulo: "Pix" }, { valor: "DINHEIRO", rotulo: "Dinheiro" }, { valor: "BOLETO", rotulo: "Boleto" },
+    { valor: "DEPOSITO", rotulo: "Depósito em conta" }, { valor: "FATURADO", rotulo: "Faturado (empresa)" }];
+  var nomeComp = function (f) { var x = FORMAS_COMP.find(function (o) { return o.valor === f; }); return x ? x.rotulo.replace(/ \(filipeta\)/, "") : nomeForma(f); };
+  var diaComp = function () { return T.filtros.compDia || L.hoje(); };
+  var reaisCent = function (v) { return Math.round(Number(String(v).replace(",", ".")) * 100) || 0; };
+
+  T.telas.comprovantes = function () {
+    var d = diaComp();
+    var comps = (L.estado.comprovantes || []).filter(function (c) { return c.data === d; });
+    var recs = (L.estado.recebimentos || []).filter(function (r) { return r.data === d && r.tipo !== "SAIDA_CAIXA" && r.status !== "CANCELADO"; });
+    var formas = {};
+    var soma = function (f, k, v) { formas[f] = formas[f] || { dh: 0, comp: 0, conf: 0, nao: 0 }; formas[f][k] += v; };
+    recs.forEach(function (r) { var f = r.forma || "OUTRO", v = r.valorBruto || 0; soma(f, "dh", v); if (r.confirmadoBanco === "SIM") soma(f, "conf", v); if (r.confirmadoBanco === "NAO") soma(f, "nao", v); });
+    comps.forEach(function (c) { soma(c.forma || "OUTRO", "comp", c.valor || 0); });
+    var html = T.cabecalho("Comprovantes do Dia", "Filipetas da maquininha, Pix, dinheiro, boletos e depósitos lançados por dia e por apartamento, comparados com o que entrou no DataHotel. Em cada recebimento, marque se ele foi confirmado no banco.",
+      '<button class="botao primario" data-acao="comp-novo">Lançar comprovante</button>');
+    html += '<div class="filtro-periodo"><label>Dia <input type="date" id="comp-dia" value="' + esc(d) + '"></label><button class="botao" data-acao="comp-dia">Ver dia</button></div>';
+    var chaves = Object.keys(formas);
+    html += U.painelHtml("Resumo do dia por forma de pagamento", diaBR(d), chaves.length ? U.tabelaHtml([
+      { rotulo: "Forma", conteudo: function (k) { return esc(nomeComp(k)); } },
+      { rotulo: "No DataHotel", direita: true, conteudo: function (k) { return brl(formas[k].dh); } },
+      { rotulo: "Comprovantes", direita: true, conteudo: function (k) { return brl(formas[k].comp); } },
+      { rotulo: "Diferença", direita: true, conteudo: function (k) { var x = formas[k].comp - formas[k].dh; return x === 0 ? '<span class="pastilha ok">Bate</span>' : '<strong style="color:var(--vermelho)">' + brl(x) + "</strong>"; } },
+      { rotulo: "Confirmado no banco", direita: true, conteudo: function (k) { var f = formas[k]; return brl(f.conf) + (f.nao ? '<div class="secundario" style="color:var(--vermelho)">não confirmado ' + brl(f.nao) + "</div>" : ""); } }
+    ], chaves, {}) : '<p class="secundario" style="padding:16px 20px">Nada lançado neste dia.</p>');
+
+    html += U.painelHtml("Comprovantes lançados", comps.length + " comprovante(s)", comps.length ? '<div class="conf-lista">' + comps.map(function (c) {
+      return '<article class="conf-item conf-' + (c.foto ? "ok" : "atencao") + ' comp-item"><header><h3>' + (c.apto ? "Apto " + esc(c.apto) + " · " : "") + esc(nomeComp(c.forma)) + "</h3><strong>" + brl(c.valor || 0) + "</strong></header>" +
+        (c.foto ? '<a href="#" data-acao="comp-ver" data-id="' + c.id + '"><img class="comp-foto" alt="Comprovante" src="' + c.foto + '"></a>' : '<p class="secundario">Sem foto do comprovante.</p>') +
+        (c.observacao ? '<p class="secundario">' + esc(c.observacao) + "</p>" : "") +
+        '<p class="secundario">Lançado por ' + esc(c.lancadoPor || "—") + "</p>" +
+        '<div class="pend-acoes"><button class="botao" data-acao="comp-foto" data-id="' + c.id + '">' + (c.foto ? "Trocar foto" : "Anexar foto") + "</button></div></article>";
+    }).join("") + "</div>" : '<p class="secundario" style="padding:16px 20px">Nenhum comprovante lançado neste dia.</p>');
+
+    html += U.painelHtml("Recebimentos do DataHotel · confirmado no banco?", recs.length + " recebimento(s)", recs.length ? '<div class="conf-lista">' + recs.map(function (r) {
+      var c = r.confirmadoBanco, tom = c === "SIM" ? "ok" : c === "NAO" ? "critico" : "atencao";
+      return '<article class="conf-item conf-' + tom + '"><header><h3>' + esc(nomeComp(r.forma)) + (r.apartamento ? " · Apto " + esc(r.apartamento) : "") + "</h3><strong>" + brl(r.valorBruto || 0) + "</strong></header>" +
+        '<p class="secundario">' + esc(r.descricao || r.pagador || "") + "</p>" +
+        (c ? '<div class="pend-resps"><div><strong>' + (c === "SIM" ? "Confirmado no banco" : "Não confirmado no banco") + "</strong> · " + esc(r.confirmadoPor || "") + " · " + esc(r.confirmadoEm || "") + (r.obsBanco ? "<div>" + esc(r.obsBanco) + "</div>" : "") + "</div></div>" : "") +
+        '<div class="pend-acoes"><button class="botao" data-acao="rec-banco" data-id="SIM|' + r.id + '">Sim, confirmado</button><button class="botao" data-acao="rec-banco" data-id="NAO|' + r.id + '">Não</button></div></article>';
+    }).join("") + "</div>" : '<p class="secundario" style="padding:16px 20px">Nenhum recebimento no DataHotel neste dia.</p>');
+    return html;
+  };
+  T.acoes["comp-dia"] = function () { var i = U.el("comp-dia"); if (i && i.value) T.filtros.compDia = i.value; T.renderizar(); };
+  T.acoes["comp-novo"] = function () {
+    U.abrirFormulario({ titulo: "Lançar comprovante", campos: [
+      { id: "data", rotulo: "Dia", tipo: "data", obrigatorio: true, padrao: diaComp(), par: true }, { id: "apto", rotulo: "Apartamento" },
+      { id: "forma", rotulo: "Forma", tipo: "select", opcoes: FORMAS_COMP, par: true }, { id: "valor", rotulo: "Valor (R$)", tipo: "moeda", obrigatorio: true },
+      { id: "observacao", rotulo: "Observação", tipo: "textarea" }],
+      aoSalvar: function (v) {
+        var reg = L.criar("comprovantes", { data: v.data, apto: v.apto, forma: v.forma, valor: reaisCent(v.valor), observacao: v.observacao, lancadoPor: (L.estado.usuario || {}).nome || "" });
+        T.filtros.compDia = v.data; U.fecharModal(); T.renderizar();
+        if (reg && reg.id && window.confirm("Comprovante lançado. Quer anexar a foto agora?")) T.acoes["comp-foto"](reg.id);
+      } });
+  };
+  // Foto: reduzida no próprio navegador (no máximo ~1280px, JPEG) para caber no registro.
+  T.acoes["comp-foto"] = function (id) {
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture", "environment");
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      var img = new Image(), url = URL.createObjectURL(f);
+      img.onload = function () {
+        var lado = 1280, q = 0.7, dataUrl = "";
+        for (var t = 0; t < 6; t++) {
+          var k = Math.min(1, lado / Math.max(img.width, img.height)), cv = document.createElement("canvas");
+          cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          dataUrl = cv.toDataURL("image/jpeg", q);
+          if (dataUrl.length < 150000) break;
+          lado = Math.round(lado * 0.8); q = Math.max(0.45, q - 0.05);
+        }
+        URL.revokeObjectURL(url);
+        if (dataUrl.length >= 150000) { U.avisar("A foto ficou grande demais. Tente uma foto mais próxima do comprovante."); return; }
+        L.atualizar("comprovantes", id, { foto: dataUrl }); T.renderizar(); U.avisar("Foto anexada.");
+      };
+      img.onerror = function () { U.avisar("Não foi possível ler essa imagem."); };
+      img.src = url;
+    };
+    inp.click();
+  };
+  T.acoes["comp-ver"] = function (id) {
+    var c = L.buscarPorId("comprovantes", id); if (!c || !c.foto) return;
+    var w = window.open(""); if (w) w.document.write('<title>Comprovante</title><body style="margin:0;background:#111;display:grid;place-items:center;min-height:100vh"><img src="' + c.foto + '" style="max-width:100%;max-height:100vh"></body>');
+  };
+  T.acoes["rec-banco"] = function (arg) {
+    var resp = arg.split("|")[0], id = arg.slice(resp.length + 1);
+    var r = L.buscarPorId("recebimentos", id); if (!r) return;
+    U.abrirFormulario({ titulo: resp === "SIM" ? "Confirmado no banco" : "Não confirmado no banco", sub: nomeComp(r.forma) + " · " + brl(r.valorBruto || 0),
+      campos: [{ id: "quem", rotulo: "Quem conferiu", obrigatorio: true, padrao: (L.estado.usuario || {}).nome || "" },
+        { id: "obs", rotulo: resp === "SIM" ? "Observação (ex.: entrou no BB em 07/11)" : "O que aconteceu", tipo: "textarea", obrigatorio: resp !== "SIM" }],
+      aoSalvar: function (v) {
+        var agora = new Date();
+        L.atualizar("recebimentos", id, { confirmadoBanco: resp, confirmadoPor: v.quem, obsBanco: v.obs || "", confirmadoEm: agora.toLocaleDateString("pt-BR") + " " + agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) });
+        U.fecharModal(); T.renderizar();
+      } });
   };
   T.telas.dashboard = T.telas.painelhotel;
 })();

@@ -84,18 +84,16 @@
       ]);
       var ordem = { DIVERGENTE: 0, ATENCAO: 1, OK: 2 };
       var lista = (r.resultados || []).slice().sort(function (x, y) { return ordem[x.situacao] - ordem[y.situacao]; });
-      html += U.painelHtml("Resultado · " + diaBR(r.inicio) + " a " + diaBR(r.fim), r.doHistorico ? "do histórico" : "agora", U.tabelaHtml([
-        { rotulo: "Regra", conteudo: function (x) { return U.esc(x.regra); } },
-        { rotulo: "O que foi conferido", conteudo: function (x) {
-          var d = x.detalhes || [];
-          return "<strong>" + U.esc(x.titulo) + '</strong><div class="secundario">' + U.esc(x.entre) + "</div>" +
-            (d.length ? '<ul style="margin:6px 0 0;padding-left:18px">' + d.slice(0, 12).map(function (t) { return "<li>" + U.esc(t) + "</li>"; }).join("") +
-              (d.length > 12 ? "<li>… e mais " + (d.length - 12) + "</li>" : "") + "</ul>" : "");
-        } },
-        { rotulo: "Esperado", direita: true, conteudo: function (x) { return valor(x.esperado, x.unidade); } },
-        { rotulo: "Encontrado", direita: true, conteudo: function (x) { return valor(x.encontrado, x.unidade); } },
-        { rotulo: "Situação", direita: true, conteudo: function (x) { var t = ROT[x.situacao]; return pastilha(t[0], t[1]); } }
-      ], lista, { tituloVazio: "Sem regras" }));
+      html += U.painelHtml("Resultado · " + diaBR(r.inicio) + " a " + diaBR(r.fim), r.doHistorico ? "do histórico" : "agora",
+        '<div class="conf-lista">' + lista.map(function (x) {
+          var t = ROT[x.situacao] || ["info", x.situacao], d = x.detalhes || [];
+          var num = (x.esperado !== undefined && x.esperado !== null && x.situacao !== "OK" && x.encontrado !== x.esperado)
+            ? '<div class="conf-num"><span>Esperado <b>' + valor(x.esperado, x.unidade) + '</b></span><span>Encontrado <b>' + valor(x.encontrado, x.unidade) + "</b></span></div>" : "";
+          return '<article class="conf-item conf-' + t[0] + '"><header><h3>' + U.esc(x.titulo) + "</h3>" + pastilha(t[0], t[1]) + "</header>" +
+            '<p class="secundario">Conferido entre: ' + U.esc(x.entre) + "</p>" + num +
+            (d.length ? "<ul>" + d.slice(0, 12).map(function (s) { return "<li>" + U.esc(s) + "</li>"; }).join("") + (d.length > 12 ? "<li>… e mais " + (d.length - 12) + "</li>" : "") + "</ul>" : "") +
+            "</article>";
+        }).join("") + "</div>");
       if (r.relatorios && r.relatorios.length) {
         T._confRelatorios = r.relatorios;
         html += U.painelHtml("Relatórios para a Direção", "abra e use Imprimir → Salvar como PDF", '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px">' +

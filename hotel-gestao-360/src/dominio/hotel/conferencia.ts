@@ -408,7 +408,7 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
     const naoPagos = d.mapa.filter((m) => /^n/i.test(m.pago) || /parcial/i.test(m.pago));
     out.push({ regra: "C12b", titulo: "Hóspedes em casa com pagamento pendente", entre: "Mapa de Ocupação",
       situacao: naoPagos.length ? "ATENCAO" : "OK",
-      detalhes: naoPagos.length ? naoPagos.map((m) => `Apto ${m.apto} (${m.reserva}): pago = ${m.pago}.`) : ["Todos pagos."] });
+      detalhes: naoPagos.length ? naoPagos.map((m) => `Apto ${m.apto} (reserva ${m.reserva}): ${/parcial/i.test(m.pago) ? "pagou só uma parte" : "ainda não pagou nada"}.`) : ["Todos pagos."] });
   }
 
   // C13 — apartamentos: cadastro × RDS
@@ -424,7 +424,7 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
   // C14 — estoque negativo
   {
     const neg = d.estoque.filter((e) => e.saldo < 0);
-    out.push({ regra: "C14", titulo: "Estoque com saldo negativo", entre: "Relatório de Estoque Atual",
+    out.push({ regra: "C14", titulo: "Estoque com saldo negativo (frigobar e serviços)", entre: "Relatório de Estoque Atual",
       situacao: neg.length ? "ATENCAO" : "OK",
       detalhes: neg.length ? neg.map((e) => `${e.codigo || "(sem código)"} ${e.descricao}: ${e.saldo}.`) : ["Nenhum saldo negativo."] });
   }

@@ -16,7 +16,7 @@
     "enxovalItens", "enxovalMovimentos", "frigobarProdutos", "frigobarConsumos",
     "recebimentos", "fechamentosCaixa", "transacoesCartao", "boletos",
     "notasFiscais", "cobrancas", "contasRecorrentes", "contasBancarias",
-    "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes", "cafeLista", "pendencias", "folhaMes"
+    "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes", "cafeLista", "pendencias", "folhaMes", "comprovantes"
   ];
   var sincroniza = function (c) { return COLECOES.indexOf(c) !== -1; };
 

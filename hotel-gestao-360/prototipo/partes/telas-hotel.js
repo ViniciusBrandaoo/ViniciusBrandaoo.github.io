@@ -11,7 +11,7 @@
   var NOVOS = [
     { grupo: "Hotel", chave: "hospedagem", nome: "Hospedagem do Dia", icone: "documentos" },
     { grupo: "Hotel", chave: "cafe", nome: "Café da Manhã", icone: "ferias" },
-    { grupo: "Hotel", chave: "governanca", nome: "Governança e Enxoval", icone: "operacao" },
+    { grupo: "Hotel", chave: "governanca", nome: "Governança e Estoque", icone: "operacao" },
     { grupo: "Hotel", chave: "frigobar", nome: "Frigobar", icone: "fatia" },
     { grupo: "Hotel", chave: "importacoes", nome: "Importações DataHotel", icone: "relatorios" },
     { grupo: "Hotel", chave: "conferencia", nome: "Conferência do Fechamento", icone: "fechamento" },
@@ -112,8 +112,9 @@
     cafeAjustes: { titulo: "Ajuste do café (extra autorizado)", campos: [
       { id: "data", rotulo: "Data", tipo: "data", obrigatorio: true, par: true }, { id: "quantidade", rotulo: "Pessoas a mais (ou a menos)", tipo: "numero", obrigatorio: true },
       { id: "apartamento", rotulo: "Apartamento / referência" }, { id: "justificativa", rotulo: "Justificativa", tipo: "textarea", obrigatorio: true }] },
-    enxovalItens: { titulo: "Item de enxoval", campos: [
-      { id: "nome", rotulo: "Item", obrigatorio: true }, { id: "minimo", rotulo: "Quantidade mínima desejada", tipo: "numero", par: true },
+    enxovalItens: { titulo: "Item de estoque", campos: [
+      { id: "nome", rotulo: "Item", obrigatorio: true },
+      { id: "categoria", rotulo: "Categoria", tipo: "select", opcoes: ["Enxoval", "Cantina", "Limpeza", "Escritório", "Outros"], par: true }, { id: "minimo", rotulo: "Quantidade mínima desejada", tipo: "numero", par: true },
       { id: "perdaMaximaMes", rotulo: "Perda máxima aceitável no mês", tipo: "numero" }] },
     frigobarProdutos: { titulo: "Produto do frigobar", campos: [
       { id: "codigo", rotulo: "Código", par: true }, { id: "nome", rotulo: "Nome", obrigatorio: true }, { id: "categoria", rotulo: "Categoria", par: true },
@@ -333,18 +334,20 @@
     var resumos = itens.map(function (i) { return { item: i, r: H.resumoEnxoval(i.id, ini, d) }; });
     exportavel("enxoval-" + d, ["Item", "Inicial do mês", "Entradas", "Entregue aptos", "Recolhido", "Enviado lavanderia", "Recebido lavanderia", "Danificado", "Extraviado", "Descartado", "Disponível", "Na lavanderia", "Final", "Mínimo"],
       resumos.map(function (x) { var r = x.r; return [x.item.nome, r.inicial, r.entradas, r.entreguesApartamentos, r.recolhidos, r.enviadosLavanderia, r.recebidosLavanderia, r.danificados, r.extraviados, r.descartados, r.disponivel, r.pendenteLavanderia, r.final, r.minimo]; }));
-    var html = T.cabecalho("Governança e Enxoval", "Estoque final = inicial + entradas − saídas definitivas. Transferência só muda o local.",
+    var html = T.cabecalho("Governança e Estoque", "Estoque final = inicial + entradas − saídas definitivas. Transferência só muda o local.",
       (itens.length ? '<button class="botao primario" data-acao="hotel-mov-enxoval">Movimentar enxoval</button> ' : "") + botaoNovo("enxovalItens", "Novo item"));
     html += barraData();
-    if (!itens.length) html += '<div class="painel">' + vazio("Nenhum item de enxoval", "Comece pelos cinco itens obrigatórios: toalha de rosto, de banho, lençol, fronha e cobertor.", { acao: "hotel-enxoval-padrao", rotulo: "Criar os 5 itens obrigatórios" }) + "</div>";
+    if (!itens.length) html += '<div class="painel">' + vazio("Nenhum item de estoque", "Comece pelo enxoval (toalha de rosto, toalha de banho, lençol, fronha, cobertor e tapete). Cantina, limpeza e escritório você cadastra em Novo item.", { acao: "hotel-enxoval-padrao", rotulo: "Criar os 6 itens de enxoval" }) + "</div>";
     if (alertas.length) html += U.painelHtml("Alertas", "", '<ul class="lista-alertas" style="margin:0;padding:0 20px 16px 36px">' + alertas.map(function (a) { return "<li>" + pastilha(a.nivel === "critico" ? "critico" : "atencao", a.nivel === "critico" ? "Crítico" : "Atenção") + " " + U.esc(a.texto) + "</li>"; }).join("") + "</ul>");
     html += U.painelHtml("Lista do dia", g.ocupados + " ocupados · " + g.saidas + " saídas · " + g.entradas + " entradas", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (a) { return "<strong>" + U.esc(a.apartamento) + "</strong>"; } },
       { rotulo: "O que fazer", conteudo: function (a) { return a.tarefas.map(U.esc).join(" · "); } }
     ], g.apartamentos, { tituloVazio: "Nenhum apartamento para arrumar" }) +
       (Object.keys(g.reposicao).length ? '<p class="secundario" style="padding:0 20px 14px">Reposição pelo padrão de cada apartamento: ' + Object.keys(g.reposicao).map(function (k) { var i = L.buscarPorId("enxovalItens", k); return (i ? i.nome : k) + " " + g.reposicao[k]; }).join(" · ") + "</p>" : ""));
+    var CATS = ["Enxoval", "Cantina", "Limpeza", "Escritório", "Outros"];
+    resumos.sort(function (a, b) { return CATS.indexOf(a.item.categoria || "Enxoval") - CATS.indexOf(b.item.categoria || "Enxoval") || String(a.item.nome).localeCompare(String(b.item.nome)); });
     if (itens.length) html += U.painelHtml("Estoque por item", "mês até " + L.dataBR(d), U.tabelaHtml([
-      { rotulo: "Item", conteudo: function (x) { return '<div class="principal">' + U.esc(x.item.nome) + '</div><div class="secundario">mínimo ' + (x.item.minimo || 0) + "</div>"; } },
+      { rotulo: "Item", conteudo: function (x) { return '<div class="principal">' + U.esc(x.item.nome) + '</div><div class="secundario">' + U.esc(x.item.categoria || "Enxoval") + " · mínimo " + (x.item.minimo || 0) + "</div>"; } },
       { rotulo: "Rouparia", direita: true, conteudo: function (x) { return x.r.porLocal.ROUPARIA; } },
       { rotulo: "Aptos", direita: true, conteudo: function (x) { return x.r.porLocal.APARTAMENTOS; } },
       { rotulo: "Lavanderia", direita: true, conteudo: function (x) { return x.r.porLocal.LAVANDERIA; } },
@@ -363,7 +366,7 @@
     return html;
   };
   T.acoes["hotel-enxoval-padrao"] = function () {
-    H.ITENS_ENXOVAL_PADRAO.forEach(function (n) { if (!L.estado.enxovalItens.some(function (i) { return i.nome === n; })) L.criar("enxovalItens", { nome: n, minimo: 0 }); });
+    H.ITENS_ENXOVAL_PADRAO.concat(["Tapete"]).forEach(function (n) { if (!L.estado.enxovalItens.some(function (i) { return i.nome === n; })) L.criar("enxovalItens", { nome: n, minimo: 0, categoria: "Enxoval" }); });
     T.renderizar();
   };
   T.acoes["hotel-mov-enxoval"] = function () {
