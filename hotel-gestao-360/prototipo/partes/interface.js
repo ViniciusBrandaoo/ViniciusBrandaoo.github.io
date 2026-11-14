@@ -139,6 +139,9 @@ U.iniciarTema = function () {
   try { guardado = localStorage.getItem("hotel-tema"); } catch (e) { /* modo anônimo */ }
   if (guardado === "claro" || guardado === "escuro") {
     U.aplicarTema(guardado, false);
+  } else if (true) {
+    // Acácia Hotel: sem escolha registrada, o padrão é o tema claro (pistache).
+    U.aplicarTema("claro", false);
   } else {
     // Sem escolha registrada, segue o sistema — e continua seguindo se mudar.
     U.todos("[data-tema]").forEach(function (b) {

@@ -57,23 +57,52 @@
 .hotel-filtro { padding: 7px 10px; border: 1px solid var(--borda-forte); border-radius: 7px; font-size: var(--t-1); }
 
 /* ============================================================ identidade Acácia Hotel
-   Verde-acácia de marca, flor dourada de acento, areia de fundo. Só troca o valor dos
-   tokens de estilo.css (os nomes --marinho etc. ficam): o sistema inteiro acompanha. */
+   Pistache: fundo creme-esverdeado, verde-pistache de marca, flor dourada de acento.
+   Só troca o valor dos tokens de estilo.css (os nomes --marinho etc. ficam). */
 :root {
-  --tinta:#17251F; --tinta-media:#5C6B65; --tinta-fraca:#66746E;
-  --papel:#F1EFE6; --superficie:#FFFEFA; --superficie-alt:#F4F2EA; --borda:#DDE0D6; --borda-forte:#A3ADA6;
-  --topo-vidro-fundo:rgba(241,239,230,.96);
-  --kpi-borda:#DDE0D6; --kpi-hover-fundo:#F7F6F0; --kpi-rotulo-cor:#5C6B65; --kpi-valor-cor:#24493F; --kpi-nota-cor:#5C6B65;
-  --marinho-abissal:#12261F; --marinho:#2F5D50; --marinho-borda:#3E7A69; --titulo:#24493F; --marinho-claro:#3E7A69;
-  --dourado:#E3B93F; --orbital:#8A6A12; --orbital-luz:#D9B95A; --orbital-fundo:#FBF4DE;
-  --lateral-fundo:#16302A; --lateral-fundo-alt:#21453B; --lateral-mais-hover:#2B574B;
-  --lateral-texto:#EEF0E6; --lateral-texto-fraca:#BFCCC4; --lateral-texto-fraca-ativo:#BFCCC4;
-  --lateral-dourado:#E3B93F; --lateral-dourado-ativo:#E3B93F; --lateral-dourado-fundo:rgba(227,185,63,.13);
+  --tinta:#1F2B1A; --tinta-media:#56634C; --tinta-fraca:#64705A;
+  --papel:#EFF3E6; --superficie:#FFFFFB; --superficie-alt:#F4F7EC; --borda:#DCE4CC; --borda-forte:#A9B798;
+  --topo-vidro-fundo:rgba(239,243,230,.96);
+  --kpi-borda:#DCE4CC; --kpi-vidro-fundo:#FFFFFB; --kpi-hover-fundo:#F7F9F0; --kpi-rotulo-cor:#56634C; --kpi-valor-cor:#2F4A1F; --kpi-nota-cor:#56634C;
+  --marinho-abissal:#22331A; --marinho:#4F7D30; --marinho-borda:#6B9A47; --titulo:#2F4A1F; --marinho-claro:#5C8A3A;
+  --dourado:#E3B93F; --orbital:#7C6410; --orbital-luz:#D9B95A; --orbital-fundo:#F6F1D8;
+  --lateral-fundo:#DCE8C6; --lateral-fundo-alt:#C9DBAE; --lateral-mais-hover:#BCD19D;
+  --lateral-borda:rgba(47,74,31,.14);
+  --lateral-texto:#2A3D1E; --lateral-texto-fraca:#4F6043; --lateral-texto-fraca-ativo:#2F4A1F; --lateral-texto-ativa:#1F2B1A;
+  --lateral-dourado:#3F6B22; --lateral-dourado-ativo:#2F5518; --lateral-dourado-fundo:rgba(79,125,48,.16);
+  --lateral-urgente:#A32D43; --lateral-urgente-ativo:#A32D43;
+  --sombra-1:0 1px 2px rgba(47,74,31,.05); --sombra-2:0 1px 3px rgba(47,74,31,.05), 0 8px 24px -12px rgba(47,74,31,.12); --sombra-3:0 16px 48px rgba(47,74,31,.12);
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --tinta:#E7EDE9;--tinta-media:#AEBDB5;--tinta-fraca:#98A9A0;--papel:#0B1512;--superficie:#12201B;--superficie-alt:#1A2C26;--borda:#2A3D36;--borda-forte:#44594F;--topo-vidro-fundo:rgba(11,21,18,.96);--kpi-borda:#2A3D36;--kpi-vidro-fundo:#12201B;--kpi-hover-fundo:#1A2C26;--kpi-rotulo-cor:#AEBDB5;--kpi-valor-cor:#F1F5F2;--kpi-nota-cor:#AEBDB5;--marinho:#356F5F;--marinho-borda:#4A8A77;--titulo:#F1F5F2;--marinho-claro:#8CC7B3;--lateral-fundo:#08110E;--lateral-fundo-alt:#16302A;--lateral-mais-hover:#21453B; } }
-:root[data-theme="dark"] { --tinta:#E7EDE9;--tinta-media:#AEBDB5;--tinta-fraca:#98A9A0;--papel:#0B1512;--superficie:#12201B;--superficie-alt:#1A2C26;--borda:#2A3D36;--borda-forte:#44594F;--topo-vidro-fundo:rgba(11,21,18,.96);--kpi-borda:#2A3D36;--kpi-vidro-fundo:#12201B;--kpi-hover-fundo:#1A2C26;--kpi-rotulo-cor:#AEBDB5;--kpi-valor-cor:#F1F5F2;--kpi-nota-cor:#AEBDB5;--marinho:#356F5F;--marinho-borda:#4A8A77;--titulo:#F1F5F2;--marinho-claro:#8CC7B3;--lateral-fundo:#08110E;--lateral-fundo-alt:#16302A;--lateral-mais-hover:#21453B; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme:dark;--tinta:#EAF0E2;--tinta-media:#B8C5AB;--tinta-fraca:#A1B093;--papel:#1B2317;--superficie:#232D1E;--superficie-alt:#2B3725;--borda:#38472F;--borda-forte:#586A4C;--topo-vidro-fundo:rgba(27,35,23,.96);--kpi-borda:#38472F;--kpi-vidro-fundo:#232D1E;--kpi-hover-fundo:#2B3725;--kpi-rotulo-cor:#B8C5AB;--kpi-valor-cor:#F1F6EA;--kpi-nota-cor:#B8C5AB;--marinho:#5C8A3A;--marinho-borda:#86B360;--titulo:#F1F6EA;--marinho-claro:#B5D68F;--orbital:#D9C06A;--orbital-luz:#EBD98F;--orbital-fundo:#2E2A14;--lateral-fundo:#141B11;--lateral-fundo-alt:#27351F;--lateral-mais-hover:#31422A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E6EDDB;--lateral-texto-fraca:#B8C5AB;--lateral-texto-fraca-ativo:#B8C5AB;--lateral-texto-ativa:#FFFFFB;--lateral-dourado:#B5D68F;--lateral-dourado-ativo:#B5D68F;--lateral-dourado-fundo:rgba(181,214,143,.14);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0; } }
+:root[data-theme="dark"] { color-scheme:dark;--tinta:#EAF0E2;--tinta-media:#B8C5AB;--tinta-fraca:#A1B093;--papel:#1B2317;--superficie:#232D1E;--superficie-alt:#2B3725;--borda:#38472F;--borda-forte:#586A4C;--topo-vidro-fundo:rgba(27,35,23,.96);--kpi-borda:#38472F;--kpi-vidro-fundo:#232D1E;--kpi-hover-fundo:#2B3725;--kpi-rotulo-cor:#B8C5AB;--kpi-valor-cor:#F1F6EA;--kpi-nota-cor:#B8C5AB;--marinho:#5C8A3A;--marinho-borda:#86B360;--titulo:#F1F6EA;--marinho-claro:#B5D68F;--orbital:#D9C06A;--orbital-luz:#EBD98F;--orbital-fundo:#2E2A14;--lateral-fundo:#141B11;--lateral-fundo-alt:#27351F;--lateral-mais-hover:#31422A;--lateral-borda:rgba(255,255,255,.08);--lateral-texto:#E6EDDB;--lateral-texto-fraca:#B8C5AB;--lateral-texto-fraca-ativo:#B8C5AB;--lateral-texto-ativa:#FFFFFB;--lateral-dourado:#B5D68F;--lateral-dourado-ativo:#B5D68F;--lateral-dourado-fundo:rgba(181,214,143,.14);--lateral-urgente:#FFB4C0;--lateral-urgente-ativo:#FFB4C0; }
 #atomo { display: none; }
-/* Brilho da tela de acesso no tom da marca (verde frio + flor quente). */
-.acesso { --acesso-fundo: #E9E6D8; --acesso-brilho-frio: #DCEAE3; --acesso-brilho-quente: #F1E3BC; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .acesso { --acesso-fundo: #060B09; --acesso-brilho-frio: #12332A; --acesso-brilho-quente: #1E1806; } }
-:root[data-theme="dark"] .acesso { --acesso-fundo: #060B09; --acesso-brilho-frio: #12332A; --acesso-brilho-quente: #1E1806; }
+.acesso { --acesso-fundo:#EFF3E6; --acesso-brilho-frio:#E2EDD0; --acesso-brilho-quente:#F4ECC8; }
+:root[data-theme="dark"] .acesso { --acesso-fundo:#161D13; --acesso-brilho-frio:#26351E; --acesso-brilho-quente:#2A2610; }
+
+/* ============================================================ tela de entrada Acácia
+   Painel pistache com a acácia ao sol; o cartão de acesso ao lado.
+   Em tela estreita o painel vira faixa no topo e a página pode rolar. */
+@media screen {
+  .acesso .acesso-topo { padding: 16px 28px; border-bottom: 0; }
+  .acesso .acesso-palco { max-width: none; padding: 4px 24px 20px; gap: 24px; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); align-items: stretch; }
+  .acesso .acesso-texto { display: flex; flex-direction: column; justify-content: flex-start; position: relative; overflow: hidden; border-radius: 26px; padding: clamp(28px, 5vw, 64px); background: linear-gradient(170deg, #E4EFCF 0%, #D3E4B6 60%, #C3DBA0 100%); min-height: 0; }
+  .acesso .acesso-texto::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 56%; background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 640 280%22 preserveAspectRatio=%22xMidYMax slice%22%3E%3Ccircle cx=%22486%22 cy=%22112%22 r=%2254%22 fill=%22%23F0C94F%22/%3E%3Cpath d=%22M0 232c90-26 170-30 260-18s190 4 380-22v88H0z%22 fill=%22%23A9C77E%22/%3E%3Cpath d=%22M36 170c0-36 62-62 140-62s140 26 140 62z%22 fill=%22%234F7D30%22/%3E%3Cpath d=%22M176 268v-66m0 14-58-48m58 36 58-36%22 fill=%22none%22 stroke=%22%234F7D30%22 stroke-width=%2210%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%22246%22 cy=%22134%22 r=%229%22 fill=%22%23F0C94F%22/%3E%3Cpath d=%22M420 204c0-21 36-36 80-36s80 15 80 36z%22 fill=%22%236B9A47%22/%3E%3Cpath d=%22M500 266v-42m0 9-33-29m33 22 33-22%22 fill=%22none%22 stroke=%22%236B9A47%22 stroke-width=%226.5%22 stroke-linecap=%22round%22/%3E%3Crect y=%22262%22 width=%22640%22 height=%2218%22 fill=%22%237FA650%22/%3E%3C/svg%3E") center bottom / cover no-repeat; pointer-events: none; }
+  .acesso .acesso-texto > * { position: relative; z-index: 1; }
+  .acesso .acesso-eyebrow { color: #3F6B22; margin-bottom: 18px; }
+  .acesso .acesso-tese { color: #22331A; font-size: clamp(1.9rem, 3.2vw, 3.1rem); max-width: 16ch; }
+  .acesso .acesso-descricao { color: #3F5232; margin-top: 18px; max-width: 34ch; line-height: 1.6; }
+  .acesso .acesso-cartao { align-self: center; justify-self: center; width: min(420px, 100%); }
+  .acesso .acesso-cartao h1 { font-size: 1.5rem; color: var(--titulo); margin-bottom: 4px; }
+  .acesso .acesso-cartao h1 + p { color: var(--tinta-media); margin-bottom: 20px; }
+  .acesso .acesso-rodape { border-top: 0; }
+  @media (max-width: 900px) {
+    .acesso { height: auto; overflow: visible; }
+    .acesso .acesso-palco { display: flex; flex-direction: column; align-items: stretch; overflow: visible; padding: 4px 16px 24px; gap: 18px; }
+    .acesso .acesso-texto { border-radius: 20px; padding: 24px 22px 150px; }
+    .acesso .acesso-texto::after { height: 150px; }
+    .acesso .acesso-eyebrow { margin-bottom: 10px; }
+    .acesso .acesso-tese { font-size: 1.6rem; max-width: 20ch; }
+    .acesso .acesso-descricao { display: none; }
+    .acesso .acesso-cartao { max-width: 460px; width: 100%; }
+  }
+}
