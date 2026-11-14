@@ -126,7 +126,7 @@ U.temaAtual = function () {
 U.aplicarTema = function (tema, guardar) {
   document.documentElement.setAttribute("data-theme", tema === "escuro" ? "dark" : "light");
   if (guardar) {
-    try { localStorage.setItem("hotel-tema", tema); } catch (e) { /* modo anônimo */ }
+    try { localStorage.setItem("acacia-tema", tema); } catch (e) { /* modo anônimo */ }
   }
   U.todos("[data-tema]").forEach(function (b) {
     b.setAttribute("aria-pressed", String(b.dataset.tema === tema));
@@ -136,7 +136,7 @@ U.aplicarTema = function (tema, guardar) {
 
 U.iniciarTema = function () {
   var guardado = null;
-  try { guardado = localStorage.getItem("hotel-tema"); } catch (e) { /* modo anônimo */ }
+  try { guardado = localStorage.getItem("acacia-tema"); } catch (e) { /* modo anônimo */ }
   if (guardado === "claro" || guardado === "escuro") {
     U.aplicarTema(guardado, false);
   } else if (true) {
