@@ -55,6 +55,7 @@ import * as hotel from "./hotel.js";
 import * as hotelDados from "./hotel-dados.js";
 import * as hotelConferencia from "./hotel-conferencia.js";
 import { registrarPrimeiroAcesso } from "./primeiro-acesso.js";
+import { registrarConvite } from "./convite.js";
 import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
 import { lerLotacionogramaDeBuffer } from "../src/importacao/lotacionograma.js";
 import * as clipescola from "./conectores/clipescola.js";
@@ -325,6 +326,7 @@ app.get("/api/saude", async () => {
 // ---------------------------------------------------------------- primeiro acesso (só com PRIMEIRO_ACESSO_TOKEN e sem usuários)
 
 registrarPrimeiroAcesso(app);
+registrarConvite(app);
 
 // ---------------------------------------------------------------- acesso
 
