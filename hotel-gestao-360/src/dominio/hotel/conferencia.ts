@@ -450,14 +450,14 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
 /** Cada fonte (relatório do DataHotel) que uma regra precisa. */
 export type Fonte =
   | "reservas" | "recebidas" | "receitas" | "fatDiario" | "analitico" | "creditos" | "aReceber"
-  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque" | "caixa" | "banco";
+  | "consumo" | "vendas" | "rds" | "mapa" | "cafe" | "camareira" | "estoque" | "caixa" | "banco" | "reservasEmpresa";
 
 export const NOME_FONTE: Record<Fonte, string> = {
   reservas: "Relatório de Reservas (com extrato)", recebidas: "Relatório de Contas Recebidas",
   receitas: "Receitas x Despesas", fatDiario: "Resumo de Faturamento Diário", analitico: "Relatório de Faturamento Analítico",
   creditos: "Créditos e Débitos por Forma de Pgto.", aReceber: "Relatório de Contas a Receber",
   consumo: "Relatório de Consumo", vendas: "Relatório de Vendas Itens", rds: "Relatório Diário (RDS)",
-  mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual", banco: "Extrato bancário (BB)",
+  mapa: "Mapa de Ocupação Diário", cafe: "Lista de Café da Manhã", camareira: "Lista de Camareira", estoque: "Relatório de Estoque Atual", banco: "Extrato bancário (BB)", reservasEmpresa: "Relatório de Reservas por Empresas",
   caixa: "Resumo por Movimentação de Caixa",
 };
 
@@ -522,4 +522,20 @@ export function lerExtratoBanco(texto: string): { lancamentos: LancamentoBanco[]
     const u = meses[meses.length - 1]; if (u) u.soma += valor;
   }
   return { lancamentos, meses };
+}
+
+/** Relatório de Reservas agrupado por Empresas: código da reserva → empresa ("" = sem empresa). */
+export function lerReservasPorEmpresa(texto: string): Map<string, string> {
+  const out = new Map<string, string>();
+  let empresa = "";
+  for (const bruta of texto.split(/\r?\n/)) {
+    const c = bruta.split(";").map((x) => x.trim());
+    const prim = c[0] ?? "";
+    if (!prim) continue;
+    if (/^[A-Z]{3}\d{6}$/.test(prim)) { out.set(prim, empresa); continue; }
+    if (/^Total:/i.test(prim)) { empresa = ""; continue; }
+    if (/^(Tipo Conta|DI.RIA|RECEBIMENTO|CONSUMO|DESCONTO|Relat|Per.odo|H.spede|C.d\. Res|Emitido|Resumo|Total Geral|\d+ registro)/i.test(prim)) continue;
+    if (c.slice(1).every((x) => x === "") && /[A-Za-z]/.test(prim)) empresa = prim.replace(/\s+/g, " ");
+  }
+  return out;
 }

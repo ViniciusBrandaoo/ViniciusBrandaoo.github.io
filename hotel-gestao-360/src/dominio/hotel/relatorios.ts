@@ -5,7 +5,7 @@
  * Só lê: nenhum número é estimado; o que não vem do DataHotel aparece como "sem dado".
  */
 import { lerContasRecebidasDataHotel, lerListaCafeDataHotel, lerMovimentoCaixaDataHotel, lerRelatorioReservasDataHotel, lerValor, normalizarForma } from "./importacao.js";
-import { lerContasAReceber, lerEstoque, lerExtratoBanco, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Fonte, type Resultado } from "./conferencia.js";
+import { lerContasAReceber, lerEstoque, lerExtratoBanco, lerReservasPorEmpresa, lerFaturamentoDiario, recebimentosDeLinhas, reservasDeLinhas, type Fonte, type Resultado } from "./conferencia.js";
 
 export interface ConferenciaResumo { inicio: string; fim: string; resumo: { ok: number; divergentes: number; atencao: number }; resultados: Resultado[] }
 export interface Relatorio { nome: string; titulo: string; html: string }
@@ -247,6 +247,20 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
         `<h2>Observações da folha</h2><ul>${fs.filter((f) => f.observacoes).map((f) => `<li><b>${esc(f.nome)}:</b> ${esc(f.observacoes)}</li>`).join("")}</ul>`; }).join("");
   }
 
+  // ------------------------------------------------------------------ empresa de cada reserva e previsão de recebimento
+  const empresaDe = texto("reservasEmpresa") ? lerReservasPorEmpresa(texto("reservasEmpresa")!) : null;
+  function secaoPrevisao(): string {
+    const abertas = res.filter((r) => r.checkout >= HOJE && !/checked-out/i.test(r.situacao))
+      .map((r) => ({ r, previsto: Math.max(r.vrTotal, r.diariaLancada + r.consumo) - r.recebido })).filter((x) => x.previsto > 0)
+      .sort((a, b) => a.r.checkout.localeCompare(b.r.checkout));
+    if (!abertas.length) return "";
+    const formaDe = (cod: string) => { const e = empresaDe?.get(cod); return e ? `Faturar para ${e}` : empresaDe ? "Hóspede paga no check-out (forma escolhida na hora)" : "Sem dado de empresa"; };
+    const porDia = new Map<string, number>(); for (const a of abertas) porDia.set(a.r.checkout, (porDia.get(a.r.checkout) ?? 0) + a.previsto);
+    return `<h2 class="quebra">Previsão de recebimento</h2><p class="nota">Reservas e hospedagens em andamento: quanto falta receber, em que dia (data de saída) e de que forma. Valor = total da reserva no DataHotel menos o que já foi pago.</p>` +
+      tabela(["Saída", "Apto", "Hóspede", "Situação", "Como recebe", "A receber"], abertas.map((a) => [br(a.r.checkout), esc(a.r.apto), esc(nomeDe.get(a.r.codigo) ?? "") + `<div class="fraco">${esc(a.r.codigo)}</div>`, esc(a.r.situacao), esc(formaDe(a.r.codigo)), brl(a.previsto)]), [5], ["Total", "", "", "", "", brl(soma(abertas.map((a) => a.previsto)))]) +
+      `<h2>Previsto por dia</h2>` + tabela(["Dia", "Valor"], [...porDia].sort().map(([d, v]) => [br(d), brl(v)]), [1], ["Total", brl(soma([...porDia.values()]))]);
+  }
+
   // ------------------------------------------------------------------ 3) financeiro
   const maxDia = Math.max(...porDia.values(), 1);
   const p3 = pagina("Financeiro", "recebimentos, caixa, faturamento e empresas",
@@ -270,8 +284,11 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     `<h2>Receita lançada por dia</h2><p class="nota">Diárias, consumo e venda de balcão lançados em cada dia (até ${br(fatFim)}).</p>` +
     tabela(["Dia", "Diárias", "Consumo", "Balcão", "Total"], fatDiario.map((f) => [br(f.dia), brl(f.diaria), brl(f.consumo), brl(f.venda), brl(f.total)]), [1, 2, 3, 4], ["Total", brl(diariasPeriodo), brl(consumoPeriodo), brl(vendaPeriodo), brl(soma(fatDiario.map((f) => f.total)))]) +
     `<h2>Empresas</h2><div class="card"><b>Faturado para empresas sem fatura emitida</b><ul><li>${brl(faturado)} lançados como "Faturar empresa" de ${br(inicio)} a ${br(fim)}.</li><li>Faturas emitidas no DataHotel: nenhuma. Contas a receber lançadas: ${brl(aReceberTotal)}.</li><li><b>O que fazer:</b> ${ACAO.C8}</li></ul></div>` +
-    `<p class="nota">Hospedagens lançadas como "Faturar empresa" (o relatório do DataHotel traz o hóspede e a reserva; o nome da empresa não vem nele).</p>` +
-    tabela(["Data", "Reserva", "Hóspede", "Valor"], rec.filter((r) => r.forma === "FATURADO").sort((a, b) => a.dia.localeCompare(b.dia)).map((r) => [br(r.dia), esc(r.reserva || "—"), esc(titulo((r.reserva && nomeDe.get(r.reserva)) || r.pagador || "")), brl(r.valor)]), [3], ["Total", "", "", brl(faturado)]) +
+    `<p class="nota">Hospedagens lançadas como "Faturar empresa", com a empresa cadastrada na reserva do DataHotel.</p>` +
+    tabela(["Data", "Reserva", "Hóspede", "Empresa", "Valor"], rec.filter((r) => r.forma === "FATURADO").sort((a, b) => a.dia.localeCompare(b.dia)).map((r) => [br(r.dia), esc(r.reserva || "—"), esc(titulo((r.reserva && nomeDe.get(r.reserva)) || r.pagador || "")), empresaDe ? (empresaDe.get(r.reserva) ? `<b>${esc(empresaDe.get(r.reserva)!)}</b>` : '<span style="color:#b42318">sem empresa na reserva</span>') : "—", brl(r.valor)]), [4], ["Total", "", "", "", brl(faturado)]) +
+    (empresaDe ? (() => { const g = new Map<string, number>(); for (const r of rec.filter((x) => x.forma === "FATURADO")) { const e = empresaDe.get(r.reserva) || "Sem empresa na reserva (corrigir no DataHotel)"; g.set(e, (g.get(e) ?? 0) + r.valor); }
+      return `<h2>Faturado por empresa</h2><p class="nota">O que é de empresa vai para a empresa: soma do "Faturar empresa" pela empresa cadastrada na reserva do DataHotel.</p>` + tabela(["Empresa", "Valor"], [...g].sort((a, b) => b[1] - a[1]).map(([e, v]) => [esc(e), brl(v)]), [1], ["Total", brl(faturado)]); })() : "") +
+    secaoPrevisao() +
     (aReceber.length ? tabela(["Lançamento", "Vencimento", "Descrição", "Valor"], aReceber.map((a) => [esc(a.lancto), br(a.vencimento), esc(a.descricao), brl(a.valor)]), [3]) : ""));
 
   // ------------------------------------------------------------------ 4) hospedagem e operação
@@ -318,7 +335,8 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     ["Fechamento diário de caixa por forma de pagamento", S.ok, "Relatório 3 · Caixa dia a dia e Fechamentos de caixa (livro-caixa até o último caixa fechado)."],
     ["Faturado × recebido", S.ok, "Relatórios 1 e 3 · recebido em caixa e bancos separado do faturado para empresas."],
     ["Conciliação de cartões e depósitos (taxas, antecipação)", extrato ? S.parcial : S.sem, extrato ? "Relatório 3 · Conciliação bancária BB × DataHotel por forma. Falta o relatório da Cielo para fechar venda por venda." : "Precisa do extrato bancário e do relatório da maquininha (Cielo)."],
-    ["Faturamento mensal das empresas", S.parcial, ex ? `Relatório 3 · faturado por hospedagem e títulos a receber; ${ex.empresas.total} empresas com regras de faturamento cadastradas. O DataHotel não informa a empresa de cada hospedagem faturada.` : "Relatório 3 · faturado por hospedagem. O DataHotel não informa a empresa nesse relatório e não há fatura emitida."],
+    ["Faturamento mensal das empresas", empresaDe && ex ? S.ok : S.parcial, empresaDe ? `Relatório 3 · faturado por hospedagem com a empresa da reserva, soma por empresa e títulos a receber${ex ? `; ${ex.empresas.total} empresas com regras de faturamento cadastradas` : ""}.` : "Relatório 3 · faturado por hospedagem. Falta o Relatório de Reservas agrupado por Empresas para saber a empresa de cada uma."],
+    ["Previsão de recebimento por reserva (dia, forma, valor)", res.length ? S.ok : S.sem, "Relatório 3 · Previsão de recebimento: cada reserva com a data de saída, se é faturada para empresa ou paga no check-out, e quanto falta receber."],
     ["Notas fiscais e boletos", S.sem, "Nenhuma fatura, NFS-e ou boleto emitido no DataHotel no período."],
     ["Cobrança das empresas", ex ? S.ok : S.parcial, ex ? "Relatório 3 · Empresas a receber: NF, vencimento, previsão e situação da cobrança de cada título." : "Relatórios 1 e 3 · valor sem cobrança apontado; contas a receber lançadas listadas."],
     ["Frigobar (vendas, margem, não cobrados)", S.ok, "Relatório 4 · produtos vendidos, custo, venda e margem; consumo por hospedagem no extrato."],

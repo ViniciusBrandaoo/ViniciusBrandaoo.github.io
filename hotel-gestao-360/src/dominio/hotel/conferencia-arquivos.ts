@@ -16,6 +16,7 @@ export interface ArquivoTexto { nome: string; texto: string }
 /** Qual relatório é este arquivo? Null = não reconhecido. */
 export function reconhecer(texto: string): Fonte | null {
   const t = texto.slice(0, 4000);
+  if (/Reservas por Empresas/i.test(t)) return "reservasEmpresa";
   if (/Relat.rio de Reservas/i.test(t) && /C.d\. Res\./.test(texto)) return "reservas";
   if (/Contas Recebidas por/i.test(t)) return "recebidas";
   if (/Receitas x Despesas/i.test(t)) return "receitas";
