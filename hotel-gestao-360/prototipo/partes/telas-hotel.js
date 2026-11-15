@@ -1070,9 +1070,9 @@
     var nFeitos = passos.filter(function (p, i) { return feitos[i]; }).length;
     html += U.painelHtml("Roteiro de conferência", nFeitos + " de " + passos.length + " conferidos", '<div class="roteiro">' + passos.map(function (p, i) {
       var ok = !!feitos[i];
-      return '<' + (ok || !T.podeEditar() ? "div" : 'button type="button" data-acao="hotel-passo-mes" data-id="' + i + '"') + ' class="roteiro-item' + (ok ? " feito" : "") + '">' +
+      return '<' + (!T.podeEditar() ? "div" : 'button type="button" data-acao="hotel-passo-mes" data-id="' + i + '" title="' + (ok ? "Clique para desmarcar" : "Clique para marcar como conferido") + '"') + ' class="roteiro-item' + (ok ? " feito" : "") + '">' +
         '<span class="roteiro-caixa" aria-hidden="true">' + (ok ? "✓" : "") + '</span><span class="roteiro-texto">' + U.esc(p) + (ok ? '<small>conferido por ' + U.esc(feitos[i]) + "</small>" : "") + "</span>" +
-        "</" + (ok || !T.podeEditar() ? "div" : "button") + ">"; }).join("") + "</div>" +
+        "</" + (!T.podeEditar() ? "div" : "button") + ">"; }).join("") + "</div>" +
       '<div style="padding:0 20px 18px;display:flex;gap:8px">' +
       (st !== "FECHADO" && T.podeEditar() ? '<button class="botao" data-acao="hotel-status-mes" data-id="AGUARDANDO_APROVACAO">Submeter à Direção</button>' : "") +
       (T.temPerfil("DIRECAO") && st === "AGUARDANDO_APROVACAO" ? ' <button class="botao primario" data-acao="hotel-status-mes" data-id="APROVADO">Aprovar</button>' : "") +
@@ -1091,8 +1091,10 @@
     var comp = compSel();
     var atual = (L.estado.fechamentosMes || []).find(function (x) { return x.id === comp; }) || {};
     var passos = Object.assign({}, atual.passosHotel || {});
-    passos[i] = (L.estado.usuario || {}).nome;
+    var desfez = !!passos[i];
+    if (desfez) delete passos[i]; else passos[i] = (L.estado.usuario || {}).nome;
     gravarMes(comp, { passosHotel: passos });
+    U.avisar(desfez ? "Desmarcado." : "Marcado como conferido. Clique de novo para desfazer.");
     T.renderizar();
   };
   T.acoes["hotel-status-mes"] = function (s) {
