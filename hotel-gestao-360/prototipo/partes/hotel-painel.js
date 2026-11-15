@@ -368,9 +368,9 @@
           "<ul><li>" + esc(p.descricao || "") + "</li>" + (p.solucao ? "<li><strong>O que fazer:</strong> " + esc(p.solucao) + "</li>" : "") +
           (p.responsavel || p.prazo ? '<li class="secundario">Responsável: ' + esc(p.responsavel || "—") + (p.prazo ? " · até " + diaBR(p.prazo) : "") + "</li>" : "") +
           (p.observacoes ? '<li class="secundario">' + esc(p.observacoes) + "</li>" : "") + "</ul>" +
-          (resps.length || p.decisao ? '<div class="pend-resps">' + resps.map(function (r) {
+          (resps.length || (p.decisao && p.status === "Resolvida") ? '<div class="pend-resps">' + resps.map(function (r) {
             return "<div><strong>" + RESP_ROT[r.resposta] + "</strong> · " + esc(r.quem || "—") + " · " + esc(r.quando || "") + (r.observacao ? "<div>" + esc(r.observacao) + "</div>" : "") + "</div>";
-          }).join("") + (!resps.length && p.decisao ? "<div><strong>Resolvida</strong>" + (p.resolvidaEm ? " · " + diaBR(p.resolvidaEm) : "") + "<div>" + esc(p.decisao) + "</div></div>" : "") + "</div>" : "") +
+          }).join("") + (!resps.length && p.decisao && p.status === "Resolvida" ? "<div><strong>Resolvida</strong>" + (p.resolvidaEm ? " · " + diaBR(p.resolvidaEm) : "") + "<div>" + esc(p.decisao) + "</div></div>" : "") + "</div>" : "") +
           '<div class="pend-acoes"><button class="botao" data-acao="pend-responder" data-id="SIM|' + p.id + '">Sim, resolvido</button>' +
           '<button class="botao" data-acao="pend-responder" data-id="NAO|' + p.id + '">Não</button></div>' +
           "</article>";

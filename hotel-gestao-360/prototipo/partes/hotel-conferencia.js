@@ -65,7 +65,7 @@
       html += '<div class="painel" style="padding:12px 20px;display:flex;gap:10px;align-items:center">' + pastilha(tom, selo) + "<span>" + U.esc(msg) + "</span></div>";
     }
 
-    var ini = T.filtros.confInicio || "", fim = T.filtros.confFim || L.hoje();
+    var ini = T.filtros.confInicio || "2026-10-26", fim = T.filtros.confFim || L.hoje();
     html += '<div class="painel imp-painel"><div class="imp-passo"><span class="imp-num">1</span><div class="imp-passo-corpo"><h3>Período e relatórios</h3>' +
       '<p style="margin:0 0 10px"><label>De <input type="date" id="conf-inicio" value="' + U.esc(ini) + '"' + (ST.enviando ? " disabled" : "") + "></label> " +
       '<label>até <input type="date" id="conf-fim" value="' + U.esc(fim) + '"' + (ST.enviando ? " disabled" : "") + "></label></p>" +

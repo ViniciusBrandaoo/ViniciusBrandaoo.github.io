@@ -56,7 +56,7 @@ L.horas = function (minutos) {
 
 // ---------------------------------------------------------------- datas
 
-L.hoje = function () { return new Date().toISOString().slice(0, 10); };
+L.hoje = function () { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }; // data local (UTC virava o dia seguinte depois das 21h)
 L.competenciaAtual = function () { return L.hoje().slice(0, 7); };
 /**
  * ISO (2026-08-31) para o formato brasileiro. Nem tudo que chega é ISO — a
