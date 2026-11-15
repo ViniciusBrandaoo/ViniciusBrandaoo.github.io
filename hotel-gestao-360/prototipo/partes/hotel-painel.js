@@ -160,9 +160,9 @@
 
     var pend = (L.estado.pendencias || []).filter(function (x) { return x.status !== "Resolvida"; });
     if (pend.length) html += U.painelHtml("Pendências", pend.length + " em aberto",
-      '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between"><span>' +
+      '<div class="nota-linha"><span>' +
       pend.slice(0, 3).map(function (x) { return esc(x.tipo) + (x.apto ? " (" + esc(x.apto) + ")" : ""); }).join(" · ") + (pend.length > 3 ? " e mais " + (pend.length - 3) : "") +
-      '</span><button class="botao primario" data-acao="pend-ir">Responder pendências</button></div>');
+      '</span><button class="botao miudo" data-acao="pend-ir">Responder pendências</button></div>');
     html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return esc(x.h.apartamento); } },
       { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigoOrigem || x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
@@ -196,17 +196,17 @@
         '<div style="padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px">' + u.relatorios.map(function (x, i) { return '<button class="botao" data-acao="hotel-rel-abrir" data-id="' + i + '">' + esc(x.titulo) + "</button>"; }).join("") +
         '</div><p class="secundario" style="padding:0 20px 14px">Para um período novo, faça a Conferência do Fechamento com os relatórios exportados do DataHotel: os 5 relatórios são gerados junto.</p>');
     } else {
-      html += '<div class="painel" style="padding:14px 20px">Os relatórios completos aparecem aqui depois de uma Conferência do Fechamento. <button class="botao miudo" data-ir="conferencia">Ir para a Conferência</button></div>';
+      html += '<div class="painel nota-linha"><span>Os relatórios completos aparecem aqui depois de uma Conferência do Fechamento.</span><button class="botao miudo" data-ir="conferencia">Ir para a Conferência</button></div>';
     }
     html += filtroPeriodo("rh");
     var sel = T.filtros.relSecoes;
     var confs = ST.lista || [];
-    html += U.painelHtml("O que entra no relatório", "", '<div style="padding:12px 20px 18px">' +
-      SECOES.map(function (s) { return '<label style="display:block;margin:6px 0"><input type="checkbox" class="rel-secao" value="' + s[0] + '"' + (sel[s[0]] ? " checked" : "") + "> " + esc(s[1]) + "</label>"; }).join("") +
-      '<label style="display:block;margin:14px 0 0">Conferência usada: <select id="rel-conf">' +
+    html += U.painelHtml("O que entra no relatório", "", '<div class="opcoes">' +
+      SECOES.map(function (s) { return '<label class="opcao"><input type="checkbox" class="rel-secao" value="' + s[0] + '"' + (sel[s[0]] ? " checked" : "") + "><span>" + esc(s[1]) + "</span></label>"; }).join("") +
+      '<label class="opcao-campo"><span>Conferência usada</span><select id="rel-conf">' +
       (confs.length ? confs.map(function (c, i) { return '<option value="' + esc(c.id) + '"' + (i === 0 ? " selected" : "") + ">" + esc(quando(c.criadoEm) + " · " + diaBR(c.inicio) + " a " + diaBR(c.fim) + " · " + c.divergentes + " divergente(s)") + "</option>"; }).join("") : '<option value="">' + (ST.carregando ? "carregando…" : "nenhuma conferência feita") + "</option>") +
       "</select></label>" +
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="botao" data-acao="rel-pdf">Gerar PDF</button>' +
+      '<div class="opcoes-acoes"><button class="botao primario" data-acao="rel-pdf">Gerar PDF</button>' +
       '<button class="botao secundario" data-acao="rel-msg">Copiar mensagem (WhatsApp / e-mail)</button></div></div>');
     return html;
   };
@@ -431,7 +431,7 @@
       { rotulo: "Comprovantes", direita: true, conteudo: function (k) { return brl(formas[k].comp); } },
       { rotulo: "Diferença", direita: true, conteudo: function (k) { var x = formas[k].comp - formas[k].dh; return x === 0 ? '<span class="pastilha ok">Bate</span>' : '<strong style="color:var(--vermelho)">' + brl(x) + "</strong>"; } },
       { rotulo: "Confirmado no banco", direita: true, conteudo: function (k) { var f = formas[k]; return brl(f.conf) + (f.nao ? '<div class="secundario" style="color:var(--vermelho)">não confirmado ' + brl(f.nao) + "</div>" : ""); } }
-    ], chaves, {}) : '<p class="secundario" style="padding:16px 20px">Nada lançado neste dia.</p>');
+    ], chaves, {}) : U.vazioHtml("Nada lançado neste dia", ""));
 
     html += U.painelHtml("Comprovantes lançados", comps.length + " comprovante(s)", comps.length ? '<div class="conf-lista">' + comps.map(function (c) {
       return '<article class="conf-item conf-' + (c.foto ? "ok" : "atencao") + ' comp-item"><header><h3>' + (c.apto ? "Apto " + esc(c.apto) + " · " : "") + esc(nomeComp(c.forma)) + "</h3><strong>" + brl(c.valor || 0) + "</strong></header>" +
@@ -439,7 +439,7 @@
         (c.observacao ? '<p class="secundario">' + esc(c.observacao) + "</p>" : "") +
         '<p class="secundario">Lançado por ' + esc(c.lancadoPor || "—") + "</p>" +
         '<div class="pend-acoes"><button class="botao" data-acao="comp-foto" data-id="' + c.id + '">' + (c.foto ? "Trocar foto" : "Anexar foto") + "</button></div></article>";
-    }).join("") + "</div>" : '<p class="secundario" style="padding:16px 20px">Nenhum comprovante lançado neste dia.</p>');
+    }).join("") + "</div>" : U.vazioHtml("Nenhum comprovante lançado neste dia", ""));
 
     html += U.painelHtml("Recebimentos do DataHotel · confirmado no banco?", recs.length + " recebimento(s)", recs.length ? '<div class="conf-lista">' + recs.map(function (r) {
       var c = r.confirmadoBanco, tom = c === "SIM" ? "ok" : c === "NAO" ? "critico" : "atencao";
@@ -447,7 +447,7 @@
         '<p class="secundario">' + esc(r.descricao || r.pagador || "") + "</p>" +
         (c ? '<div class="pend-resps"><div><strong>' + (c === "SIM" ? "Confirmado no banco" : "Não confirmado no banco") + "</strong> · " + esc(r.confirmadoPor || "") + " · " + esc(r.confirmadoEm || "") + (r.obsBanco ? "<div>" + esc(r.obsBanco) + "</div>" : "") + "</div></div>" : "") +
         '<div class="pend-acoes"><button class="botao" data-acao="rec-banco" data-id="SIM|' + r.id + '">Sim, confirmado</button><button class="botao" data-acao="rec-banco" data-id="NAO|' + r.id + '">Não</button></div></article>';
-    }).join("") + "</div>" : '<p class="secundario" style="padding:16px 20px">Nenhum recebimento no DataHotel neste dia.</p>');
+    }).join("") + "</div>" : U.vazioHtml("Nenhum recebimento no DataHotel neste dia", ""));
     return html;
   };
   T.acoes["comp-dia"] = function () { var i = U.el("comp-dia"); if (i && i.value) T.filtros.compDia = i.value; T.renderizar(); };

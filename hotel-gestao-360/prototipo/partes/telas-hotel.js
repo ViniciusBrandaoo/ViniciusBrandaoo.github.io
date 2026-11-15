@@ -909,9 +909,9 @@
       var fl = fluxo.linhas[d - 1];
       cel.push('<div class="cal-dia ' + tom + '" title="' + U.esc(cs.map(function (c) { return c.descricao + " " + L.brl(c.valor); }).join("\n")) + '"><span class="cal-n">' + d + "</span>" +
         (cs.length ? '<span class="cal-v">' + L.brl(tot) + "</span><span class=\"cal-q\">" + cs.length + " conta(s)</span>" : "") +
-        '<span class="cal-s' + (fl.insuficiente ? " neg" : "") + '">saldo ' + L.brl(fl.saldoProjetado) + "</span></div>");
+        (cs.length || fl.insuficiente || d === dias || d === 1 || fl.saldoProjetado !== fluxo.linhas[d - 2].saldoProjetado ? '<span class="cal-s' + (fl.insuficiente ? " neg" : "") + '">saldo ' + L.brl(fl.saldoProjetado) + "</span>" : "") + "</div>");
     }
-    html += U.painelHtml("Calendário financeiro · " + comp, "verde pago · amarelo a pagar · vermelho vencido · saldo projetado no rodapé",
+    html += U.painelHtml("Calendário financeiro · " + comp, "verde pago · amarelo a pagar · vermelho vencido · saldo aparece quando muda",
       '<div class="cal-grade">' + ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(function (x) { return '<div class="cal-cab">' + x + "</div>"; }).join("") + cel.join("") + "</div>");
     var alertas = L.estado.contas.filter(function (c) { return c.status !== "PAGO" && c.status !== "CANCELADO" && H.marcoAlerta(c.vencimento, hoje); });
     if (alertas.length) html += U.painelHtml("Alertas de vencimento de hoje", "um aviso por marco: 7, 3, 1 dia, no dia e depois", U.tabelaHtml([

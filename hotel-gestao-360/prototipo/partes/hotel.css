@@ -252,3 +252,91 @@ button.roteiro-item:hover { border-color: var(--pistache-forte, #2F6B2B); backgr
   .fl-item { border-top: 1px solid var(--borda) !important; }
   .fl-cel::before { content: attr(data-rot); display: block; font-size: 11px; color: var(--tinta-media); }
 }
+
+/* ============================================================ padrão único das telas (v4)
+   Mesmo desenho da folha do mês em todo o sistema: cabeçalho de colunas pequeno e sem faixa,
+   linhas com divisória fina, painéis sem linha sob o título, filtros soltos (sem caixa),
+   indicadores do mesmo tamanho. Só tokens: vale para o tema claro e o escuro. */
+@media screen {
+  .conteudo .painel { border: 1px solid var(--borda); border-radius: 18px; box-shadow: 0 1px 2px rgba(23, 26, 22, .03), 0 12px 28px -22px rgba(23, 26, 22, .18); overflow: clip; }
+  .conteudo .painel-topo { padding: 20px 24px 12px; border-bottom: 0; gap: 10px; }
+  .conteudo .painel-topo h2 { font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+  .conteudo .painel-topo .contexto { font-size: .78rem; color: var(--tinta-media); letter-spacing: 0; text-transform: none; }
+  .conteudo .painel-topo + .vazio-bloco, .conteudo .painel-topo + p { border-top: 1px solid var(--borda); }
+
+  /* Tabelas */
+  .conteudo table { font-size: .875rem; }
+  .conteudo thead th { background: transparent; padding: 10px 14px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tinta-media); border-bottom: 1px solid var(--borda); white-space: nowrap; }
+  .conteudo tbody td { padding: 14px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
+  .conteudo tbody tr:last-child td { border-bottom: 0; }
+  .conteudo thead th:first-child, .conteudo tbody td:first-child { padding-left: 24px; }
+  .conteudo thead th:last-child, .conteudo tbody td:last-child { padding-right: 24px; }
+  .conteudo tbody tr { transition: background .12s ease; }
+  .conteudo tbody tr:hover { background: color-mix(in srgb, var(--superficie-alt) 60%, transparent); }
+  .conteudo td .principal { font-weight: 600; color: var(--tinta); }
+  .conteudo td .secundario { font-size: .78rem; color: var(--tinta-media); margin-top: 1px; }
+  .conteudo td.direita, .conteudo td.num { font-variant-numeric: tabular-nums; }
+  .conteudo .painel > .rolagem:last-child, .conteudo .painel > .lista-pesquisavel:last-child { padding-bottom: 6px; }
+
+  /* Filtros e exportação: barra solta, sem caixa branca */
+  .conteudo > .barra-ferramentas, .tela-dashboard > .barra-ferramentas { background: transparent; border: 0; padding: 0; margin: 2px 0 18px; gap: 10px; }
+  .conteudo .barra-ferramentas .filtro-rotulo { font-size: .78rem; font-weight: 600; color: var(--tinta-media); letter-spacing: 0; text-transform: none; }
+  .conteudo .barra-ferramentas input, .conteudo .barra-ferramentas select, .conteudo .hotel-filtro { min-height: 38px; padding: 6px 12px; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); font-weight: 500; }
+  .conteudo .barra-ferramentas .direita .botao.miudo { border-color: transparent; background: transparent; color: var(--tinta-media); }
+  .conteudo .barra-ferramentas .direita .botao.miudo:hover { background: var(--superficie); border-color: var(--borda); color: var(--tinta); }
+
+  /* Indicadores: todos do mesmo tamanho */
+  .conteudo .grade-kpi .kpi.hero { grid-column: auto; }
+  .conteudo .grade-kpi .kpi.hero .kpi-rotulo { font-size: .78rem; }
+  .conteudo .grade-kpi .kpi.hero .kpi-valor { font-size: 1.55rem; }
+  .conteudo .grade-kpi .kpi { border-radius: 16px; box-shadow: 0 1px 2px rgba(23, 26, 22, .03); }
+  .conteudo .grade-kpi .kpi[data-inerte] { cursor: default; }
+
+  /* Botões pequenos e etiquetas mais discretos */
+  .conteudo .botao.miudo { font-size: 12px; padding: 6px 11px; border-color: var(--borda); border-radius: 8px; }
+  .conteudo .botao.miudo:hover { border-color: var(--borda-forte); }
+  .conteudo .pastilha { font-size: 11.5px; padding: 3px 10px; font-weight: 600; }
+  .conteudo .pastilha.neutro { border-color: transparent; }
+
+  /* Sem nada para mostrar: uma linha discreta, não um bloco grande */
+  .conteudo .vazio-bloco { padding: 22px 24px; }
+  .conteudo .vazio-bloco h3 { font-size: .95rem; font-weight: 600; }
+  .conteudo .vazio-bloco p { font-size: .82rem; }
+
+  /* Listas em cartão (conferência, pendências) no mesmo ritmo */
+  .conf-lista { padding: 6px 24px 22px; }
+  .conf-item { border-radius: 14px; border-left-width: 3px; padding: 14px 18px; }
+  .fl-lista { padding: 0 24px 12px; }
+  .fl-aviso { padding: 10px 24px; }
+  .roteiro { padding: 6px 24px 20px; }
+  .barras { padding: 2px 24px 18px; }
+  .cal-grade { padding: 4px 24px 20px; }
+  .cal-dia { border-radius: 12px; }
+}
+
+@media screen {
+  /* Indicadores: rótulo, valor e nota alinhados entre os cartões da mesma linha */
+  @supports (grid-template-rows: subgrid) {
+    .conteudo .grade-kpi .kpi { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 4px; align-content: start; }
+    .conteudo .grade-kpi .kpi-valor { margin: 0; align-self: end; }
+  }
+  /* Linha de aviso com um botão ao lado */
+  .nota-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 24px; font-size: .875rem; color: var(--tinta-media); }
+  .painel-topo + .nota-linha { padding-top: 4px; padding-bottom: 20px; color: var(--tinta); }
+  /* Opções de marcar e campos soltos */
+  .conteudo input[type="checkbox"], .conteudo input[type="radio"] { accent-color: var(--pistache-forte, #2F6B2B); width: 17px; height: 17px; flex: none; }
+  .opcoes { padding: 0 24px 22px; }
+  .opcao { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--borda); font-size: .9rem; cursor: pointer; }
+  .opcao:first-child { border-top: 0; padding-top: 4px; }
+  .opcao-campo { display: grid; gap: 6px; margin-top: 14px; font-size: .78rem; font-weight: 600; color: var(--tinta-media); }
+  .opcao-campo select, .conteudo select:not([class]) { font: inherit; font-size: .9rem; font-weight: 500; min-height: 40px; max-width: 520px; padding: 6px 12px; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); color: var(--tinta); }
+  .opcoes-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+}
+@media screen and (max-width: 640px) {
+  .conteudo .grade-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .conteudo .grade-kpi .kpi { padding: 14px; }
+  .conteudo .grade-kpi .kpi-valor, .conteudo .grade-kpi .kpi.hero .kpi-valor { font-size: 1.2rem; }
+  .conteudo .painel-topo { padding: 16px 16px 10px; }
+  .conf-lista, .roteiro, .opcoes, .fl-lista, .barras, .cal-grade { padding-left: 16px; padding-right: 16px; }
+  .nota-linha { padding-left: 16px; padding-right: 16px; }
+}
