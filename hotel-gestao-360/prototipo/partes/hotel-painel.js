@@ -503,5 +503,89 @@
         U.fecharModal(); T.renderizar();
       } });
   };
+
+  // ------------------------------------------------------------ guia narrado ("Como usar")
+  // Passeio pelas telas de verdade, com legenda e narração (voz do próprio aparelho).
+  var GUIA = [
+    { tela: "dashboard", titulo: "Painel do Hotel", fala: "Este é o Painel do Hotel, a tela inicial. Aqui você vê quanto foi recebido no período, a ocupação de hoje, o que falta receber e o que a última conferência apontou." },
+    { tela: "pendencias", titulo: "Pendências", fala: "Em Pendências fica tudo o que precisa ser conferido ou corrigido, separado por dia. Em cada uma, responda Sim ou Não e escreva o que foi feito. O sistema guarda quem respondeu e quando." },
+    { tela: "conferencia", titulo: "Conferência do Fechamento", fala: "A Conferência cruza os relatórios do DataHotel entre si e mostra o que bate e o que não bate, em linguagem simples. Nada é alterado no DataHotel." },
+    { tela: "relatorioshotel", titulo: "Relatórios em PDF", fala: "Em Relatórios em PDF ficam os cinco relatórios da Direção: resumo, conferência, financeiro, hospedagem e a lista de itens pedidos. É só abrir e imprimir, ou salvar em PDF." },
+    { tela: "hospedagem", titulo: "Hospedagem do Dia", fala: "Hospedagem do Dia mostra quem está na casa, as entradas e as saídas, com o extrato de cada apartamento." },
+    { tela: "caixa", titulo: "Fechamento de Caixa", fala: "No Fechamento de Caixa você vê o que entrou no dia, separado por dinheiro, Pix, cartões e faturado para empresas." },
+    { tela: "comprovantes", titulo: "Comprovantes do Dia", fala: "Em Comprovantes do Dia a recepção lança as filipetas da maquininha, Pix, dinheiro, boletos e depósitos, por apartamento, com a foto do comprovante. O sistema compara com o DataHotel. Em cada recebimento, marque se ele foi confirmado no banco." },
+    { tela: "contas", titulo: "Contas a Pagar", fala: "Em Contas a Pagar ficam as notas e os boletos do hotel. Quem recebe a nota lança a conta, e ela fica aguardando a aprovação da Direção." },
+    { tela: "aprovacoes", titulo: "Minhas Aprovações", fala: "Em Minhas Aprovações a Direção aprova ou rejeita os pagamentos. Depois de pagar, a conta é marcada como paga, com a data e a forma de pagamento." },
+    { tela: "recorrentes", titulo: "Contas Fixas e Calendário", fala: "Contas Fixas e Calendário mostra as contas que se repetem todo mês, como internet, energia e água, com o dia do vencimento, para pagar em dia e evitar juros." },
+    { tela: "empresas", titulo: "Faturamento de Empresas", fala: "Em Faturamento de Empresas estão as empresas conveniadas, as regras de cada convênio e as notas que ainda faltam receber." },
+    { tela: "ponto", titulo: "Ponto e Diárias", fala: "Ponto e Diárias traz a folha do mês com as horas do relógio de ponto: horas extras, noturnas, atrasos e faltas de cada funcionário." },
+    { tela: "governanca", titulo: "Governança e Estoque", fala: "Em Governança e Estoque ficam a lista de arrumação do dia e o estoque de enxoval, cantina, limpeza e escritório." },
+    { tela: "dashboard", titulo: "Pronto!", fala: "Pronto! Esse é o Acácia Hotel. Para rever este guia, clique em Ajuda, no menu, e depois em Como usar." }
+  ];
+  var GS = { i: 0, tocando: false, timer: null, caixa: null };
+  function guiaVoz() {
+    if (!window.speechSynthesis) return null;
+    var vs = window.speechSynthesis.getVoices() || [];
+    return vs.find(function (v) { return /pt[-_]BR/i.test(v.lang) && /Francisca|Google|Natural|Maria/i.test(v.name); }) || vs.find(function (v) { return /pt[-_]BR/i.test(v.lang); }) || vs.find(function (v) { return /^pt/i.test(v.lang); }) || null;
+  }
+  function guiaParar() { clearTimeout(GS.timer); if (window.speechSynthesis) window.speechSynthesis.cancel(); }
+  function guiaDesenhar() {
+    var p = GUIA[GS.i]; if (!GS.caixa) return;
+    GS.caixa.querySelector(".guia-titulo").textContent = (GS.i + 1) + " de " + GUIA.length + " · " + p.titulo;
+    GS.caixa.querySelector(".guia-fala").textContent = p.fala;
+    GS.caixa.querySelector(".guia-barra i").style.width = Math.round((GS.i + 1) / GUIA.length * 100) + "%";
+    GS.caixa.querySelector('[data-guia="play"]').textContent = GS.tocando ? "Pausar" : "Continuar";
+  }
+  function guiaPasso() {
+    guiaParar();
+    var p = GUIA[GS.i];
+    try { if (T.podeVer ? T.podeVer(p.tela) : true) T.ir(p.tela); } catch (e) { /* tela sem acesso: segue só com a legenda */ }
+    window.scrollTo(0, 0);
+    guiaDesenhar();
+    if (!GS.tocando) return;
+    var seguir = function () { if (!GS.tocando) return; if (GS.i < GUIA.length - 1) { GS.i++; guiaPasso(); } else { GS.tocando = false; guiaDesenhar(); } };
+    var voz = guiaVoz();
+    if (window.speechSynthesis && window.SpeechSynthesisUtterance && voz) {
+      var u = new SpeechSynthesisUtterance(p.fala); u.voice = voz; u.lang = voz.lang; u.rate = 1;
+      var feito = false, fim = function () { if (feito) return; feito = true; clearTimeout(GS.timer); GS.timer = setTimeout(seguir, 700); };
+      u.onend = fim; u.onerror = fim;
+      GS.timer = setTimeout(fim, 4000 + p.fala.length * 110); // se a voz travar, a legenda segue sozinha
+      window.speechSynthesis.speak(u);
+    } else {
+      GS.timer = setTimeout(seguir, 3000 + p.fala.length * 60); // sem voz no aparelho: só legenda, no tempo de leitura
+    }
+  }
+  function guiaFechar() { guiaParar(); GS.tocando = false; if (GS.caixa) { GS.caixa.remove(); GS.caixa = null; } }
+  T.acoes["guia-abrir"] = function () {
+    guiaFechar();
+    var c = document.createElement("div"); c.className = "guia"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", "Como usar o sistema");
+    c.innerHTML = '<div class="guia-barra"><i></i></div><div class="guia-corpo"><div class="guia-texto"><strong class="guia-titulo"></strong><p class="guia-fala" aria-live="polite"></p>' +
+      (guiaVoz() || !window.speechSynthesis ? "" : '<p class="guia-aviso">Este aparelho não tem voz em português instalada: o guia segue só com a legenda.</p>') + "</div>" +
+      '<div class="guia-botoes"><button class="botao" data-guia="ant">Anterior</button><button class="botao primario" data-guia="play">Pausar</button><button class="botao" data-guia="prox">Próximo</button><button class="botao" data-guia="sair">Fechar</button></div></div>';
+    c.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-guia]"); if (!b) return;
+      var a = b.dataset.guia;
+      if (a === "sair") return guiaFechar();
+      if (a === "play") { GS.tocando = !GS.tocando; if (GS.tocando) guiaPasso(); else { guiaParar(); guiaDesenhar(); } return; }
+      if (a === "ant" && GS.i > 0) GS.i--;
+      if (a === "prox" && GS.i < GUIA.length - 1) GS.i++;
+      guiaPasso();
+    });
+    document.body.appendChild(c); GS.caixa = c; GS.i = 0; GS.tocando = true;
+    if (window.speechSynthesis && !window.speechSynthesis.getVoices().length) { window.speechSynthesis.onvoiceschanged = function () { window.speechSynthesis.onvoiceschanged = null; var av = GS.caixa && GS.caixa.querySelector(".guia-aviso"); if (av && guiaVoz()) av.remove(); if (GS.caixa && GS.i === 0) guiaPasso(); }; }
+    guiaPasso();
+  };
+  // Ajuda: o botão do menu passa a abrir o guia. Vale também se o menu já tiver sido montado.
+  function preencherAjuda() {
+    var painel = U.el("popover-ajuda"); if (!painel) return;
+    painel.innerHTML = '<div class="capsula-popover-titulo">Ajuda</div>' +
+      '<button type="button" class="capsula-popover-item" id="guia-botao">▶ Como usar (guia narrado)</button>' +
+      '<p class="capsula-popover-texto">Um passeio de uns 3 minutos pelas telas, com narração. Em cada tela, o “?” ao lado do título explica para que ela serve.</p>';
+    var g = U.el("guia-botao");
+    if (g) g.addEventListener("click", function () { var b = U.el("btn-ajuda"); if (b && b.getAttribute("aria-expanded") === "true") b.click(); T.acoes["guia-abrir"](); });
+  }
+  var montarAjudaOriginal = T.montarAjuda;
+  T.montarAjuda = function () { montarAjudaOriginal(); preencherAjuda(); };
+  preencherAjuda();
   T.telas.dashboard = T.telas.painelhotel;
 })();

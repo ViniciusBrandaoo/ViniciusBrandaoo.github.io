@@ -165,3 +165,22 @@
 .comp-foto { display: block; max-width: 220px; max-height: 220px; margin-top: 8px; border-radius: 8px; border: 1px solid var(--borda); object-fit: cover; }
 
 .conteudo .grade-kpi .kpi-valor { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+/* Explicação da tela escondida num "?" ao lado do título: aparece ao passar o mouse, focar ou tocar. */
+.dica-q { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 8px; vertical-align: middle; border-radius: 50%; border: 1px solid var(--borda-forte); color: var(--tinta-media); font-size: 13px; font-weight: 600; letter-spacing: 0; line-height: 1; cursor: help; user-select: none; }
+.dica-q:hover, .dica-q:focus { border-color: var(--pistache-forte, #2F6B2B); color: var(--pistache-forte, #2F6B2B); outline: none; }
+.dica-q-balao { display: none; position: absolute; top: calc(100% + 8px); left: -12px; z-index: 40; width: min(360px, 78vw); padding: 12px 14px; border-radius: 12px; background: var(--tinta); color: var(--superficie); font-size: 13px; font-weight: 400; line-height: 1.5; letter-spacing: 0; text-align: left; box-shadow: var(--sombra-3); }
+.dica-q:hover .dica-q-balao, .dica-q:focus .dica-q-balao, .dica-q:focus-within .dica-q-balao { display: block; }
+
+/* Guia narrado: faixa fixa embaixo, por cima da tela de verdade. */
+.guia { position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: var(--tinta); color: #fff; box-shadow: 0 -12px 40px rgba(0,0,0,.25); }
+.guia-barra { height: 4px; background: rgba(255,255,255,.15); }
+.guia-barra i { display: block; height: 100%; width: 0; background: var(--pistache, #9CCB8F); transition: width .4s; }
+.guia-corpo { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; padding: 16px 24px 18px; max-width: 1300px; margin: 0 auto; }
+.guia-texto { flex: 1 1 420px; min-width: 0; }
+.guia-titulo { display: block; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--pistache, #9CCB8F); }
+.guia-fala { margin: 6px 0 0; font-size: 1.05rem; line-height: 1.5; color: #fff; }
+.guia-aviso { margin: 6px 0 0; font-size: 12px; color: #C9CFC4; }
+.guia-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.guia .botao { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
+.guia .botao.primario { background: var(--pistache, #9CCB8F); color: #171A16; border-color: transparent; }

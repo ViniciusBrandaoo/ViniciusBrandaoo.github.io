@@ -1032,8 +1032,8 @@ T.cabecalho = function (titulo, texto, acoes) {
   var modulo = T.MODULOS.filter(function (m) { return m.chave === T.atual; })[0];
   var grupo = modulo ? modulo.grupo : "Gestão";
   return T.faixaDemonstracao() +
-    '<div class="cabecalho"><div class="cabecalho-titulos"><span class="pagina-grupo">' + U.esc(grupo) + '</span><h1>' + U.esc(titulo) + "</h1>" +
-    (texto ? "<p>" + U.esc(texto) + "</p>" : "") + "</div>" +
+    '<div class="cabecalho"><div class="cabecalho-titulos"><span class="pagina-grupo">' + U.esc(grupo) + '</span><h1>' + U.esc(titulo) +
+    (texto ? ' <span class="dica-q" tabindex="0" role="button" aria-label="Para que serve esta tela">?<span class="dica-q-balao" role="tooltip">' + U.esc(texto) + "</span></span>" : "") + "</h1></div>" +
     (acoes && T.podeEditar() ? '<div class="cabecalho-acoes">' + acoes + "</div>" : "") + "</div>";
 };
 
