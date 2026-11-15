@@ -879,6 +879,7 @@
     ], todas, { tituloVazio: "Nenhuma empresa cadastrada" }));
     return html;
   };
+  T.acoes["hotel-ir-tela"] = function (k) { T.ir(k); window.scrollTo(0, 0); };
   T.acoes["hotel-empresa-ver"] = function (id) { T.filtros.empresaSel = id || ""; T.renderizar(); window.scrollTo(0, 0); };
 
   // ------------------------------------------------------------ contas fixas e calendário
@@ -986,18 +987,20 @@
     var folha = L.estado.folhaMes.filter(function (x) { return x.competencia === comp; });
     if (folha.length) {
       var hz = function (t) { t = String(t || "").replace(",", ":"); return !t || /^0?0:00$/.test(t) || t === "0" ? "" : t.replace(/^0(\d:)/, "$1"); };
-      var dado = function (rot, val, tom) { return val ? '<div class="folha-dado' + (tom ? " " + tom : "") + '"><span>' + rot + "</span><b>" + U.esc(val) + "</b></div>" : ""; };
-      html += U.painelHtml("Folha do mês · " + comp, folha.length + " funcionários", '<div class="folha-lista">' + folha.map(function (x) {
+      var minutos = function (t) { var m = /^(\d+):(\d\d)$/.exec(String(t || "")); return m ? Number(m[1]) * 60 + Number(m[2]) : 0; };
+      var cel = function (rot, val, tom) { return '<div class="fl-cel' + (val && tom ? " " + tom : "") + '"><span>' + rot + "</span><b>" + (val ? U.esc(val) : "—") + "</b></div>"; };
+      html += U.painelHtml("Folha do mês · " + comp, folha.length + " funcionários · horas do relógio de ponto", '<div class="fl-lista">' + folha.map(function (x) {
         var pz = x.pontoEzpoint, bruta = pz ? String(pz.faltas || "") : "";
-        var fal = bruta.indexOf(",") !== -1 ? (parseFloat(bruta.replace(",", ".")) ? String(parseFloat(bruta.replace(",", "."))) : "") : hz(bruta);
-        var dados = (pz ? dado("Trabalhou", hz(pz.trabalhado) ? hz(pz.trabalhado) + " de " + hz(pz.aTrabalhar) : "nada de " + hz(pz.aTrabalhar), hz(pz.trabalhado) ? "" : "ruim") : "") +
-          dado("Extra 50%", hz(x.he50)) + dado("Extra 100%", hz(x.he100)) + dado("Noturnas", hz(x.noturnas)) +
-          dado("Atrasos", hz(x.atrasos), "atencao") + dado("Faltas", fal ? fal + (fal.indexOf(":") === -1 ? " dia(s)" : " h") : (x.faltas ? x.faltas + " dia(s)" : ""), "ruim") +
-          dado("Salário", x.valorSalario ? brl(x.valorSalario) : "") + dado("Produtividade", x.valorProdutividade ? brl(x.valorProdutividade) : "") + dado("Ticket", x.valorTicket ? brl(x.valorTicket) : "") +
-          dado("Pago em", x.dataPagamento ? L.dataBR(x.dataPagamento) : "");
-        return '<article class="folha-item"><header><div><h3>' + U.esc(x.nome) + '</h3><p class="secundario">' + U.esc([x.funcao, x.vinculo].filter(Boolean).join(" · ")) + "</p></div>" +
-          (x.observacoes ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-direita" role="tooltip">' + U.esc(x.observacoes) + "</span></span>" : "") + "</header>" +
-          '<div class="folha-dados">' + (dados || '<span class="secundario">Sem lançamentos no mês.</span>') + "</div></article>";
+        var faltas = bruta.indexOf(",") !== -1 ? (parseFloat(bruta.replace(",", ".")) ? parseFloat(bruta.replace(",", ".")) + " dia(s)" : "") : (hz(bruta) ? hz(bruta) + " h" : (x.faltas ? x.faltas + " dia(s)" : ""));
+        var trab = pz ? minutos(pz.trabalhado) : 0, meta = pz ? minutos(pz.aTrabalhar) : 0, pc = meta ? Math.min(100, Math.round(trab / meta * 100)) : 0;
+        var extras = [hz(x.he50) ? hz(x.he50) + " (50%)" : "", hz(x.he100) ? hz(x.he100) + " (100%)" : ""].filter(Boolean).join(" + ");
+        var pag = [x.valorSalario ? "Salário " + brl(x.valorSalario) : "", x.valorProdutividade ? "Produtividade " + brl(x.valorProdutividade) : "", x.valorTicket ? "Ticket " + brl(x.valorTicket) : "", x.dataPagamento ? "pago em " + L.dataBR(x.dataPagamento) : ""].filter(Boolean).join(" · ");
+        return '<article class="fl-item"><div class="fl-quem"><h3>' + U.esc(x.nome) + '</h3><p class="secundario">' + U.esc(x.funcao || "") + "</p></div>" +
+          '<div class="fl-horas">' + (pz ? '<div class="fl-barra"><i class="' + (pc < 50 ? "ruim" : pc < 85 ? "atencao" : "") + '" style="width:' + pc + '%"></i></div><span><b>' + (hz(pz.trabalhado) || "0:00") + "</b> de " + U.esc(hz(pz.aTrabalhar) || "—") + " horas · " + pc + "%</span>" : '<span class="secundario">ponto não importado</span>') + "</div>" +
+          '<div class="fl-cels">' + cel("Horas extras", extras) + cel("Noturnas", hz(x.noturnas)) + cel("Atrasos", hz(x.atrasos), "atencao") + cel("Faltas", faltas, "ruim") + "</div>" +
+          '<div class="fl-rodape">' + (pag ? "<span>" + U.esc(pag) + "</span>" : '<span class="secundario">Pagamento do mês ainda não lançado</span>') +
+          (x.vinculo && x.vinculo !== "CLT" ? '<span class="pastilha atencao">' + U.esc(x.vinculo) + "</span>" : "") +
+          (x.observacoes ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-direita dica-cima" role="tooltip">' + U.esc(x.observacoes) + "</span></span>" : "") + "</div></article>";
       }).join("") + "</div>");
     }
     var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });
@@ -1042,11 +1045,24 @@
     if (pend.length) {
       var cx = pend.filter(function (p) { return p.tipo === "caixa"; }), resto = pend.filter(function (p) { return p.tipo !== "caixa"; });
       var dias = cx.map(function (p) { return (p.texto.match(/\d\d\/\d\d/) || [""])[0]; }).filter(Boolean);
-      var linhas = (cx.length > 2 ? ["Caixa não fechado em " + cx.length + " dias: " + dias.join(", ") + "."] : cx.map(function (p) { return p.texto; })).concat(resto.map(function (p) { return p.texto; }));
-      html += U.painelHtml("Pendências do mês", linhas.length + " ponto(s)", '<ul style="margin:0;padding:6px 20px 16px 36px;line-height:1.6">' + linhas.map(function (t) { return "<li>" + U.esc(t) + "</li>"; }).join("") + "</ul>");
+      var grupos = [];
+      if (cx.length) grupos.push({ t: "Caixa não fechado", n: cx.length + " dia(s)", d: dias.length > 3 ? "de " + dias[0] + " a " + dias[dias.length - 1] : dias.join(", "), ir: "caixa", rot: "Ir para o Caixa" });
+      var bol = resto.filter(function (p) { return p.tipo === "boleto"; });
+      if (bol.length) grupos.push({ t: "Notas de empresas vencidas", n: bol.length + " título(s)", lista: bol.map(function (p) { return p.texto; }), ir: "empresas", rot: "Ver empresas" });
+      resto.filter(function (p) { return p.tipo !== "boleto"; }).forEach(function (p) { grupos.push({ t: p.texto, n: "" }); });
+      html += U.painelHtml("O que falta resolver no mês", grupos.length + " assunto(s)", '<div class="conf-lista">' + grupos.map(function (g) {
+        return '<article class="conf-item conf-atencao"><header><h3>' + U.esc(g.t) + (g.n ? ' <span class="secundario">· ' + U.esc(g.n) + "</span>" : "") + "</h3>" +
+          (g.ir ? '<button class="botao miudo" data-acao="hotel-ir-tela" data-id="' + g.ir + '">' + g.rot + "</button>" : "") + "</header>" +
+          (g.d ? '<p class="secundario">' + U.esc(g.d) + "</p>" : "") +
+          (g.lista ? "<ul>" + g.lista.map(function (t) { return "<li>" + U.esc(t) + "</li>"; }).join("") + "</ul>" : "") + "</article>";
+      }).join("") + "</div>");
     }
-    html += U.painelHtml("Roteiro", "", '<ol style="margin:0;padding:0 20px 16px 40px;line-height:2">' + passos.map(function (p, i) {
-      return "<li>" + U.esc(p) + " " + (feitos[i] ? pastilha("ok", "conferido por " + feitos[i]) : (T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-passo-mes" data-id="' + i + '">Marcar conferido</button>' : "")) + "</li>"; }).join("") + "</ol>" +
+    var nFeitos = passos.filter(function (p, i) { return feitos[i]; }).length;
+    html += U.painelHtml("Roteiro de conferência", nFeitos + " de " + passos.length + " conferidos", '<div class="roteiro">' + passos.map(function (p, i) {
+      var ok = !!feitos[i];
+      return '<' + (ok || !T.podeEditar() ? "div" : 'button type="button" data-acao="hotel-passo-mes" data-id="' + i + '"') + ' class="roteiro-item' + (ok ? " feito" : "") + '">' +
+        '<span class="roteiro-caixa" aria-hidden="true">' + (ok ? "✓" : "") + '</span><span class="roteiro-texto">' + U.esc(p) + (ok ? '<small>conferido por ' + U.esc(feitos[i]) + "</small>" : "") + "</span>" +
+        "</" + (ok || !T.podeEditar() ? "div" : "button") + ">"; }).join("") + "</div>" +
       '<div style="padding:0 20px 18px;display:flex;gap:8px">' +
       (st !== "FECHADO" && T.podeEditar() ? '<button class="botao" data-acao="hotel-status-mes" data-id="AGUARDANDO_APROVACAO">Submeter à Direção</button>' : "") +
       (T.temPerfil("DIRECAO") && st === "AGUARDANDO_APROVACAO" ? ' <button class="botao primario" data-acao="hotel-status-mes" data-id="APROVADO">Aprovar</button>' : "") +

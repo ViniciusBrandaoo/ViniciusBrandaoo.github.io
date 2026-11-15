@@ -882,7 +882,7 @@ H.pendenciasDoMes = function (competencia, hoje) {
   });
   H.frigobarNaoCobrado(competencia).forEach(function (c) { p.push({ tipo: "frigobar", texto: "Frigobar apto " + c.apartamento + " (" + c.data + ") sem cobrança." }); });
   L.estado.boletos.filter(function (b) { return H.statusBoleto(b, hoje) === "VENCIDO"; }).forEach(function (b) {
-    p.push({ tipo: "boleto", texto: "Boleto " + (b.documento || "") + " vencido (" + (b.empresaNome || "") + ")." });
+    p.push({ tipo: "boleto", texto: (b.documento || "Título") + " vencido" + (function () { var e = b.empresaNome || ((L.buscarPorId("empresas", b.empresaId) || {}).razaoSocial) || ""; return e ? " · " + e : ""; })() + (b.vencimento ? " · venceu em " + b.vencimento.split("-").reverse().join("/") : " · sem data de vencimento") + "." });
   });
   return p;
 };
