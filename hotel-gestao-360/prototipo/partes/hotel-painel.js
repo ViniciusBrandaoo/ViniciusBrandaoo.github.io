@@ -548,7 +548,10 @@
     if (window.speechSynthesis && window.SpeechSynthesisUtterance && voz) {
       var u = new SpeechSynthesisUtterance(p.fala); u.voice = voz; u.lang = voz.lang; u.rate = 1;
       var feito = false, fim = function () { if (feito) return; feito = true; clearTimeout(GS.timer); GS.timer = setTimeout(seguir, 700); };
-      u.onend = fim; u.onerror = fim;
+      var t0 = Date.now();
+      u.onend = fim;
+      // Voz recusada pelo navegador (sem clique, aba em segundo plano): não pula; dá o tempo de leitura da legenda.
+      u.onerror = function () { if (feito) return; feito = true; clearTimeout(GS.timer); GS.timer = setTimeout(seguir, Math.max(800, 3000 + p.fala.length * 60 - (Date.now() - t0))); };
       GS.timer = setTimeout(fim, 4000 + p.fala.length * 110); // se a voz travar, a legenda segue sozinha
       window.speechSynthesis.speak(u);
     } else {
