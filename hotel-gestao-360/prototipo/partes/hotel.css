@@ -198,3 +198,10 @@
 .folha-dado.atencao b { color: var(--ambar); }
 .folha-dado.ruim b { color: var(--vermelho); }
 .dica-q-balao.dica-direita { left: auto; right: -8px; }
+
+/* Botões de ação da linha ficam lado a lado, sem empilhar. */
+.acoes-linha { display: inline-flex; gap: 6px; white-space: nowrap; }
+.conteudo table td:last-child .botao + .botao { margin-left: 4px; }
+.conteudo table td:last-child { white-space: nowrap; }
+
+@media screen { .conteudo > * + .painel { margin-top: 16px; } }

@@ -834,28 +834,13 @@
       cons.map(function (c) { return [c.empresa.razaoSocial, c.empresa.cnpj, c.hospedagens.length, H.reaisCsv(c.total), H.reaisCsv(c.jaPagoNaHospedagem), H.reaisCsv(c.jaFaturado), H.reaisCsv(c.saldoAFaturar)]; }));
     var html = T.cabecalho("Faturamento de Empresas", "Consolida as hospedagens do mês pela empresa informada no DataHotel (nome, fantasia ou CNPJ).", botaoNovo("empresas", "Nova empresa"));
     html += barraData(true);
-    html += U.painelHtml("Fechamento mensal · " + comp, "", U.tabelaHtml([
-      { rotulo: "Empresa", conteudo: function (c) { return '<div class="principal">' + U.esc(c.empresa.nomeFantasia || c.empresa.razaoSocial) + '</div><div class="secundario">' + U.esc(c.empresa.cnpj || "") + "</div>"; } },
-      { rotulo: "Hospedagens", direita: true, conteudo: function (c) { return c.hospedagens.length; } },
-      { rotulo: "Total", direita: true, conteudo: function (c) { return brl(c.total); } },
-      { rotulo: "Já faturado", direita: true, conteudo: function (c) { return brl(c.jaFaturado); } },
-      { rotulo: "Saldo a faturar", direita: true, conteudo: function (c) { return "<strong>" + brl(c.saldoAFaturar) + "</strong>"; } },
-      { rotulo: "", direita: true, conteudo: function (c) { return '<button class="botao miudo" data-acao="hotel-empresa-ver" data-id="' + c.empresa.id + '">Demonstrativo</button> ' + botaoEditar("empresas", c.empresa); } }
-    ], cons, { tituloVazio: "Nenhuma empresa cadastrada" }));
-    var aReceber = L.estado.boletos.filter(function (b) { var st = H.statusBoleto(b, L.hoje()); return st !== "PAGO" && st !== "CANCELADO"; });
-    html += U.painelHtml("A receber das empresas", aReceber.length + " título(s) · " + brl(aReceber.reduce(function (a, b) { return a + H.saldoBoleto(b); }, 0)), U.tabelaHtml([
-      { rotulo: "Empresa", conteudo: function (b) { var e = L.buscarPorId("empresas", b.empresaId); return '<div class="principal">' + U.esc(e ? (e.nomeFantasia || e.razaoSocial) : "—") + '</div><div class="secundario">' + (b.notaFiscal ? "NF " + U.esc(b.notaFiscal) + " · " : "") + U.esc(b.formaCobranca || "") + "</div>"; } },
-      { rotulo: "Vencimento", conteudo: function (b) { return b.vencimento ? L.dataBR(b.vencimento) : "sem data"; } },
-      { rotulo: "Previsão", conteudo: function (b) { return b.previsao ? L.dataBR(b.previsao) : "—"; } },
-      { rotulo: "Valor", direita: true, conteudo: function (b) { return brl(H.saldoBoleto(b)); } },
-      { rotulo: "Última cobrança", conteudo: function (b) { return '<span class="secundario">' + U.esc(b.observacoes || "") + "</span>"; } }
-    ], aReceber, { tituloVazio: "Nada a receber de empresas" }));
+    var comMov = cons.filter(function (c) { return c.hospedagens.length || c.total || c.jaFaturado; });
     if (sel) {
       var ee = sel.empresa, regra = function (r, v) { return v ? "<p><strong>" + r + ":</strong> " + U.esc(v).split("\n").join("<br>") + "</p>" : ""; };
       html += U.painelHtml("Regras do convênio · " + (ee.nomeFantasia || ee.razaoSocial), ee.pendenciaCadastro && ee.pendenciaCadastro !== "Completo" ? ee.pendenciaCadastro : "cadastro completo",
         '<div style="padding:4px 20px 14px">' + regra("Tabela", ee.tabelaDiarias) + regra("Reserva", ee.regraReserva) + regra("Voucher", ee.regraVoucher) + regra("Consumo e lavanderia", ee.regraConsumo) +
-        regra("Faturamento", ee.regraFaturamento) + regra("Contato", ee.responsavel) + regra("Telefones", ee.telefones) + regra("E-mails", ee.emails) + "</div>");
-      html += U.painelHtml("Demonstrativo · " + (sel.empresa.nomeFantasia || sel.empresa.razaoSocial), comp, U.tabelaHtml([
+        regra("Faturamento", ee.regraFaturamento) + regra("Contato", ee.responsavel) + regra("Telefones", ee.telefones) + regra("E-mails", ee.emails) + '<button class="botao miudo" data-acao="hotel-empresa-ver" data-id="">Fechar</button></div>');
+      if (sel.hospedagens.length) html += U.painelHtml("Demonstrativo · " + (sel.empresa.nomeFantasia || sel.empresa.razaoSocial), comp, U.tabelaHtml([
         { rotulo: "Hóspede", conteudo: function (x) { return U.esc(x.hospedagem.hospede || ""); } },
         { rotulo: "Apto", conteudo: function (x) { return U.esc(x.hospedagem.apartamento); } },
         { rotulo: "Período", conteudo: function (x) { return L.dataBR(x.hospedagem.checkin) + " → " + L.dataBR(x.hospedagem.checkoutRealizado || x.hospedagem.checkout); } },
@@ -869,9 +854,32 @@
       T._export = { nome: "demonstrativo-" + comp, cab: ["Hóspede", "Apto", "Check-in", "Check-out", "Diárias", "Hospedagem", "Consumos", "Descontos", "Total"],
         linhas: sel.hospedagens.map(function (x) { var h = x.hospedagem; return [h.hospede, h.apartamento, h.checkin, h.checkoutRealizado || h.checkout, x.diarias, H.reaisCsv(x.valorHospedagem), H.reaisCsv(h.consumos), H.reaisCsv(h.descontos), H.reaisCsv(x.total)]; }) };
     }
+    var aReceber = L.estado.boletos.filter(function (b) { var st = H.statusBoleto(b, L.hoje()); return st !== "PAGO" && st !== "CANCELADO"; });
+    html += U.painelHtml("A receber das empresas", aReceber.length + " título(s) · " + brl(aReceber.reduce(function (a, b) { return a + H.saldoBoleto(b); }, 0)), U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (b) { var e = L.buscarPorId("empresas", b.empresaId); return '<div class="principal">' + U.esc(e ? (e.nomeFantasia || e.razaoSocial) : "—") + '</div><div class="secundario">' + (b.notaFiscal ? "NF " + U.esc(b.notaFiscal) + " · " : "") + U.esc(b.formaCobranca || "") + "</div>"; } },
+      { rotulo: "Vencimento", conteudo: function (b) { return b.vencimento ? L.dataBR(b.vencimento) : "sem data"; } },
+      { rotulo: "Previsão", conteudo: function (b) { return b.previsao ? L.dataBR(b.previsao) : "—"; } },
+      { rotulo: "Valor", direita: true, conteudo: function (b) { return brl(H.saldoBoleto(b)); } },
+      { rotulo: "Última cobrança", conteudo: function (b) { return '<span class="secundario">' + U.esc(b.observacoes || "") + "</span>"; } }
+    ], aReceber, { tituloVazio: "Nada a receber de empresas" }));
+    html += U.painelHtml("Hospedagens de empresas no mês · " + comp, comMov.length ? comMov.length + " empresa(s)" : "", U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (c) { return '<div class="principal">' + U.esc(c.empresa.nomeFantasia || c.empresa.razaoSocial) + '</div><div class="secundario">' + U.esc(c.empresa.cnpj || "") + "</div>"; } },
+      { rotulo: "Hospedagens", direita: true, conteudo: function (c) { return c.hospedagens.length; } },
+      { rotulo: "Total", direita: true, conteudo: function (c) { return brl(c.total); } },
+      { rotulo: "Já faturado", direita: true, conteudo: function (c) { return c.jaFaturado ? brl(c.jaFaturado) : "—"; } },
+      { rotulo: "Saldo a faturar", direita: true, conteudo: function (c) { return "<strong>" + brl(c.saldoAFaturar) + "</strong>"; } },
+      { rotulo: "", direita: true, conteudo: function (c) { return '<button class="botao miudo" data-acao="hotel-empresa-ver" data-id="' + c.empresa.id + '">Demonstrativo</button> ' + botaoEditar("empresas", c.empresa); } }
+    ], comMov, { tituloVazio: "Nenhuma hospedagem de empresa neste mês", textoVazio: "Aparece aqui quando a reserva no DataHotel tiver a empresa informada." }));
+    var todas = L.estado.empresas.slice().sort(function (a, b) { return String(a.nomeFantasia || a.razaoSocial).localeCompare(String(b.nomeFantasia || b.razaoSocial)); });
+    html += U.painelHtml("Empresas conveniadas", todas.length + " cadastradas", U.tabelaHtml([
+      { rotulo: "Empresa", conteudo: function (e) { return '<div class="principal">' + U.esc(e.nomeFantasia || e.razaoSocial) + '</div><div class="secundario">' + U.esc(e.cnpj || "sem CNPJ") + "</div>"; } },
+      { rotulo: "Contato", conteudo: function (e) { return U.esc(e.responsavel || "—") + (e.telefone ? '<div class="secundario">' + U.esc(e.telefone) + "</div>" : ""); } },
+      { rotulo: "Cadastro", conteudo: function (e) { return !e.pendenciaCadastro || e.pendenciaCadastro === "Completo" ? pastilha("ok", "Completo") : pastilha("atencao", e.pendenciaCadastro); } },
+      { rotulo: "", direita: true, conteudo: function (e) { return '<span class="acoes-linha"><button class="botao miudo" data-acao="hotel-empresa-ver" data-id="' + e.id + '">Regras</button> ' + botaoEditar("empresas", e) + "</span>"; } }
+    ], todas, { tituloVazio: "Nenhuma empresa cadastrada" }));
     return html;
   };
-  T.acoes["hotel-empresa-ver"] = function (id) { T.filtros.empresaSel = id; T.renderizar(); };
+  T.acoes["hotel-empresa-ver"] = function (id) { T.filtros.empresaSel = id || ""; T.renderizar(); window.scrollTo(0, 0); };
 
   // ------------------------------------------------------------ contas fixas e calendário
 
@@ -1031,7 +1039,12 @@
     html += barraData(true);
     html += kpis([{ rotulo: "Status", valor: (ROT[st] || st), nota: comp, hero: true }, { rotulo: "Pendências automáticas", valor: String(pend.length), nota: "caixa, cartão, frigobar, boletos", tom: pend.length ? "critico" : "" },
       { rotulo: "Etapas conferidas", valor: Object.keys(feitos).length + " / " + passos.length, nota: "" }]);
-    if (pend.length) html += U.painelHtml("Pendências", "", '<ul style="margin:0;padding:0 20px 16px 36px">' + pend.map(function (p) { return "<li>" + U.esc(p.texto) + "</li>"; }).join("") + "</ul>");
+    if (pend.length) {
+      var cx = pend.filter(function (p) { return p.tipo === "caixa"; }), resto = pend.filter(function (p) { return p.tipo !== "caixa"; });
+      var dias = cx.map(function (p) { return (p.texto.match(/\d\d\/\d\d/) || [""])[0]; }).filter(Boolean);
+      var linhas = (cx.length > 2 ? ["Caixa não fechado em " + cx.length + " dias: " + dias.join(", ") + "."] : cx.map(function (p) { return p.texto; })).concat(resto.map(function (p) { return p.texto; }));
+      html += U.painelHtml("Pendências do mês", linhas.length + " ponto(s)", '<ul style="margin:0;padding:6px 20px 16px 36px;line-height:1.6">' + linhas.map(function (t) { return "<li>" + U.esc(t) + "</li>"; }).join("") + "</ul>");
+    }
     html += U.painelHtml("Roteiro", "", '<ol style="margin:0;padding:0 20px 16px 40px;line-height:2">' + passos.map(function (p, i) {
       return "<li>" + U.esc(p) + " " + (feitos[i] ? pastilha("ok", "conferido por " + feitos[i]) : (T.podeEditar() ? '<button class="botao miudo" data-acao="hotel-passo-mes" data-id="' + i + '">Marcar conferido</button>' : "")) + "</li>"; }).join("") + "</ol>" +
       '<div style="padding:0 20px 18px;display:flex;gap:8px">' +
