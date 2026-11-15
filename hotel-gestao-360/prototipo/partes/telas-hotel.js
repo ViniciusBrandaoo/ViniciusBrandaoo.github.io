@@ -988,19 +988,29 @@
     if (folha.length) {
       var hz = function (t) { t = String(t || "").replace(",", ":"); return !t || /^0?0:00$/.test(t) || t === "0" ? "" : t.replace(/^0(\d:)/, "$1"); };
       var minutos = function (t) { var m = /^(\d+):(\d\d)$/.exec(String(t || "")); return m ? Number(m[1]) * 60 + Number(m[2]) : 0; };
-      var cel = function (rot, val, tom) { return '<div class="fl-cel' + (val && tom ? " " + tom : "") + '"><span>' + rot + "</span><b>" + (val ? U.esc(val) : "—") + "</b></div>"; };
-      html += U.painelHtml("Folha do mês · " + comp, folha.length + " funcionários · horas do relógio de ponto", '<div class="fl-lista">' + folha.map(function (x) {
+      var hm = function (min) { return Math.floor(min / 60) + ":" + String(min % 60).padStart(2, "0"); };
+      var cel = function (rot, val, tom, sub) { return '<div class="fl-cel' + (val && tom ? " " + tom : "") + '" data-rot="' + rot + '"><b>' + (val ? U.esc(val) : "—") + "</b>" + (sub ? "<small>" + U.esc(sub) + "</small>" : "") + "</div>"; };
+      var semPag = folha.every(function (x) { return !x.valorSalario && !x.dataPagamento; });
+      // Observação igual em todos (ex.: "parcial, ponto de 01 a 13/11") vira um aviso só, no topo.
+      var obsComum = folha.length > 1 && folha.every(function (x) { return x.observacoes && x.observacoes === folha[0].observacoes; }) ? folha[0].observacoes : "";
+      html += U.painelHtml("Folha do mês · " + comp, folha.length + " funcionários",
+        (obsComum || semPag ? '<p class="fl-aviso">' + U.esc(obsComum || "Salários e pagamentos deste mês ainda não foram lançados.") + "</p>" : "") +
+        '<div class="fl-lista"><div class="fl-item fl-cab"><span>Funcionário</span><span>Horas trabalhadas</span><div class="fl-cels"><span>Horas extras</span><span>Noturnas</span><span>Atrasos</span><span>Faltas</span></div></div>' +
+        folha.map(function (x) {
         var pz = x.pontoEzpoint, bruta = pz ? String(pz.faltas || "") : "";
-        var faltas = bruta.indexOf(",") !== -1 ? (parseFloat(bruta.replace(",", ".")) ? parseFloat(bruta.replace(",", ".")) + " dia(s)" : "") : (hz(bruta) ? hz(bruta) + " h" : (x.faltas ? x.faltas + " dia(s)" : ""));
+        var dias = bruta.indexOf(",") !== -1 ? parseFloat(bruta.replace(",", ".")) : (!hz(bruta) && x.faltas ? Number(x.faltas) : 0);
+        var faltas = dias ? dias + (dias === 1 ? " dia" : " dias") : (hz(bruta) ? hz(bruta).replace(/:00$/, "") + " h" : "");
         var trab = pz ? minutos(pz.trabalhado) : 0, meta = pz ? minutos(pz.aTrabalhar) : 0, pc = meta ? Math.min(100, Math.round(trab / meta * 100)) : 0;
-        var extras = [hz(x.he50) ? hz(x.he50) + " (50%)" : "", hz(x.he100) ? hz(x.he100) + " (100%)" : ""].filter(Boolean).join(" + ");
+        var e50 = minutos(x.he50), e100 = minutos(x.he100);
         var pag = [x.valorSalario ? "Salário " + brl(x.valorSalario) : "", x.valorProdutividade ? "Produtividade " + brl(x.valorProdutividade) : "", x.valorTicket ? "Ticket " + brl(x.valorTicket) : "", x.dataPagamento ? "pago em " + L.dataBR(x.dataPagamento) : ""].filter(Boolean).join(" · ");
+        var obs = x.observacoes && x.observacoes !== obsComum ? x.observacoes : "";
+        var extra = (pag ? "<span>" + U.esc(pag) + "</span>" : "") + (x.vinculo && x.vinculo !== "CLT" ? '<span class="pastilha atencao">' + U.esc(x.vinculo) + "</span>" : "") +
+          (obs ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-cima" role="tooltip">' + U.esc(obs) + "</span></span>" : "");
         return '<article class="fl-item"><div class="fl-quem"><h3>' + U.esc(x.nome) + '</h3><p class="secundario">' + U.esc(x.funcao || "") + "</p></div>" +
-          '<div class="fl-horas">' + (pz ? '<div class="fl-barra"><i class="' + (pc < 50 ? "ruim" : pc < 85 ? "atencao" : "") + '" style="width:' + pc + '%"></i></div><span><b>' + (hz(pz.trabalhado) || "0:00") + "</b> de " + U.esc(hz(pz.aTrabalhar) || "—") + " horas · " + pc + "%</span>" : '<span class="secundario">ponto não importado</span>') + "</div>" +
-          '<div class="fl-cels">' + cel("Horas extras", extras) + cel("Noturnas", hz(x.noturnas)) + cel("Atrasos", hz(x.atrasos), "atencao") + cel("Faltas", faltas, "ruim") + "</div>" +
-          '<div class="fl-rodape">' + (pag ? "<span>" + U.esc(pag) + "</span>" : '<span class="secundario">Pagamento do mês ainda não lançado</span>') +
-          (x.vinculo && x.vinculo !== "CLT" ? '<span class="pastilha atencao">' + U.esc(x.vinculo) + "</span>" : "") +
-          (x.observacoes ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-direita dica-cima" role="tooltip">' + U.esc(x.observacoes) + "</span></span>" : "") + "</div></article>";
+          '<div class="fl-horas">' + (pz ? '<div class="fl-barra"><i class="' + (pc < 50 ? "ruim" : pc < 85 ? "atencao" : "") + '" style="width:' + pc + '%"></i></div><span><b>' + (hz(pz.trabalhado) || "0:00") + "</b> de " + U.esc(hz(pz.aTrabalhar) || "—") + " · " + pc + "%</span>" : '<span class="secundario">ponto não importado</span>') + "</div>" +
+          '<div class="fl-cels">' + cel("Horas extras", e50 + e100 ? hm(e50 + e100) : "", "", e50 && e100 ? hm(e50) + " a 50% · " + hm(e100) + " a 100%" : e50 ? "a 50%" : e100 ? "a 100%" : "") +
+          cel("Noturnas", hz(x.noturnas)) + cel("Atrasos", hz(x.atrasos), "atencao") + cel("Faltas", faltas, "ruim") + "</div>" +
+          (extra ? '<div class="fl-rodape">' + extra + "</div>" : "") + "</article>";
       }).join("") + "</div>");
     }
     var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });

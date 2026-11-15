@@ -237,3 +237,18 @@ button.roteiro-item:hover { border-color: var(--pistache-forte, #2F6B2B); backgr
 .roteiro-item.feito { background: var(--pistache-suave, #EAF4E6); border-color: transparent; }
 .roteiro-item.feito .roteiro-caixa { background: var(--pistache-forte, #2F6B2B); border-color: transparent; color: #fff; }
 .roteiro-texto small { display: block; font-size: 11px; color: var(--tinta-media); }
+
+/* Folha do mês v3: cabeçalho de colunas uma vez só; linhas só com os valores. */
+.fl-aviso { margin: 0; padding: 12px 20px; font-size: var(--t-1); color: var(--tinta-media); background: var(--superficie-alt); border-bottom: 1px solid var(--borda); }
+.fl-item { grid-template-columns: minmax(200px, 1.3fr) minmax(200px, 1.2fr) minmax(380px, 2.2fr); padding: 14px 0; }
+.fl-item.fl-cab { padding: 10px 0 8px; border-top: 0; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tinta-media); }
+.fl-item.fl-cab + .fl-item { border-top: 1px solid var(--borda); }
+.fl-cels { grid-template-columns: 1.5fr 1fr 1fr 1fr; align-items: start; }
+.fl-cel span { display: none; }
+.fl-cel small { display: block; font-size: 11px; color: var(--tinta-media); margin-top: 1px; }
+.fl-rodape { margin-top: 2px; }
+@media (max-width: 900px) {
+  .fl-item.fl-cab { display: none !important; }
+  .fl-item { border-top: 1px solid var(--borda) !important; }
+  .fl-cel::before { content: attr(data-rot); display: block; font-size: 11px; color: var(--tinta-media); }
+}
