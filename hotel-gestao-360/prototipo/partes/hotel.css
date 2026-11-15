@@ -184,3 +184,17 @@
 .guia-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
 .guia .botao { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
 .guia .botao.primario { background: var(--pistache, #9CCB8F); color: #171A16; border-color: transparent; }
+
+/* Folha do mês: um cartão por funcionário; só aparece o que tem valor. */
+.folha-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; padding: 14px 20px 20px; }
+.folha-item { display: block !important; border: 1px solid var(--borda); border-radius: 14px; padding: 16px 18px; background: var(--superficie); }
+.folha-item header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.folha-item h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.folha-item header p { margin: 2px 0 0; font-size: var(--t-1); }
+.folha-dados { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.folha-dado { padding: 7px 10px; border-radius: 10px; background: var(--superficie-alt); min-width: 84px; }
+.folha-dado span { display: block; font-size: 11px; color: var(--tinta-media); }
+.folha-dado b { display: block; font-size: var(--t-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.folha-dado.atencao b { color: var(--ambar); }
+.folha-dado.ruim b { color: var(--vermelho); }
+.dica-q-balao.dica-direita { left: auto; right: -8px; }

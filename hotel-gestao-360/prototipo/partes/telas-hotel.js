@@ -976,18 +976,22 @@
       { rotulo: "Diárias", direita: true, conteudo: function (l) { return l.diarias.quantidade ? l.diarias.quantidade + " · " + brl(l.diarias.base) + '<div class="secundario">pendente ' + brl(l.diarias.pendente) + "</div>" : "—"; } }
     ], linhas, { tituloVazio: "Nenhum funcionário ativo", textoVazio: "Cadastre a equipe em Pessoas → Funcionários." }));
     var folha = L.estado.folhaMes.filter(function (x) { return x.competencia === comp; });
-    if (folha.length) html += U.painelHtml("Folha do mês · " + comp, "planilha da Direção (ponto do EZPoint)", U.tabelaHtml([
-      { rotulo: "Funcionário", conteudo: function (x) { return '<div class="principal">' + U.esc(x.nome) + '</div><div class="secundario">' + U.esc(x.funcao || "") + " · " + U.esc(x.vinculo || "") + "</div>"; } },
-      { rotulo: "Salário", direita: true, conteudo: function (x) { return x.valorSalario ? brl(x.valorSalario) : "—"; } },
-      { rotulo: "Produtividade", direita: true, conteudo: function (x) { return x.valorProdutividade ? brl(x.valorProdutividade) + '<div class="secundario">' + U.esc(x.formaProdutividade || "") + "</div>" : "—"; } },
-      { rotulo: "Ticket", direita: true, conteudo: function (x) { return x.valorTicket ? brl(x.valorTicket) : "—"; } },
-      { rotulo: "HE 50% / 100%", direita: true, conteudo: function (x) { return U.esc(x.he50 + " / " + x.he100); } },
-      { rotulo: "Noturnas", direita: true, conteudo: function (x) { return U.esc(x.noturnas); } },
-      { rotulo: "Atrasos", direita: true, conteudo: function (x) { return U.esc(x.atrasos); } },
-      { rotulo: "Faltas", direita: true, conteudo: function (x) { return x.faltas; } },
-      { rotulo: "EZPoint", direita: true, conteudo: function (x) { var p = x.pontoEzpoint; return p ? U.esc(p.trabalhado) + " de " + U.esc(p.aTrabalhar) + '<div class="secundario">falta ' + U.esc(p.faltas) + " · DSR " + U.esc(p.dsrDescontar) + "</div>" : '<span class="secundario">não importado</span>'; } },
-      { rotulo: "Pago em", conteudo: function (x) { return L.dataBR(x.dataPagamento) + '<div class="secundario">' + U.esc(x.observacoes || "") + "</div>"; } }
-    ], folha));
+    if (folha.length) {
+      var hz = function (t) { t = String(t || "").replace(",", ":"); return !t || /^0?0:00$/.test(t) || t === "0" ? "" : t.replace(/^0(\d:)/, "$1"); };
+      var dado = function (rot, val, tom) { return val ? '<div class="folha-dado' + (tom ? " " + tom : "") + '"><span>' + rot + "</span><b>" + U.esc(val) + "</b></div>" : ""; };
+      html += U.painelHtml("Folha do mês · " + comp, folha.length + " funcionários", '<div class="folha-lista">' + folha.map(function (x) {
+        var pz = x.pontoEzpoint, bruta = pz ? String(pz.faltas || "") : "";
+        var fal = bruta.indexOf(",") !== -1 ? (parseFloat(bruta.replace(",", ".")) ? String(parseFloat(bruta.replace(",", "."))) : "") : hz(bruta);
+        var dados = (pz ? dado("Trabalhou", hz(pz.trabalhado) ? hz(pz.trabalhado) + " de " + hz(pz.aTrabalhar) : "nada de " + hz(pz.aTrabalhar), hz(pz.trabalhado) ? "" : "ruim") : "") +
+          dado("Extra 50%", hz(x.he50)) + dado("Extra 100%", hz(x.he100)) + dado("Noturnas", hz(x.noturnas)) +
+          dado("Atrasos", hz(x.atrasos), "atencao") + dado("Faltas", fal ? fal + (fal.indexOf(":") === -1 ? " dia(s)" : " h") : (x.faltas ? x.faltas + " dia(s)" : ""), "ruim") +
+          dado("Salário", x.valorSalario ? brl(x.valorSalario) : "") + dado("Produtividade", x.valorProdutividade ? brl(x.valorProdutividade) : "") + dado("Ticket", x.valorTicket ? brl(x.valorTicket) : "") +
+          dado("Pago em", x.dataPagamento ? L.dataBR(x.dataPagamento) : "");
+        return '<article class="folha-item"><header><div><h3>' + U.esc(x.nome) + '</h3><p class="secundario">' + U.esc([x.funcao, x.vinculo].filter(Boolean).join(" · ")) + "</p></div>" +
+          (x.observacoes ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-direita" role="tooltip">' + U.esc(x.observacoes) + "</span></span>" : "") + "</header>" +
+          '<div class="folha-dados">' + (dados || '<span class="secundario">Sem lançamentos no mês.</span>') + "</div></article>";
+      }).join("") + "</div>");
+    }
     var ms = L.estado.marcacoesPonto.filter(function (m) { return H.noMes(m.data, comp); }).sort(function (a, b) { return b.data.localeCompare(a.data); });
     html += U.painelHtml("Marcações", "", U.tabelaHtml([
       { rotulo: "Data", conteudo: function (m) { var f = L.buscarPorId("funcionarios", m.funcionarioId); return L.dataBR(m.data) + '<div class="secundario">' + U.esc(f ? f.nome : "") + "</div>"; } },
