@@ -140,15 +140,19 @@ export function lerContasAReceber(texto: string): { lancto: string; vencimento: 
 }
 
 /** "Relatório Diário (RDS)". */
-export function lerRds(texto: string): { ocupados: number; livres: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } {
-  const r: { ocupados: number; livres: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } =
-    { ocupados: 0, livres: 0, bloqueados: 0, receitaDiaria: 0, receitaConsumo: 0 };
+export function lerRds(texto: string): { ocupados: number; livres: number; reservados: number; governanca: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } {
+  // O RDS separa os apartamentos em Ocupadas, Livres, Reservadas, Governança (em arrumação) e
+  // Bloqueadas; o total do hotel é a soma das cinco linhas.
+  const r: { ocupados: number; livres: number; reservados: number; governanca: number; bloqueados: number; receitaDiaria: number; receitaConsumo: number; dia?: string } =
+    { ocupados: 0, livres: 0, reservados: 0, governanca: 0, bloqueados: 0, receitaDiaria: 0, receitaConsumo: 0 };
   const titulo = /\(RDS\)\s*-\s*(\d{2}\/\d{2}\/\d{4})/.exec(texto.slice(0, 2000));
   if (titulo) r.dia = iso(titulo[1]!);
   for (const l of linhasDe(texto)) {
     const t = naoVazias(l);
     if (t[0] === "Ocupadas") r.ocupados = Number(t[1]);
     else if (t[0] === "Livres") r.livres = Number(t[1]);
+    else if (t[0] === "Reservadas") r.reservados = Number(t[1]) || 0;
+    else if (/^Governan.a$/i.test(t[0] ?? "")) r.governanca = Number(t[1]) || 0;
     else if (t[0] === "Bloqueadas") r.bloqueados = Number(t[1]);
     else if (/^DI.RIA$/i.test(t[0] ?? "")) r.receitaDiaria = num(t[1]) ?? 0;
     else if (/^CONSUMO$/i.test(t[0] ?? "")) r.receitaConsumo = num(t[1]) ?? 0;
@@ -415,7 +419,7 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
   if (d.rds && d.apartamentos.length) {
     const total = d.apartamentos.length;
     const bloq = d.apartamentos.filter((a) => /bloq/i.test(a.situacao)).length;
-    const rdsTotal = d.rds.ocupados + d.rds.livres + d.rds.bloqueados;
+    const rdsTotal = d.rds.ocupados + d.rds.livres + d.rds.reservados + d.rds.governanca + d.rds.bloqueados;
     out.push({ regra: "C13", titulo: "Apartamentos: cadastro × RDS", entre: "Lista de Camareira × RDS",
       situacao: total === rdsTotal && bloq === d.rds.bloqueados ? "OK" : "DIVERGENTE", esperado: rdsTotal, encontrado: total,
       unidade: "un", diferenca: total - rdsTotal, detalhes: [`Camareira: ${total} apartamentos, ${bloq} bloqueado(s). RDS: ${rdsTotal} apartamentos, ${d.rds.bloqueados} bloqueado(s).`] });

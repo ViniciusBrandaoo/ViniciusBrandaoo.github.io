@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  conferir, lerCreditosDebitos, lerEstoque, lerFaturamentoAnalitico, lerFaturamentoDiario, lerReceitasDespesas,
+  conferir, lerCreditosDebitos, lerEstoque, lerFaturamentoAnalitico, lerFaturamentoDiario, lerRds, lerReceitasDespesas,
   type DadosConferencia,
 } from "../../src/dominio/hotel/conferencia.js";
 
@@ -119,7 +119,7 @@ describe("regras de conferência", () => {
 
   it("C12/C13: ocupação e apartamentos em contagens (não em dinheiro)", () => {
     const d = base();
-    d.rds = { ocupados: 5, livres: 21, bloqueados: 5, receitaDiaria: 0, receitaConsumo: 0 };
+    d.rds = { ocupados: 5, livres: 21, reservados: 0, governanca: 0, bloqueados: 5, receitaDiaria: 0, receitaConsumo: 0 };
     d.mapa = [{ apto: "105", reserva: "RAK261843", pago: "Não" }];
     const c12 = regra(d, "C12");
     expect(c12).toMatchObject({ situacao: "ATENCAO", unidade: "un", esperado: 5, encontrado: 1 });
@@ -144,5 +144,14 @@ describe("envio parcial de relatórios", () => {
     const r = conferir(m.dados);
     expect(r.map((x) => x.regra)).toEqual(["C0", "C13"]);
     expect(r[0]!.detalhes[0]).toMatch(/Contas Recebidas/);
+  });
+});
+
+describe("lerRds", () => {
+  it("soma Governança e Reservadas no total de apartamentos", () => {
+    const t = ";Ocupadas;;5;;;11\n;Livres;;12;;;30\n;Reservadas;;0;;;0\n;Governança;;5;;;14\n;Bloqueadas;;9;;;24\n";
+    const r = lerRds(t);
+    expect(r.ocupados + r.livres + r.reservados + r.governanca + r.bloqueados).toBe(31);
+    expect(r.governanca).toBe(5);
   });
 });
