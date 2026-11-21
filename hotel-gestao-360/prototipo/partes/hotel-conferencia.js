@@ -58,11 +58,13 @@
 
     var a = ST.alerta;
     if (a) {
-      var tom, selo, msg;
-      if (!a.ultima) { tom = "atencao"; selo = "Pendente"; msg = "Nenhuma conferência feita ainda."; }
-      else if (!a.feitaHoje) { tom = "atencao"; selo = "Pendente"; msg = "Hoje (" + diaBR(a.hoje) + ") ainda não foi conferido. Última: " + quando(a.ultima.criadoEm) + " — " + a.ultima.divergentes + " divergência(s), " + a.ultima.atencao + " com atenção."; }
-      else { tom = a.divergentes ? "critico" : "ok"; selo = a.divergentes ? "Com divergência" : "Em dia"; msg = "Conferência de hoje feita às " + quando(a.ultima.criadoEm) + " — " + a.ultima.divergentes + " divergência(s), " + a.ultima.atencao + " com atenção."; }
-      html += '<div class="painel" style="padding:12px 20px;display:flex;gap:10px;align-items:center">' + pastilha(tom, selo) + "<span>" + U.esc(msg) + "</span></div>";
+      // Uma linha discreta: bolinha de cor + resumo curto (sem caixa grande).
+      var hora = function (x) { return String(quando(x)).slice(-5); }, plural = function (n, um, varios) { return n + " " + (n === 1 ? um : varios); };
+      var tom, msg;
+      if (!a.ultima) { tom = "atencao"; msg = "Nenhuma conferência feita ainda"; }
+      else if (!a.feitaHoje) { tom = "atencao"; msg = "Hoje ainda não conferido · última em " + String(quando(a.ultima.criadoEm)).slice(0, 5); }
+      else { tom = a.divergentes ? "critico" : "ok"; msg = "Conferido hoje às " + hora(a.ultima.criadoEm) + (a.ultima.divergentes ? " · " + plural(a.ultima.divergentes, "divergência", "divergências") : " · tudo bate") + (a.ultima.atencao ? " · " + plural(a.ultima.atencao, "atenção", "atenções") : ""); }
+      html += '<p class="status-linha"><i class="status-ponto ' + tom + '" aria-hidden="true"></i>' + U.esc(msg) + "</p>";
     }
 
     var ini = T.filtros.confInicio || "2026-10-26", fim = T.filtros.confFim || L.hoje();

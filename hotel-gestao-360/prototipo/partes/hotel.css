@@ -465,3 +465,9 @@ button.linha-item:hover, .linha-comp:hover { background: var(--superficie-alt); 
 .cal-rodape button { font-size: .8rem; font-weight: 600; color: var(--pistache-forte, #2F6B2B); padding: 4px 8px; border-radius: 8px; }
 .cal-rodape button:hover { background: var(--superficie-alt); }
 .cal-pop button:focus-visible { outline: 2px solid var(--pistache-forte, #2F6B2B); outline-offset: 1px; }
+
+/* Linha de situação discreta (ex.: conferência do dia) */
+.status-linha { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; font-size: .84rem; color: var(--tinta-media); }
+.status-ponto { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ambar); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ambar) 18%, transparent); }
+.status-ponto.critico { background: var(--vermelho); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vermelho) 16%, transparent); }
+.status-ponto.ok { background: var(--pistache-forte, #2F6B2B); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pistache, #9CCB8F) 35%, transparent); }
