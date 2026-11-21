@@ -361,3 +361,58 @@ button.roteiro-item:hover { border-color: var(--pistache-forte, #2F6B2B); backgr
 .aponta-texto b { font-weight: 600; font-size: .92rem; }
 .aponta-texto small { font-size: .78rem; color: var(--tinta-media); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 640px) { .colunas, .colunas-eixo { padding-left: 16px; padding-right: 16px; } }
+
+/* ============================================================ linhas compactas (comprovantes, planilhas) */
+.linhas { display: grid; padding: 0 12px 10px; }
+.linha-item { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px; border: 0; border-top: 1px solid var(--borda); background: none; font: inherit; color: var(--tinta); text-align: left; border-radius: 0; }
+.linha-item:first-child { border-top: 0; }
+button.linha-item { cursor: pointer; }
+button.linha-item:hover, .linha-comp:hover { background: var(--superficie-alt); border-radius: 12px; }
+.linha-texto { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.linha-texto b { font-weight: 600; font-size: .92rem; }
+.linha-texto small { font-size: .78rem; color: var(--tinta-media); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.linha-valor { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.linha-foto { flex: none; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; display: grid; place-items: center; background: var(--superficie-alt); border: 1px solid var(--borda); }
+.linha-foto img { width: 100%; height: 100%; object-fit: cover; }
+.linha-foto.vazia { font: inherit; font-size: 10px; color: var(--tinta-media); cursor: pointer; border-style: dashed; }
+.linha-foto.vazia:hover { border-color: var(--pistache-forte, #2F6B2B); color: var(--pistache-forte, #2F6B2B); }
+
+/* Aviso de uma linha (ex.: retirar dinheiro do caixa) */
+.aviso-linha { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 16px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--superficie); border: 1px solid var(--borda); border-left: 3px solid var(--ambar); font-size: .9rem; }
+.aviso-linha span { color: var(--tinta-media); }
+
+/* Planilha do frigobar */
+.form-grade { display: grid; grid-template-columns: 160px 140px 1fr; gap: 12px; margin-bottom: 16px; }
+.form-grade .campo { display: grid; gap: 6px; font-size: .78rem; font-weight: 600; color: var(--tinta-media); }
+.form-grade input, .form-grade select { font: inherit; font-size: .92rem; font-weight: 500; color: var(--tinta); min-height: 42px; padding: 8px 12px; border: 1px solid var(--borda-forte); border-radius: 10px; background: var(--superficie); }
+.fp-tabela { border: 1px solid var(--borda); border-radius: 14px; overflow: hidden; }
+.fp-linha { display: grid; grid-template-columns: 1fr 92px 92px 96px; gap: 10px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--borda); }
+.fp-linha:first-child { border-top: 0; }
+.fp-cab { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--tinta-media); background: var(--superficie-alt); }
+.fp-nome { display: grid; font-size: .9rem; font-weight: 500; }
+.fp-nome small { font-size: .74rem; color: var(--tinta-media); font-weight: 400; }
+.fp-linha input { width: 100%; min-height: 38px; padding: 6px 10px; text-align: right; font: inherit; font-variant-numeric: tabular-nums; border: 1px solid var(--borda); border-radius: 9px; background: var(--superficie); color: var(--tinta); }
+.fp-linha input:focus-visible { outline: 3px solid var(--pistache, #9CCB8F); outline-offset: 1px; border-color: var(--pistache-forte, #2F6B2B); }
+.fp-valor { text-align: right; font-variant-numeric: tabular-nums; color: var(--tinta-media); font-size: .9rem; }
+.fp-total { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 4px 0; font-size: .9rem; color: var(--tinta-media); }
+.fp-total b { font-size: 1.2rem; color: var(--tinta); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .form-grade { grid-template-columns: 1fr 1fr; } .form-grade .campo-largo { grid-column: 1 / -1; }
+  .fp-linha { grid-template-columns: 1fr 64px 64px; } .fp-linha > :nth-child(4) { display: none; }
+}
+
+/* ============================================================ acabamento sofisticado
+   Tipografia mais fina e espaçamento generoso; menos bordas, mais respiro. */
+@media screen {
+  .conteudo { letter-spacing: -.005em; }
+  .conteudo .cabecalho { margin-bottom: 6px; }
+  .conteudo .cabecalho h1 { font-weight: 500; letter-spacing: -.035em; }
+  .conteudo .painel-topo h2 { font-weight: 600; letter-spacing: -.015em; }
+  .conteudo .grade-kpi .kpi-rotulo { font-weight: 500; letter-spacing: 0; }
+  .conteudo .grade-kpi .kpi-valor { font-weight: 500; letter-spacing: -.035em; }
+  .conteudo .botao { border-radius: 10px; font-weight: 500; letter-spacing: -.005em; }
+  .conteudo .botao.primario { box-shadow: 0 1px 2px rgba(23, 26, 22, .12); }
+  .conteudo .painel { box-shadow: 0 1px 2px rgba(23, 26, 22, .025), 0 18px 40px -30px rgba(23, 26, 22, .22); }
+  .modal { border-radius: 20px; }
+  .modal-topo h2 { font-weight: 600; letter-spacing: -.02em; }
+}

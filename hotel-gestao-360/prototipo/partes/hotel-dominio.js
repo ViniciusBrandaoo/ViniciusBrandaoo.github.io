@@ -23,7 +23,7 @@
   "frigobarProdutos", "frigobarConsumos",
   "recebimentos", "fechamentosCaixa", "transacoesCartao", "boletos",
   "notasFiscais", "cobrancas", "contasRecorrentes", "contasBancarias",
-  "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes", "pendencias", "folhaMes", "comprovantes"
+  "relatoriosDiarios", "diarias", "marcacoesPonto", "ajustesPonto", "fechamentosMes", "pendencias", "folhaMes", "comprovantes", "frigobarPlanilhas"
 ].forEach(function (c) { if (!Array.isArray(L.estado[c])) L.estado[c] = []; });
 
 L.hotel = {};
@@ -40,7 +40,9 @@ L.estado.configHotel = L.estado.configHotel || {
   // traz a idade). Configurável: cada hotel tem a sua política.
   cafeIdadeCrianca: 12,
   alertasVencimentoDias: [7, 3, 1, 0],
-  saldoInicialCaixa: 0
+  saldoInicialCaixa: 0,
+  // Troco que fica no caixa todo dia (regra da Direção: R$ 50,00). O que passar disso sai do caixa.
+  fundoCaixa: 5000
 };
 
 H.FORMAS = {
@@ -624,7 +626,9 @@ H.fechamentoDia = function (data) {
   }, { faturado: 0, recebido: 0, aReceber: 0 });
   var anterior = L.estado.fechamentosCaixa.filter(function (f) { return f.data < data && f.status === "FECHADO"; })
     .sort(function (a, b) { return b.data.localeCompare(a.data); })[0];
-  var saldoInicial = anterior ? anterior.saldoConferido : (L.estado.configHotel.saldoInicialCaixa || 0);
+  // Regra da Direção: o caixa começa e termina o dia só com o troco (R$ 50,00); o excesso sai do caixa.
+  var fundo = H.fundoCaixa();
+  var saldoInicial = fundo != null ? fundo : (anterior ? anterior.saldoConferido : (L.estado.configHotel.saldoInicialCaixa || 0));
   var saidas = L.estado.recebimentos.filter(function (r) { return r.data === data && r.tipo === "SAIDA_CAIXA" && r.status !== "CANCELADO"; })
     .reduce(function (a, r) { return a + (r.valorBruto || 0); }, 0);
   var entradasDinheiro = porForma.DINHEIRO.recebido;
@@ -633,9 +637,13 @@ H.fechamentoDia = function (data) {
     data: data, porForma: porForma, totais: totais,
     saldoInicial: saldoInicial, entradasDinheiro: entradasDinheiro, saidasDinheiro: saidas,
     saldoCalculado: saldoInicial + entradasDinheiro - saidas,
+    fundo: fundo, aRetirar: fundo != null ? Math.max(0, saldoInicial + entradasDinheiro - saidas - fundo) : 0,
     fechamento: existente || null
   };
 };
+
+/** Troco fixo do caixa, em centavos (padrão R$ 50,00). */
+H.fundoCaixa = function () { var v = (L.estado.configHotel || {}).fundoCaixa; return v == null ? 5000 : v; };
 
 /** Fechar exige: diferença zero, OU justificativa + aprovação de quem pode. */
 H.validarFechamentoCaixa = function (calc, saldoConferido, justificativa, aprovador) {

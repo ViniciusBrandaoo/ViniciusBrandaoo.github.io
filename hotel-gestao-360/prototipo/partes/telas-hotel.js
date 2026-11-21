@@ -392,8 +392,8 @@
     var d = dataSel(), comp = compSel(), dia = H.frigobarDia(d), mes = H.frigobarMes(comp), nc = H.frigobarNaoCobrado(comp);
     exportavel("frigobar-" + comp, ["Produto", "Quantidade", "Preço médio", "Receita", "Custo", "Margem bruta"],
       mes.produtos.map(function (p) { return [p.produto, p.quantidade, H.reaisCsv(p.precoMedio), H.reaisCsv(p.receita), H.reaisCsv(p.custo), H.reaisCsv(p.margem)]; }));
-    var html = T.cabecalho("Frigobar", "Valor = quantidade × preço de venda. O mês soma os dias reais (" + mes.dias + " em " + comp + ").",
-      (L.estado.frigobarProdutos.length ? botaoNovo("frigobarConsumos", "Registrar consumo") + " " : "") + botaoNovo("frigobarProdutos", "Novo produto"));
+    var html = T.cabecalho("Frigobar", "A recepção preenche a planilha do turno: quanto recebeu e quanto vendeu de cada produto. Valor = quantidade vendida × preço de venda.",
+      (L.estado.frigobarProdutos.length && T.podeEditar() ? '<button class="botao primario" data-acao="frig-planilha">Preencher planilha do turno</button> ' : "") + botaoNovo("frigobarProdutos", "Novo produto"));
     html += barraData() + '<div class="barra-ferramentas" style="margin-top:-8px"><span class="filtro-rotulo">Mês</span><input type="month" class="hotel-filtro" data-chave="mesHotel" value="' + comp + '"></div>';
     html += kpis([
       { rotulo: "Consumo do dia", valor: brl(dia.total), nota: L.dataBR(d) },
@@ -401,6 +401,15 @@
       { rotulo: "Margem bruta do mês", valor: brl(mes.receita - mes.custo), nota: "receita − custo" },
       { rotulo: "Sem cobrança", valor: String(nc.length), nota: "consumos não lançados na conta", tom: nc.length ? "critico" : "" }
     ]);
+    var plans = (L.estado.frigobarPlanilhas || []).filter(function (x) { return x.data === d; }).sort(function (a, b) { return String(a.turno).localeCompare(String(b.turno)); });
+    html += U.painelHtml("Planilhas do turno · " + L.dataBR(d), plans.length ? plans.length + " turno(s) · vendido " + brl(plans.reduce(function (a, x) { return a + (x.total || 0); }, 0)) : "",
+      plans.length ? '<div class="linhas">' + plans.map(function (x) {
+        var vend = (x.itens || []).filter(function (i) { return i.vendido; }), rec = (x.itens || []).filter(function (i) { return i.recebido; });
+        return '<button type="button" class="linha-item" data-acao="frig-planilha-ver" data-id="' + x.id + '"><span class="linha-texto"><b>' + U.esc(x.turno || "Turno") + " · " + U.esc(x.recepcionista || "—") + "</b>" +
+          "<small>" + (vend.length ? vend.map(function (i) { return i.vendido + " " + U.esc(i.produto); }).join(", ") : "nada vendido") + (rec.length ? " · recebeu " + rec.reduce(function (a, i) { return a + i.recebido; }, 0) + " item(ns)" : "") + "</small></span>" +
+          '<span class="linha-valor">' + brl(x.total || 0) + "</span></button>";
+      }).join("") + "</div>"
+      : U.vazioHtml("Nenhuma planilha neste dia", L.estado.frigobarProdutos.length ? "Use “Preencher planilha do turno” no topo da tela." : "Cadastre os produtos do frigobar primeiro."));
     if (mes.receitaJaNoDataHotel) html += '<p class="secundario">' + brl(mes.receitaJaNoDataHotel) + " desta receita já está na conta do hóspede no DataHotel e não deve ser lançada de novo.</p>";
     html += U.painelHtml("Dia " + L.dataBR(d), "por produto e por apartamento", '<div class="grade-2">' + U.tabelaHtml([
       { rotulo: "Produto", conteudo: function (p) { return U.esc(p.chave); } }, { rotulo: "Qtd", direita: true, conteudo: function (p) { return p.quantidade; } },
@@ -425,6 +434,53 @@
       { rotulo: "Estoque", direita: true, conteudo: function (p) { return (p.estoque || 0) + ((p.estoqueMinimo && p.estoque < p.estoqueMinimo) ? " " + pastilha("critico", "baixo") : ""); } },
       { rotulo: "", direita: true, conteudo: function (p) { return botaoEditar("frigobarProdutos", p); } }], prods));
     return html;
+  };
+  // Planilha do turno: uma linha por produto, com o que chegou e o que foi vendido.
+  T.acoes["frig-planilha"] = function () {
+    var prods = L.estado.frigobarProdutos.slice().filter(function (p) { return p.ativo !== false; }).sort(function (a, b) { return String(a.categoria || "").localeCompare(String(b.categoria || "")) || a.nome.localeCompare(b.nome); });
+    var u = L.estado.usuario || {};
+    var corpo = '<div class="form-grade"><label class="campo"><span>Dia</span><input type="date" id="fp-data" value="' + U.esc(dataSel()) + '"></label>' +
+      '<label class="campo"><span>Turno</span><select id="fp-turno"><option>Manhã</option><option>Tarde</option><option>Noite</option></select></label>' +
+      '<label class="campo campo-largo"><span>Recepcionista</span><input id="fp-quem" value="' + U.esc(u.nome || "") + '" autocomplete="name"></label></div>' +
+      '<div class="fp-tabela"><div class="fp-linha fp-cab"><span>Produto</span><span>Recebido</span><span>Vendido</span><span>Valor</span></div>' +
+      prods.map(function (p) {
+        return '<div class="fp-linha" data-prod="' + p.id + '" data-preco="' + (p.precoVenda || 0) + '"><span class="fp-nome">' + U.esc(p.nome) + "<small>" + brl(p.precoVenda || 0) + "</small></span>" +
+          '<input type="number" min="0" step="1" inputmode="numeric" class="fp-rec" aria-label="Recebido de ' + U.esc(p.nome) + '">' +
+          '<input type="number" min="0" step="1" inputmode="numeric" class="fp-vend" aria-label="Vendido de ' + U.esc(p.nome) + '">' +
+          '<span class="fp-valor">—</span></div>';
+      }).join("") + '</div><div class="fp-total"><span>Total vendido</span><b id="fp-total">R$ 0,00</b></div>';
+    U.abrirModal({ titulo: "Planilha do frigobar", sub: "preencha só o que mudou no turno", largo: true, corpo: corpo, acoes: [
+      { rotulo: "Cancelar", aoClicar: U.fecharModal },
+      { rotulo: "Salvar planilha", classe: "primario", aoClicar: function () {
+        var quem = U.el("fp-quem").value.trim(), data = U.el("fp-data").value;
+        if (!quem) { U.avisar("Informe o nome do recepcionista."); return; }
+        if (!data) { U.avisar("Informe o dia."); return; }
+        var itens = U.todos(".fp-linha[data-prod]").map(function (l) {
+          var p = L.buscarPorId("frigobarProdutos", l.dataset.prod) || {}, rec = parseInt(l.querySelector(".fp-rec").value, 10) || 0, vend = parseInt(l.querySelector(".fp-vend").value, 10) || 0;
+          return { produtoId: p.id, produto: p.nome, recebido: rec, vendido: vend, precoUnitario: p.precoVenda || 0, valor: vend * (p.precoVenda || 0) };
+        }).filter(function (i) { return i.recebido || i.vendido; });
+        if (!itens.length) { U.avisar("Preencha pelo menos um produto."); return; }
+        L.criar("frigobarPlanilhas", { data: data, turno: U.el("fp-turno").value, recepcionista: quem, itens: itens,
+          total: itens.reduce(function (a, i) { return a + i.valor; }, 0), lancadoPor: u.nome || "" });
+        T.filtros.dataHotel = data; U.fecharModal(); T.renderizar(); U.avisar("Planilha salva.");
+      } }] });
+    var recalc = function () {
+      var tot = 0;
+      U.todos(".fp-linha[data-prod]").forEach(function (l) { var v = (parseInt(l.querySelector(".fp-vend").value, 10) || 0) * Number(l.dataset.preco); tot += v; l.querySelector(".fp-valor").textContent = v ? brl(v) : "—"; });
+      U.el("fp-total").textContent = brl(tot);
+    };
+    U.el("modal-corpo").addEventListener("input", recalc);
+  };
+  T.acoes["frig-planilha-ver"] = function (id) {
+    var x = L.buscarPorId("frigobarPlanilhas", id); if (!x) return;
+    U.abrirModal({ titulo: "Planilha · " + L.dataBR(x.data) + " · " + (x.turno || ""), sub: "preenchida por " + (x.recepcionista || "—"),
+      corpo: U.tabelaHtml([
+        { rotulo: "Produto", conteudo: function (i) { return U.esc(i.produto); } },
+        { rotulo: "Recebido", direita: true, conteudo: function (i) { return i.recebido || "—"; } },
+        { rotulo: "Vendido", direita: true, conteudo: function (i) { return i.vendido || "—"; } },
+        { rotulo: "Valor", direita: true, conteudo: function (i) { return i.valor ? brl(i.valor) : "—"; } }
+      ], x.itens || [], {}) + '<div class="fp-total"><span>Total vendido</span><b>' + brl(x.total || 0) + "</b></div>",
+      acoes: [{ rotulo: "Fechar", classe: "primario", aoClicar: U.fecharModal }] });
   };
   T.acoes["hotel-frigobar-cobrado"] = function (id) { L.atualizar("frigobarConsumos", id, { cobrado: true, cobradoEm: L.hoje() }); T.renderizar(); };
 
@@ -662,14 +718,15 @@
       Object.keys(f.porForma).map(function (k) { var x = f.porForma[k]; return [H.FORMAS[k].nome, H.reaisCsv(x.faturado), H.reaisCsv(x.recebido), H.reaisCsv(x.aReceber), x.qtd]; })
         .concat([["TOTAL", H.reaisCsv(f.totais.faturado), H.reaisCsv(f.totais.recebido), H.reaisCsv(f.totais.aReceber), ""], ["Saldo inicial do caixa", H.reaisCsv(f.saldoInicial)], ["Saídas em dinheiro", H.reaisCsv(f.saidasDinheiro)], ["Saldo calculado", H.reaisCsv(f.saldoCalculado)]]));
     var fx = f.fechamento;
-    var html = T.cabecalho("Fechamento de Caixa", "Faturado, recebido e a receber nunca se misturam. Caixa físico = saldo inicial + dinheiro recebido − saídas em dinheiro.", botaoNovo("recebimentos", "Lançar movimentação"));
+    var html = T.cabecalho("Fechamento de Caixa", "O caixa fica só com " + brl(f.fundo) + " de troco por dia. No fim do dia, o dinheiro que passar disso sai do caixa (sangria) e é registrado aqui.", botaoNovo("recebimentos", "Lançar movimentação"));
     html += barraData();
     html += kpis([
       { rotulo: "Receita lançada no dia", valor: brl(f.totais.faturado), nota: "todas as formas" },
       { rotulo: "Efetivamente recebido", valor: brl(f.totais.recebido), nota: "dinheiro, Pix, cartão conciliado, boleto pago", hero: true },
       { rotulo: "A receber", valor: brl(f.totais.aReceber), nota: "cartão a depositar, faturado, boleto" },
-      { rotulo: "Saldo calculado do caixa", valor: brl(f.saldoCalculado), nota: "inicial " + brl(f.saldoInicial) + " · saídas " + brl(f.saidasDinheiro) }
+      { rotulo: "Dinheiro no caixa", valor: brl(f.saldoCalculado), nota: "troco " + brl(f.saldoInicial) + (f.saidasDinheiro ? " · saídas " + brl(f.saidasDinheiro) : "") }
     ]);
+    if (f.aRetirar) html += '<div class="aviso-linha atencao"><b>Retirar ' + brl(f.aRetirar) + ' do caixa</b><span>Deixe só ' + brl(f.fundo) + ' de troco e registre a saída em “Lançar movimentação”.</span></div>';
     html += U.painelHtml("Por modalidade", "", U.tabelaHtml([
       { rotulo: "Forma", conteudo: function (k) { return U.esc(H.FORMAS[k].nome); } },
       { rotulo: "Lançado", direita: true, conteudo: function (k) { return brl(f.porForma[k].faturado); } },

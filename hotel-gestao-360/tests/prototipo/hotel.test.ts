@@ -111,6 +111,9 @@ describe("4-5 fechamento de caixa: faturado ≠ recebido", () => {
     const f = H.fechamentoDia("2026-03-03");
     expect(f.totais).toEqual({ faturado: 10000 + 19400 + 50000, recebido: 10000, aReceber: 69400 });
     expect(f.saldoCalculado).toBe(5000 + 10000 - 3000);
+    // Troco fixo de R$ 50,00: o resto sai do caixa no fim do dia.
+    expect(f.fundo).toBe(5000);
+    expect(f.aRetirar).toBe(10000 - 3000);
   });
 
   it("diferença de caixa exige justificativa e autorização", () => {

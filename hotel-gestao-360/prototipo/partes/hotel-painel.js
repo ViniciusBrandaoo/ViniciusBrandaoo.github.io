@@ -417,8 +417,8 @@
   var FORMAS_COMP = [
     { valor: "CREDITO", rotulo: "Cartão de crédito (filipeta)" }, { valor: "DEBITO", rotulo: "Cartão de débito (filipeta)" },
     { valor: "PIX", rotulo: "Pix" }, { valor: "DINHEIRO", rotulo: "Dinheiro" }, { valor: "BOLETO", rotulo: "Boleto" },
-    { valor: "DEPOSITO", rotulo: "Depósito em conta" }, { valor: "FATURADO", rotulo: "Faturado (empresa)" }];
-  var nomeComp = function (f) { var x = FORMAS_COMP.find(function (o) { return o.valor === f; }); return x ? x.rotulo.replace(/ \(filipeta\)/, "") : nomeForma(f); };
+    { valor: "DEPOSITO", rotulo: "Depósito em conta" }, { valor: "FATURADO", rotulo: "Checkout assinado (empresa conveniada)" }];
+  var nomeComp = function (f) { if (f === "FATURADO") return "Faturado (empresa)"; var x = FORMAS_COMP.find(function (o) { return o.valor === f; }); return x ? x.rotulo.replace(/ \(filipeta\)/, "") : nomeForma(f); };
   var diaComp = function () { return T.filtros.compDia || L.hoje(); };
   var reaisCent = function (v) { return Math.round(Number(String(v).replace(",", ".")) * 100) || 0; };
 
@@ -430,8 +430,8 @@
     var soma = function (f, k, v) { formas[f] = formas[f] || { dh: 0, comp: 0, conf: 0, nao: 0 }; formas[f][k] += v; };
     recs.forEach(function (r) { var f = r.forma || "OUTRO", v = r.valorBruto || 0; soma(f, "dh", v); if (r.confirmadoBanco === "SIM") soma(f, "conf", v); if (r.confirmadoBanco === "NAO") soma(f, "nao", v); });
     comps.forEach(function (c) { soma(c.forma || "OUTRO", "comp", c.valor || 0); });
-    var html = T.cabecalho("Comprovantes do Dia", "Filipetas da maquininha, Pix, dinheiro, boletos e depósitos lançados por dia e por apartamento, comparados com o que entrou no DataHotel. Em cada recebimento, marque se ele foi confirmado no banco.",
-      '<button class="botao primario" data-acao="comp-novo">Lançar comprovante</button>');
+    var html = T.cabecalho("Comprovantes do Dia", "O recepcionista que recebeu lança a filipeta do cartão, o Pix, o dinheiro ou o depósito, com a foto. No check-out de hóspede de empresa conveniada, lança o checkout assinado. O sistema compara com o DataHotel.",
+      '<button class="botao" data-acao="comp-novo" data-id="FATURADO">Checkout de empresa</button> <button class="botao primario" data-acao="comp-novo">Lançar comprovante</button>');
     html += '<div class="filtro-periodo"><label>Dia <input type="date" id="comp-dia" value="' + esc(d) + '"></label><button class="botao" data-acao="comp-dia">Ver dia</button></div>';
     var chaves = Object.keys(formas);
     html += U.painelHtml("Resumo do dia por forma de pagamento", diaBR(d), chaves.length ? U.tabelaHtml([
@@ -442,13 +442,19 @@
       { rotulo: "Confirmado no banco", direita: true, conteudo: function (k) { var f = formas[k]; return brl(f.conf) + (f.nao ? '<div class="secundario" style="color:var(--vermelho)">não confirmado ' + brl(f.nao) + "</div>" : ""); } }
     ], chaves, {}) : U.vazioHtml("Nada lançado neste dia", ""));
 
-    html += U.painelHtml("Comprovantes lançados", comps.length + " comprovante(s)", comps.length ? '<div class="conf-lista">' + comps.map(function (c) {
-      return '<article class="conf-item conf-' + (c.foto ? "ok" : "atencao") + ' comp-item"><header><h3>' + (c.apto ? "Apto " + esc(c.apto) + " · " : "") + esc(nomeComp(c.forma)) + "</h3><strong>" + brl(c.valor || 0) + "</strong></header>" +
-        (c.foto ? '<a href="#" data-acao="comp-ver" data-id="' + c.id + '"><img class="comp-foto" alt="Comprovante" src="' + c.foto + '"></a>' : '<p class="secundario">Sem foto do comprovante.</p>') +
-        (c.observacao ? '<p class="secundario">' + esc(c.observacao) + "</p>" : "") +
-        '<p class="secundario">Lançado por ' + esc(c.lancadoPor || "—") + "</p>" +
-        '<div class="pend-acoes"><button class="botao" data-acao="comp-foto" data-id="' + c.id + '">' + (c.foto ? "Trocar foto" : "Anexar foto") + "</button></div></article>";
-    }).join("") + "</div>" : U.vazioHtml("Nenhum comprovante lançado neste dia", ""));
+    var linhaComp = function (c) {
+      var emp = c.empresaId ? (L.buscarPorId("empresas", c.empresaId) || {}) : null;
+      var titulo = c.forma === "FATURADO" ? (emp ? (emp.nomeFantasia || emp.razaoSocial) : "Empresa não informada") : nomeComp(c.forma);
+      var sub = [c.apto ? "Apto " + c.apto : "", c.hospede || "", c.recepcionista ? "recebido por " + c.recepcionista : (c.lancadoPor ? "lançado por " + c.lancadoPor : "")].filter(Boolean).join(" · ");
+      return '<div class="linha-item linha-comp">' + (c.foto ? '<a href="#" class="linha-foto" data-acao="comp-ver" data-id="' + c.id + '"><img alt="Comprovante" src="' + c.foto + '"></a>' : '<button type="button" class="linha-foto vazia" data-acao="comp-foto" data-id="' + c.id + '" title="Anexar foto">+ foto</button>') +
+        '<span class="linha-texto"><b>' + esc(titulo) + "</b><small>" + esc(sub) + (c.observacao ? " · " + esc(c.observacao) : "") + "</small></span>" +
+        '<span class="linha-valor">' + (c.valor ? brl(c.valor) : "—") + "</span>" + (c.foto ? '<button type="button" class="botao miudo" data-acao="comp-foto" data-id="' + c.id + '">Trocar foto</button>' : "") + "</div>";
+    };
+    var compPag = comps.filter(function (c) { return c.forma !== "FATURADO"; }), compEmp = comps.filter(function (c) { return c.forma === "FATURADO"; });
+    html += U.painelHtml("Comprovantes de pagamento", compPag.length ? compPag.length + " · " + brl(compPag.reduce(function (a, c) { return a + (c.valor || 0); }, 0)) : "",
+      compPag.length ? '<div class="linhas">' + compPag.map(linhaComp).join("") + "</div>" : U.vazioHtml("Nenhum comprovante lançado neste dia", "Filipeta de cartão, Pix, dinheiro ou depósito: quem recebeu lança, com a foto."));
+    html += U.painelHtml("Checkouts assinados de empresas", compEmp.length ? compEmp.length + " · " + brl(compEmp.reduce(function (a, c) { return a + (c.valor || 0); }, 0)) : "",
+      compEmp.length ? '<div class="linhas">' + compEmp.map(linhaComp).join("") + "</div>" : U.vazioHtml("Nenhum checkout de empresa neste dia", "Hóspede de empresa conveniada: foto do checkout assinado, enviada pelo recepcionista."));
 
     html += U.painelHtml("Recebimentos do DataHotel · confirmado no banco?", recs.length + " recebimento(s)", recs.length ? '<div class="conf-lista">' + recs.map(function (r) {
       var c = r.confirmadoBanco, tom = c === "SIM" ? "ok" : c === "NAO" ? "critico" : "atencao";
@@ -460,15 +466,25 @@
     return html;
   };
   T.acoes["comp-dia"] = function () { var i = U.el("comp-dia"); if (i && i.value) T.filtros.compDia = i.value; T.renderizar(); };
-  T.acoes["comp-novo"] = function () {
-    U.abrirFormulario({ titulo: "Lançar comprovante", campos: [
+  T.acoes["comp-novo"] = function (formaInicial) {
+    var empresa = formaInicial === "FATURADO";
+    var emps = L.estado.empresas.slice().sort(function (a, b) { return String(a.nomeFantasia || a.razaoSocial).localeCompare(String(b.nomeFantasia || b.razaoSocial)); })
+      .map(function (e) { return { valor: e.id, rotulo: e.nomeFantasia || e.razaoSocial }; });
+    var campos = [
       { id: "data", rotulo: "Dia", tipo: "data", obrigatorio: true, padrao: diaComp(), par: true }, { id: "apto", rotulo: "Apartamento" },
-      { id: "forma", rotulo: "Forma", tipo: "select", opcoes: FORMAS_COMP, par: true }, { id: "valor", rotulo: "Valor (R$)", tipo: "moeda", obrigatorio: true },
-      { id: "observacao", rotulo: "Observação", tipo: "textarea" }],
+      { id: "recepcionista", rotulo: "Recepcionista que recebeu", obrigatorio: true, padrao: (L.estado.usuario || {}).nome || "" }];
+    if (empresa) campos.push({ id: "empresaId", rotulo: "Empresa conveniada", tipo: "select", opcoes: [{ valor: "", rotulo: "Escolha a empresa" }].concat(emps), obrigatorio: true },
+      { id: "hospede", rotulo: "Hóspede" }, { id: "valor", rotulo: "Valor do checkout (R$)", tipo: "moeda" });
+    else campos.push({ id: "forma", rotulo: "Forma", tipo: "select", opcoes: FORMAS_COMP.filter(function (f) { return f.valor !== "FATURADO"; }), par: true }, { id: "valor", rotulo: "Valor (R$)", tipo: "moeda", obrigatorio: true });
+    campos.push({ id: "observacao", rotulo: "Observação", tipo: "textarea" });
+    U.abrirFormulario({ titulo: empresa ? "Checkout de empresa conveniada" : "Lançar comprovante", sub: empresa ? "foto do checkout assinado pelo hóspede" : "filipeta, Pix, dinheiro ou depósito", campos: campos,
+      rotuloSalvar: "Salvar e anexar foto",
       aoSalvar: function (v) {
-        var reg = L.criar("comprovantes", { data: v.data, apto: v.apto, forma: v.forma, valor: reaisCent(v.valor), observacao: v.observacao, lancadoPor: (L.estado.usuario || {}).nome || "" });
+        if (empresa && !v.empresaId) throw new Error("Escolha a empresa conveniada.");
+        var reg = L.criar("comprovantes", { data: v.data, apto: v.apto, forma: empresa ? "FATURADO" : v.forma, valor: reaisCent(v.valor || 0), empresaId: v.empresaId || "",
+          hospede: v.hospede || "", recepcionista: v.recepcionista, observacao: v.observacao, lancadoPor: (L.estado.usuario || {}).nome || "" });
         T.filtros.compDia = v.data; U.fecharModal(); T.renderizar();
-        if (reg && reg.id && window.confirm("Comprovante lançado. Quer anexar a foto agora?")) T.acoes["comp-foto"](reg.id);
+        if (reg && reg.id) T.acoes["comp-foto"](reg.id);
       } });
   };
   // Foto: reduzida no próprio navegador (no máximo ~1280px, JPEG) para caber no registro.
