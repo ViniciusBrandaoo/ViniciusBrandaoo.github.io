@@ -69,8 +69,8 @@ export function registrarConvite(app: FastifyInstance): void {
     return pagina(`<h1>${c.existe ? "Crie uma senha nova" : "Crie a sua senha"}</h1><p>Olá, ${esc(c.nome.split(" ")[0]!)}. Este link é só seu e funciona uma vez.${c.existe ? " A senha antiga deixa de valer." : ""}</p>
 <form id="f" autocomplete="on">
 <label for="email">E-mail (seu login)</label><input id="email" name="email" type="email" autocomplete="username" value="${esc(c.email)}" readonly>
-<label for="senha">Senha (mínimo 8 caracteres)</label><input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="8" maxlength="200">
-<label for="senha2">Repita a senha</label><input id="senha2" name="senha2" type="password" autocomplete="new-password" required minlength="8" maxlength="200">
+<label for="senha">Senha (mínimo 6 caracteres)</label><input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="6" maxlength="200">
+<label for="senha2">Repita a senha</label><input id="senha2" name="senha2" type="password" autocomplete="new-password" required minlength="6" maxlength="200">
 <button id="b" type="submit">${c.existe ? "Salvar a senha nova" : "Criar meu acesso"}</button><div id="m" class="erro" role="alert"></div></form>
 <script>
 var f=document.getElementById('f'),m=document.getElementById('m'),b=document.getElementById('b');
@@ -87,7 +87,7 @@ fetch('/api/convite',{method:'POST',headers:{'Content-Type':'application/json'},
   app.post<{ Body: { token?: string; senha?: string } }>("/api/convite", { config: { rateLimit: { max: 10, timeWindow: "10 minutes" } } }, async (req, resp) => {
     const b = req.body ?? {};
     const senha = String(b.senha ?? "");
-    if (senha.length < 8 || senha.length > 200) return resp.code(400).send({ erro: "A senha precisa de pelo menos 8 caracteres." });
+    if (senha.length < 6 || senha.length > 200) return resp.code(400).send({ erro: "A senha precisa de pelo menos 6 caracteres." });
     const convite = await conviteValido(b.token);
     if (!convite) return resp.code(404).send({ erro: "Este convite já foi usado ou venceu." });
     const hash = await criarHashSenha(senha);
