@@ -54,6 +54,7 @@ import * as lotacao from "./lotacao.js";
 import * as hotel from "./hotel.js";
 import * as hotelDados from "./hotel-dados.js";
 import * as hotelConferencia from "./hotel-conferencia.js";
+import * as hotelDocumentos from "./hotel-documentos.js";
 import { registrarPrimeiroAcesso } from "./primeiro-acesso.js";
 import { registrarConvite } from "./convite.js";
 import { perfisQuePodem, type AcaoHotel } from "../src/dominio/hotel/permissoes.js";
@@ -2310,7 +2311,45 @@ app.post("/api/hotel/conferencias", { bodyLimit: 30 * 1024 * 1024 }, async (req,
     }
   }
   if (!campos.inicio || !campos.fim) return resp.code(400).send({ erro: "Informe o período da conferência (início e fim)." });
+  // Extrato em PDF (o banco manda assim): vira texto e entra como o .txt do extrato.
+  for (const a of arquivos) {
+    if (/\.pdf$/i.test(a.nome) || a.buffer.subarray(0, 5).toString("latin1") === "%PDF-") {
+      try { a.buffer = Buffer.from(await hotelDocumentos.textoDoPdf(a.buffer), "utf8"); a.nome = a.nome.replace(/\.pdf$/i, "") + ".txt"; }
+      catch { return resp.code(422).send({ erro: `Não consegui ler o PDF ${a.nome}.` }); }
+    }
+  }
   return hotelConferencia.executar({ userId: s.userId }, arquivos, campos.inicio, campos.fim);
+});
+
+// ---------------------------------------------------------------- hotel: PDFs que preenchem sozinhos
+//
+// Boleto, conta de consumo, nota fiscal ou comprovante de Pix: o servidor guarda
+// o PDF, lê os campos e devolve para a tela abrir o formulário já preenchido.
+// Nada é lançado sem a pessoa conferir e salvar.
+
+app.post("/api/hotel/documentos", { bodyLimit: 11 * 1024 * 1024 }, async (req, resp) => {
+  const s = exigirAcaoHotel(req, "documento.enviar");
+  let arquivo: { nome: string; tipo: string; buffer: Buffer } | null = null;
+  for await (const parte of req.parts({ limits: { files: 1, fileSize: 10 * 1024 * 1024 } })) {
+    if (parte.type === "file") {
+      if (parte.fieldname === "arquivo" && !arquivo) arquivo = { nome: parte.filename || "documento.pdf", tipo: parte.mimetype, buffer: await parte.toBuffer() };
+      else parte.file.resume();
+    }
+  }
+  if (!arquivo) return resp.code(400).send({ erro: "Envie o PDF." });
+  const hoje = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  return hotelDocumentos.receber(s.userId, arquivo.nome, arquivo.tipo, arquivo.buffer, hoje);
+});
+
+app.get<{ Params: { documento: string } }>("/api/hotel/documentos/:documento", async (req, resp) => {
+  exigirAcaoHotel(req, "documento.ver");
+  if (!ID_HOTEL.test(req.params.documento)) return resp.code(400).send({ erro: "Documento inválido." });
+  const d = await hotelDocumentos.obter(req.params.documento);
+  if (!d) return resp.code(404).send({ erro: "Documento não encontrado." });
+  resp.header("Content-Type", "application/pdf");
+  resp.header("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(d.nome)}`);
+  resp.header("Cache-Control", "private, max-age=3600");
+  return resp.send(d.conteudo);
 });
 
 // ---------------------------------------------------------------- hotel: todas as áreas no banco

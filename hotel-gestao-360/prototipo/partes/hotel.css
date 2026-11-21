@@ -471,3 +471,9 @@ button.linha-item:hover, .linha-comp:hover { background: var(--superficie-alt); 
 .status-ponto { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ambar); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ambar) 18%, transparent); }
 .status-ponto.critico { background: var(--vermelho); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vermelho) 16%, transparent); }
 .status-ponto.ok { background: var(--pistache-forte, #2F6B2B); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pistache, #9CCB8F) 35%, transparent); }
+
+/* PDF anexado: selo pequeno no lugar da foto */
+.linha-foto.pdf { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--vermelho); text-decoration: none; background: color-mix(in srgb, var(--vermelho) 7%, var(--superficie)); border-color: color-mix(in srgb, var(--vermelho) 25%, var(--borda)); }
+.linha-foto.pdf:hover { border-color: var(--vermelho); }
+/* Resumo do que foi lido do PDF, no topo do formulário */
+.modal-topo .sub { display: block; max-width: 60ch; margin-top: 4px; line-height: 1.45; white-space: normal; }

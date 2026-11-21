@@ -945,6 +945,7 @@
     var comp = compSel(), hoje = L.hoje();
     var contas = L.estado.contas.filter(function (c) { return H.noMes(c.vencimento, comp); });
     var html = T.cabecalho("Contas Fixas e Calendário", "Recorrência gera PREVISÃO (rascunho), nunca pagamento. O pagamento continua em Contas a Pagar, com aprovação.",
+      (T.podeEditar() ? '<button class="botao" data-acao="pdf-conta" title="Lança a conta do mês a partir da fatura">Enviar fatura (PDF)</button> ' : "") +
       botaoNovo("contasRecorrentes", "Nova conta recorrente") + ' <button class="botao" data-acao="hotel-gerar-recorrentes">Gerar previsões de ' + comp + "</button>");
     html += barraData(true);
     if (!L.estado.contasRecorrentes.length) html += '<div class="painel">' + vazio("Nenhuma conta recorrente", "Cadastre internet, energia, água, telefone, placa solar e outras contas fixas.", { acao: "hotel-recorrentes-padrao", rotulo: "Criar as contas fixas iniciais" }) + "</div>";

@@ -1019,8 +1019,12 @@ function carregarContasDaApi() {
 
 T.acoes["nova-conta"] = function (id) {
   var atual = id ? L.buscarPorId("contas", id) : null;
+  // Vindo de um PDF (boleto, conta, nota): campos já preenchidos para conferir.
+  var pre = !atual && T._contaDoPdf ? T._contaDoPdf : null;
+  T._contaDoPdf = null;
   U.abrirFormulario({
-    titulo: atual ? "Editar conta" : "Lançar conta a pagar",
+    titulo: atual ? "Editar conta" : (pre ? "Conferir conta lida do PDF" : "Lançar conta a pagar"),
+    sub: pre ? pre.resumo : undefined,
     largo: true,
     campos: [
       { id: "descricao", rotulo: "Descrição", obrigatorio: true },
@@ -1047,7 +1051,7 @@ T.acoes["nova-conta"] = function (id) {
       { id: "observacoes", rotulo: "Observações", tipo: "textarea" }
     ],
     valores: atual ? Object.assign({}, atual, { valor: (atual.valor / 100).toFixed(2) })
-      : { competencia: L.competenciaAberta(), vencimento: L.hoje(), status: "RASCUNHO" },
+      : Object.assign({ competencia: L.competenciaAberta(), vencimento: L.hoje(), status: "RASCUNHO" }, pre ? pre.valores : {}),
     aoSalvar: function (v) {
       if (L.USA_BACKEND) {
         var corpo = {
@@ -1056,6 +1060,7 @@ T.acoes["nova-conta"] = function (id) {
           // Ao editar, campo apagado vai vazio (""): com undefined o servidor manteria o valor antigo.
           numeroDocumento: v.numeroDocumento || (atual ? "" : undefined), formaPagamento: v.formaPagamento || (atual ? "" : undefined),
           status: v.status || undefined, observacoes: v.observacoes || (atual ? "" : undefined),
+          documentoId: pre ? pre.documentoId : undefined, linhaDigitavel: pre && pre.linhaDigitavel ? pre.linhaDigitavel : undefined,
         };
         // Conta já paga mantém o status: Pago não se escolhe no formulário.
         if (atual && atual.status === "PAGO") delete corpo.status;
@@ -1093,7 +1098,7 @@ T.telas.contas = function () {
 
   var html = T.cabecalho("Contas a Pagar",
     "O status vira vencido sozinho quando a data passa.",
-    T.botaoNovo("nova-conta", "Lançar conta"));
+    (T.podeEditar() && T.enviarPdf ? '<button class="botao" data-acao="pdf-conta">Enviar boleto ou nota (PDF)</button> ' : "") + T.botaoNovo("nova-conta", "Lançar conta"));
 
   var barra = '<div class="barra-ferramentas"><span class="filtro-rotulo">Status</span>' +
     U.seletorRico({
@@ -1120,7 +1125,8 @@ T.telas.contas = function () {
       var s = T.ROTULO_STATUS[L.statusConta(c)] || ["neutro", c.status];
       return '<span class="pastilha ' + s[0] + '">' + s[1] + "</span>"; } },
     { rotulo: "", direita: true, conteudo: function (c) {
-      var acoes = '<button class="botao miudo" data-acao="nova-conta" data-id="' + c.id + '">Editar</button>';
+      var acoes = (c.documentoId ? '<a class="botao miudo" href="/api/hotel/documentos/' + U.esc(c.documentoId) + '" target="_blank" rel="noopener">PDF</a> ' : "") +
+        '<button class="botao miudo" data-acao="nova-conta" data-id="' + c.id + '">Editar</button>';
       if (c.status !== "PAGO" && c.status !== "CANCELADO" && T.podeEditar() && (!L.USA_BACKEND || T.temPerfil("DIRECAO"))) {
         acoes += ' <button class="botao miudo" data-acao="pagar-conta" data-id="' + c.id + '">Pagar</button>';
       }

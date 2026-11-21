@@ -1633,13 +1633,16 @@ export interface ContaPagarEntrada {
   formaPagamento?: string;
   status?: string;
   observacoes?: string;
+  documentoId?: string;
+  linhaDigitavel?: string;
 }
 
 const SELECAO_CONTA = `
   SELECT cp.id, cp.descricao, cp.fornecedor_id AS "fornecedorId", cat.nome AS categoria,
          cp.competencia, to_char(cp.vencimento, 'YYYY-MM-DD') AS vencimento,
          cp.valor_centavos::int AS valor, cp.forma_pagamento AS "formaPagamento",
-         cp.status, cp.numero_documento AS "numeroDocumento", cp.observacoes
+         cp.status, cp.numero_documento AS "numeroDocumento", cp.observacoes,
+         cp.documento_id AS "documentoId", cp.linha_digitavel AS "linhaDigitavel"
     FROM contas_pagar cp
     LEFT JOIN categorias_financeiras cat ON cat.id = cp.categoria_id
 `;
@@ -1658,12 +1661,13 @@ export async function criarContaPagar(
     const r = await c.query(
       `INSERT INTO contas_pagar
          (descricao, fornecedor_id, categoria_id, competencia, vencimento, valor_centavos,
-          forma_pagamento, status, numero_documento, observacoes, criado_por)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+          forma_pagamento, status, numero_documento, observacoes, criado_por, documento_id, linha_digitavel)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
       [
         dados.descricao, dados.fornecedorId || null, categoriaId, dados.competencia, dados.vencimento,
         dados.valorCentavos, dados.formaPagamento || null, dados.status || "RASCUNHO",
         dados.numeroDocumento || null, dados.observacoes || null, ator.userId,
+        dados.documentoId || null, dados.linhaDigitavel || null,
       ],
     );
     return { id: r.rows[0].id };
@@ -1712,6 +1716,8 @@ export async function atualizarContaPagar(
     if (dados.status !== undefined) add("status", dados.status);
     if (dados.numeroDocumento !== undefined) add("numero_documento", dados.numeroDocumento || null);
     if (dados.observacoes !== undefined) add("observacoes", dados.observacoes || null);
+    if (dados.documentoId !== undefined) add("documento_id", dados.documentoId || null);
+    if (dados.linhaDigitavel !== undefined) add("linha_digitavel", dados.linhaDigitavel || null);
     if (!campos.length) return;
     valores.push(id);
     const r = await c.query(`UPDATE contas_pagar SET ${campos.join(", ")} WHERE id = $${valores.length}`, valores);

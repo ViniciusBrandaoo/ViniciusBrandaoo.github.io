@@ -207,8 +207,14 @@ export function validarConta(b: unknown, parcial: boolean): Record<string, unkno
   set("formaPagamento", umDe(d.formaPagamento, "a forma de pagamento", FORMAS_PAGAMENTO));
   set("status", umDe(d.status, "o status", STATUS_CONTA));
   set("observacoes", texto(d.observacoes, "as observações", { max: 2000 }));
+  set("documentoId", uuid(d.documentoId, "o PDF da conta"));
+  if (d.linhaDigitavel !== undefined && d.linhaDigitavel !== "" && d.linhaDigitavel !== null) {
+    const l = String(d.linhaDigitavel).replace(/\D/g, "");
+    if (!/^\d{44,48}$/.test(l)) throw erroDeEntrada("A linha digitável do boleto precisa ter de 44 a 48 números.");
+    o.linhaDigitavel = l;
+  }
   // Campos que o formulário envia vazios para "limpar": preserva o vazio.
-  for (const k of ["fornecedorId", "numeroDocumento", "formaPagamento", "observacoes"]) {
+  for (const k of ["fornecedorId", "numeroDocumento", "formaPagamento", "observacoes", "documentoId", "linhaDigitavel"]) {
     if (parcial && (d[k] === "" || d[k] === null)) o[k] = "";
   }
   return o;

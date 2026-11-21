@@ -10,7 +10,9 @@ export type AcaoHotel =
   | "recebimento.ver"
   | "conferencia.ver"
   | "conferencia.executar"
-  | "salario.ver";
+  | "salario.ver"
+  | "documento.enviar"
+  | "documento.ver";
 
 const MATRIZ: Record<AcaoHotel, readonly string[]> = {
   "importacao.ver": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "AUDITOR"],
@@ -23,6 +25,9 @@ const MATRIZ: Record<AcaoHotel, readonly string[]> = {
   "conferencia.executar": ["DIRECAO", "FINANCEIRO", "RECEPCAO"],
   // Salário é da Direção e do RH (o restante do sistema já aplica esta regra).
   "salario.ver": ["DIRECAO", "RH"],
+  // PDFs (boletos, notas, comprovantes): quem lança a conta ou o comprovante envia.
+  "documento.enviar": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "GOVERNANCA", "RH"],
+  "documento.ver": ["DIRECAO", "FINANCEIRO", "RECEPCAO", "GOVERNANCA", "RH", "AUDITOR"],
 };
 
 export function perfisQuePodem(acao: AcaoHotel): readonly string[] {

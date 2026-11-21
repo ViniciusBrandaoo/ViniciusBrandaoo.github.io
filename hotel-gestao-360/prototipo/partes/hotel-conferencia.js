@@ -32,8 +32,8 @@
 
   T._confEnviar = function (arquivos) {
     if (!arquivos || !arquivos.length || ST.enviando) return;
-    var csvs = Array.prototype.filter.call(arquivos, function (f) { return /\.csv$/i.test(f.name); });
-    if (!csvs.length) { U.avisar("Envie os relatórios do DataHotel em .csv (Salvar → Ficheiro CSV)."); return; }
+    var csvs = Array.prototype.filter.call(arquivos, function (f) { return /\.(csv|txt|pdf)$/i.test(f.name); });
+    if (!csvs.length) { U.avisar("Envie os relatórios do DataHotel em .csv (Salvar → Ficheiro CSV) e, se tiver, o extrato do banco em PDF."); return; }
     var ini = (U.el("conf-inicio") || {}).value, fim = (U.el("conf-fim") || {}).value;
     if (!ini || !fim) { U.avisar("Informe o período da conferência (início e fim)."); return; }
     T.filtros.confInicio = ini; T.filtros.confFim = fim;
@@ -71,8 +71,8 @@
     html += '<div class="painel imp-painel"><div class="imp-passo"><span class="imp-num">1</span><div class="imp-passo-corpo"><h3>Período e relatórios</h3>' +
       '<p style="margin:0 0 10px"><label>De <input type="date" id="conf-inicio" value="' + U.esc(ini) + '"' + (ST.enviando ? " disabled" : "") + "></label> " +
       '<label>até <input type="date" id="conf-fim" value="' + U.esc(fim) + '"' + (ST.enviando ? " disabled" : "") + "></label></p>" +
-      '<label class="imp-drop" id="conf-drop"><input type="file" id="conf-arquivos" multiple accept=".csv,text/csv"' + (ST.enviando ? " disabled" : "") + ">" + U.iconeSvg("documentos", 26) +
-      '<span class="imp-drop-titulo">' + (ST.enviando ? "Conferindo…" : "Arraste todos os CSVs de uma vez ou <u>clique para escolher</u>") + "</span>" +
+      '<label class="imp-drop" id="conf-drop"><input type="file" id="conf-arquivos" multiple accept=".csv,text/csv,.txt,.pdf,application/pdf"' + (ST.enviando ? " disabled" : "") + ">" + U.iconeSvg("documentos", 26) +
+      '<span class="imp-drop-titulo">' + (ST.enviando ? "Conferindo…" : "Arraste os CSVs do DataHotel (e o extrato do banco em PDF) ou <u>clique para escolher</u>") + "</span>" +
       '<span class="imp-drop-dica">Reservas (com extrato), Contas Recebidas, Receitas x Despesas, Faturamento Diário e Analítico, Créditos x Débitos, Contas a Receber, Consumo, Vendas Itens, RDS, Mapa de Ocupação, Lista de Café, Lista de Camareira e Estoque Atual. O que faltar só deixa de ser conferido, e a tela avisa.</span></label>' +
       "</div></div></div>";
 

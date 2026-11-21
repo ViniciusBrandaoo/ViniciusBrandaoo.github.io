@@ -431,7 +431,7 @@
     recs.forEach(function (r) { var f = r.forma || "OUTRO", v = r.valorBruto || 0; soma(f, "dh", v); if (r.confirmadoBanco === "SIM") soma(f, "conf", v); if (r.confirmadoBanco === "NAO") soma(f, "nao", v); });
     comps.forEach(function (c) { soma(c.forma || "OUTRO", "comp", c.valor || 0); });
     var html = T.cabecalho("Comprovantes do Dia", "O recepcionista que recebeu lança a filipeta do cartão, o Pix, o dinheiro ou o depósito, com a foto. No check-out de hóspede de empresa conveniada, lança o checkout assinado. O sistema compara com o DataHotel.",
-      '<button class="botao" data-acao="comp-novo" data-id="FATURADO">Checkout de empresa</button> <button class="botao primario" data-acao="comp-novo">Lançar comprovante</button>');
+      '<button class="botao" data-acao="pdf-comprovante">Enviar PDF do Pix</button> <button class="botao" data-acao="comp-novo" data-id="FATURADO">Checkout de empresa</button> <button class="botao primario" data-acao="comp-novo">Lançar comprovante</button>');
     html += '<div class="filtro-periodo"><label>Dia <input type="date" id="comp-dia" value="' + esc(d) + '"></label><button class="botao" data-acao="comp-dia">Ver dia</button></div>';
     var chaves = Object.keys(formas);
     html += U.painelHtml("Resumo do dia por forma de pagamento", diaBR(d), chaves.length ? U.tabelaHtml([
@@ -446,6 +446,9 @@
       var emp = c.empresaId ? (L.buscarPorId("empresas", c.empresaId) || {}) : null;
       var titulo = c.forma === "FATURADO" ? (emp ? (emp.nomeFantasia || emp.razaoSocial) : "Empresa não informada") : nomeComp(c.forma);
       var sub = [c.apto ? "Apto " + c.apto : "", c.hospede || "", c.recepcionista ? "recebido por " + c.recepcionista : (c.lancadoPor ? "lançado por " + c.lancadoPor : "")].filter(Boolean).join(" · ");
+      if (c.documentoId && !c.foto) return '<div class="linha-item linha-comp"><a class="linha-foto pdf" href="/api/hotel/documentos/' + esc(c.documentoId) + '" target="_blank" rel="noopener">PDF</a>' +
+        '<span class="linha-texto"><b>' + esc(titulo) + "</b><small>" + esc(sub) + (c.observacao ? " · " + esc(c.observacao) : "") + "</small></span>" +
+        '<span class="linha-valor">' + (c.valor ? brl(c.valor) : "—") + "</span></div>";
       return '<div class="linha-item linha-comp">' + (c.foto ? '<a href="#" class="linha-foto" data-acao="comp-ver" data-id="' + c.id + '"><img alt="Comprovante" src="' + c.foto + '"></a>' : '<button type="button" class="linha-foto vazia" data-acao="comp-foto" data-id="' + c.id + '" title="Anexar foto">+ foto</button>') +
         '<span class="linha-texto"><b>' + esc(titulo) + "</b><small>" + esc(sub) + (c.observacao ? " · " + esc(c.observacao) : "") + "</small></span>" +
         '<span class="linha-valor">' + (c.valor ? brl(c.valor) : "—") + "</span>" + (c.foto ? '<button type="button" class="botao miudo" data-acao="comp-foto" data-id="' + c.id + '">Trocar foto</button>' : "") + "</div>";
@@ -468,6 +471,7 @@
   T.acoes["comp-dia"] = function () { var i = U.el("comp-dia"); if (i && i.value) T.filtros.compDia = i.value; T.renderizar(); };
   T.acoes["comp-novo"] = function (formaInicial) {
     var empresa = formaInicial === "FATURADO";
+    var pre = T._compDoPdf; T._compDoPdf = null;
     var emps = L.estado.empresas.slice().sort(function (a, b) { return String(a.nomeFantasia || a.razaoSocial).localeCompare(String(b.nomeFantasia || b.razaoSocial)); })
       .map(function (e) { return { valor: e.id, rotulo: e.nomeFantasia || e.razaoSocial }; });
     var campos = [
@@ -477,14 +481,17 @@
       { id: "hospede", rotulo: "Hóspede" }, { id: "valor", rotulo: "Valor do checkout (R$)", tipo: "moeda" });
     else campos.push({ id: "forma", rotulo: "Forma", tipo: "select", opcoes: FORMAS_COMP.filter(function (f) { return f.valor !== "FATURADO"; }), par: true }, { id: "valor", rotulo: "Valor (R$)", tipo: "moeda", obrigatorio: true });
     campos.push({ id: "observacao", rotulo: "Observação", tipo: "textarea" });
-    U.abrirFormulario({ titulo: empresa ? "Checkout de empresa conveniada" : "Lançar comprovante", sub: empresa ? "foto do checkout assinado pelo hóspede" : "filipeta, Pix, dinheiro ou depósito", campos: campos,
-      rotuloSalvar: "Salvar e anexar foto",
+    U.abrirFormulario({ titulo: pre ? "Conferir comprovante lido do PDF" : (empresa ? "Checkout de empresa conveniada" : "Lançar comprovante"),
+      sub: pre ? pre.resumo : (empresa ? "foto do checkout assinado pelo hóspede" : "filipeta, Pix, dinheiro ou depósito"), campos: campos,
+      valores: pre ? Object.assign({ data: diaComp(), recepcionista: (L.estado.usuario || {}).nome || "" }, pre.valores) : undefined,
+      rotuloSalvar: pre ? "Salvar" : "Salvar e anexar foto",
       aoSalvar: function (v) {
         if (empresa && !v.empresaId) throw new Error("Escolha a empresa conveniada.");
         var reg = L.criar("comprovantes", { data: v.data, apto: v.apto, forma: empresa ? "FATURADO" : v.forma, valor: reaisCent(v.valor || 0), empresaId: v.empresaId || "",
-          hospede: v.hospede || "", recepcionista: v.recepcionista, observacao: v.observacao, lancadoPor: (L.estado.usuario || {}).nome || "" });
+          hospede: v.hospede || "", recepcionista: v.recepcionista, observacao: v.observacao, lancadoPor: (L.estado.usuario || {}).nome || "",
+          documentoId: pre ? pre.documentoId : "" });
         T.filtros.compDia = v.data; U.fecharModal(); T.renderizar();
-        if (reg && reg.id) T.acoes["comp-foto"](reg.id);
+        if (reg && reg.id && !pre) T.acoes["comp-foto"](reg.id);
       } });
   };
   // Foto: reduzida no próprio navegador (no máximo ~1280px, JPEG) para caber no registro.
@@ -615,6 +622,71 @@
   var montarAjudaOriginal = T.montarAjuda;
   T.montarAjuda = function () { montarAjudaOriginal(); preencherAjuda(); };
   preencherAjuda();
+  // ------------------------------------------------------------ PDF que preenche sozinho
+  // Escolhe o PDF, o servidor guarda e lê os campos; a tela abre o formulário
+  // já preenchido. Nada é salvo sem a pessoa conferir.
+  var ROT_TIPO = { BOLETO: "boleto", CONTA_CONSUMO: "conta de consumo", NFE: "nota fiscal", NFSE: "nota fiscal de serviço", COMPROVANTE_PIX: "comprovante de Pix", EXTRATO: "extrato bancário", DESCONHECIDO: "documento" };
+  T.enviarPdf = function (aoLer) {
+    if (!L.USA_BACKEND) { U.avisar("O envio de PDF funciona na versão publicada."); return; }
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/pdf,.pdf";
+    inp.onchange = function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      if (f.size > 10 * 1024 * 1024) { U.avisar("O PDF passa de 10 MB."); return; }
+      U.avisar("Lendo o PDF…");
+      L.api.enviarArquivo("/api/hotel/documentos", { arquivo: f }).then(function (r) {
+        var av = document.getElementById("aviso-flutuante"); if (av) av.remove();
+        if (r.repetido) U.avisar("Este PDF já tinha sido enviado antes. Confira se não está lançado em dobro.");
+        aoLer(r);
+      }).catch(function (e) { U.avisar(e.message || "Não foi possível ler o PDF."); });
+    };
+    inp.click();
+  };
+  /** Frase curta do que foi lido, para o topo do formulário. */
+  T.resumoPdf = function (r) {
+    var l = r.lido || {}, achou = [];
+    if (l.valor) achou.push("valor"); if (l.vencimento) achou.push("vencimento"); if (l.documento) achou.push("número");
+    if (r.fornecedor || l.nome) achou.push("fornecedor"); if (l.emissao) achou.push("data"); if (l.pagador) achou.push("pagador");
+    var base = achou.length ? "Lido do " + (ROT_TIPO[l.tipo] || "documento") + ": " + achou.join(", ").replace(/, ([^,]*)$/, " e $1") + ". Confira antes de salvar."
+      : "Não achei campos neste PDF: preencha à mão. O arquivo fica guardado.";
+    return base + ((l.avisos || []).length ? " " + l.avisos.join(" ") : "");
+  };
+  var normNome = function (s) { return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); };
+  T.acoes["pdf-conta"] = function () {
+    T.enviarPdf(function (r) {
+      var l = r.lido || {}, nome = r.fornecedor ? r.fornecedor.nome : (l.nome ? l.nome.valor : "");
+      // Conta fixa com o mesmo nome: usa a descrição e a categoria dela.
+      var b = normNome(nome).split(" ")[0] || "";
+      var fixa = b.length >= 3 ? (L.estado.contasRecorrentes || []).find(function (c) { return normNome(c.descricao).indexOf(b) !== -1; }) : null;
+      var venc = l.vencimento ? l.vencimento.valor : (l.emissao ? l.emissao.valor : "");
+      var cnpj = l.cnpj ? l.cnpj.valor.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : "";
+      var valores = {
+        descricao: fixa ? fixa.descricao : (nome || ROT_TIPO[l.tipo] || "Conta").slice(0, 200),
+        fornecedorId: r.fornecedor ? r.fornecedor.id : "",
+        categoria: fixa && fixa.categoria ? fixa.categoria : undefined,
+        valor: l.valor ? (l.valor.valor / 100).toFixed(2) : undefined,
+        vencimento: venc || undefined, competencia: venc ? venc.slice(0, 7) : undefined,
+        numeroDocumento: l.documento ? String(l.documento.valor).replace(/^NF\s*/, "").slice(0, 60) : undefined,
+        formaPagamento: l.tipo === "BOLETO" || l.tipo === "CONTA_CONSUMO" ? "BOLETO" : undefined,
+        status: "AGUARDANDO_APROVACAO",
+        observacoes: ["PDF: " + r.nome, cnpj ? "CNPJ " + cnpj : "", !r.fornecedor && nome ? "Fornecedor no documento: " + nome : ""].filter(Boolean).join(" · ")
+      };
+      Object.keys(valores).forEach(function (k) { if (valores[k] === undefined) delete valores[k]; });
+      T._contaDoPdf = { valores: valores, documentoId: r.documentoId, linhaDigitavel: l.linhaDigitavel ? l.linhaDigitavel.valor : "", resumo: T.resumoPdf(r) };
+      T.acoes["nova-conta"]();
+    });
+  };
+  T.acoes["pdf-comprovante"] = function () {
+    T.enviarPdf(function (r) {
+      var l = r.lido || {};
+      var valores = { data: l.emissao ? l.emissao.valor : diaComp(), forma: l.tipo === "COMPROVANTE_PIX" ? "PIX" : undefined,
+        valor: l.valor ? (l.valor.valor / 100).toFixed(2) : undefined,
+        observacao: [l.pagador ? "Pagador: " + l.pagador.valor : "", "PDF: " + r.nome].filter(Boolean).join(" · ") };
+      Object.keys(valores).forEach(function (k) { if (valores[k] === undefined) delete valores[k]; });
+      T._compDoPdf = { documentoId: r.documentoId, resumo: T.resumoPdf(r), valores: valores };
+      T.acoes["comp-novo"]();
+    });
+  };
+
   T.telas.dashboard = T.telas.painelhotel;
 })();
 
