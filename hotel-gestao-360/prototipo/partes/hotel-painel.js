@@ -113,6 +113,14 @@
     }).join("") + "</div>";
   }
 
+  // Recebido por dia em colunas: um dia por coluna, valor ao passar o mouse; ocupa uma altura fixa.
+  function colunas(itens) {
+    var max = itens.reduce(function (m, x) { return Math.max(m, x.valor); }, 0) || 1;
+    var rot = function (x) { return diaBR(x.dia).slice(0, 5); };
+    return '<div class="colunas" role="img" aria-label="Recebido por dia">' + itens.map(function (x) {
+      return '<span class="coluna" title="' + esc(diaBR(x.dia) + ": " + brl(x.valor)) + '"><i style="height:' + Math.max(3, Math.round(x.valor / max * 100)) + '%"></i></span>';
+    }).join("") + '</div><div class="colunas-eixo"><span>' + esc(rot(itens[0])) + "</span><span>" + esc(rot(itens[itens.length - 1])) + "</span></div>";
+  }
   function filtroPeriodo(prefixo) {
     var p = periodo();
     return '<div class="filtro-periodo">' +
@@ -132,30 +140,32 @@
   T.telas.painelhotel = function () {
     if (ST.lista === null) carregarConferencia();
     var p = periodo(), c = calcular(p.ini, p.fim), u = ST.ultima;
-    var html = T.cabecalho("Painel do Hotel", "Resumo do período com os dados importados do DataHotel e a última conferência do fechamento.");
+    var html = T.cabecalho("Painel do Hotel", "Resumo do período com os dados importados do DataHotel e a última conferência do fechamento.",
+      '<button class="botao" data-ir="relatorioshotel">Relatório em PDF</button>');
     html += filtroPeriodo("ph");
     html += '<div class="grade-kpi">' + [
       { rotulo: "Recebido no período", valor: brl(c.total), nota: c.qtd + " recebimento(s)", destino: "caixa" },
-      { rotulo: "Ocupação hoje", valor: Math.round(c.hoje.taxa * 100) + "%", nota: c.hoje.ocupados + " de " + c.hoje.total + " aptos · " + c.hoje.hospedes + " hóspede(s)", destino: "hospedagem" },
-      { rotulo: "Saldo a receber de hospedagens", valor: brl(c.pendente), nota: c.saldos.length + " hospedagem(ns)", tom: c.pendente ? "atencao" : "" },
-      { rotulo: "Faturado para empresas", valor: brl(c.faturar), nota: "a cobrar das empresas (conferir faturas)", tom: c.faturar ? "atencao" : "", destino: "empresas" },
-      { rotulo: "Última conferência", valor: u ? (u.divergentes ? String(u.divergentes) : "Tudo bate") : "—", nota: u ? (u.divergentes ? (u.divergentes === 1 ? "divergência" : "divergências") + " · " : "") + u.ok + " batem · " + u.atencao + " atenção · " + quando(u.criadoEm) : (ST.carregando ? "carregando…" : "nenhuma ainda"), tom: u && u.divergentes ? "critico" : "", destino: "conferencia" }
+      { rotulo: "Ocupação hoje", valor: Math.round(c.hoje.taxa * 100) + "%", nota: c.hoje.ocupados + " de " + c.hoje.total + " aptos", destino: "hospedagem" },
+      { rotulo: "A receber de hóspedes", valor: brl(c.pendente), nota: c.saldos.length + " hospedagem(ns)", tom: c.pendente ? "atencao" : "" },
+      { rotulo: "Faturado para empresas", valor: brl(c.faturar), nota: "a cobrar das empresas", tom: c.faturar ? "atencao" : "", destino: "empresas" },
+      { rotulo: "Última conferência", valor: u ? (u.divergentes ? String(u.divergentes) : "Tudo bate") : "—", nota: u ? (u.divergentes ? (u.divergentes === 1 ? "divergência" : "divergências") + " · " : "") + "em " + String(quando(u.criadoEm)).slice(0, 5) : (ST.carregando ? "carregando…" : "nenhuma ainda"), tom: u && u.divergentes ? "critico" : "", destino: "conferencia" }
     ].map(U.kpiHtml).join("") + "</div>";
 
     html += '<div class="grade-2">' +
       U.painelHtml("Recebido por forma de pagamento", diaBR(p.ini) + " a " + diaBR(p.fim), c.formas.length ? barras(c.formas, function (x) { return nomeForma(x.forma); }, function (x) { return x.valor; }) : '<p class="secundario" style="padding:16px 20px">Sem recebimentos no período.</p>') +
-      U.painelHtml("Recebido por dia", "", c.dias.length ? barras(c.dias, function (x) { return diaBR(x.dia); }, function (x) { return x.valor; }) : '<p class="secundario" style="padding:16px 20px">Sem recebimentos no período.</p>') +
+      U.painelHtml("Recebido por dia", c.dias.length ? "média " + brl(Math.round(c.total / c.dias.length)) + " · maior " + brl(c.dias.reduce(function (m, x) { return Math.max(m, x.valor); }, 0)) : "", c.dias.length ? colunas(c.dias) : U.vazioHtml("Sem recebimentos no período", "")) +
       "</div>";
 
     if (u) {
       var probl = (u.resultado || []).filter(function (r) { return r.situacao !== "OK"; });
       html += U.painelHtml("O que a última conferência apontou", diaBR(u.inicio) + " a " + diaBR(u.fim), probl.length ?
-        '<div class="conf-lista">' + probl.map(function (r) {
-          var tom = r.situacao === "DIVERGENTE" ? "critico" : "atencao", d = r.detalhes || [];
-          return '<article class="conf-item conf-' + tom + '"><header><h3>' + esc(r.titulo) + '</h3><span class="pastilha ' + tom + '">' + SIT[r.situacao] + "</span></header>" +
-            (d.length ? "<ul>" + d.slice(0, 4).map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + (d.length > 4 ? "<li>… e mais " + (d.length - 4) + "</li>" : "") + "</ul>" : "") + "</article>";
-        }).join("") + '<p class="secundario" style="margin:2px 0 0">Detalhes completos em Conferência do Fechamento.</p></div>'
-        : '<p style="padding:16px 20px">Tudo bateu.</p>');
+        '<div class="aponta">' + probl.map(function (r) {
+          var tom = r.situacao === "DIVERGENTE" ? "critico" : "atencao", d = (r.detalhes || [])[0] || "";
+          return '<button type="button" class="aponta-item" data-ir="conferencia"><i class="aponta-sinal ' + tom + '" aria-hidden="true"></i>' +
+            '<span class="aponta-texto"><b>' + esc(r.titulo) + "</b>" + (d ? "<small>" + esc(d) + "</small>" : "") + "</span>" +
+            '<span class="pastilha ' + tom + '">' + SIT[r.situacao] + "</span></button>";
+        }).join("") + "</div>"
+        : U.vazioHtml("Tudo bateu", ""));
     }
 
     var pend = (L.estado.pendencias || []).filter(function (x) { return x.status !== "Resolvida"; });
@@ -163,15 +173,14 @@
       '<div class="nota-linha"><span>' +
       pend.slice(0, 3).map(function (x) { return esc(x.tipo) + (x.apto ? " (" + esc(x.apto) + ")" : ""); }).join(" · ") + (pend.length > 3 ? " e mais " + (pend.length - 3) : "") +
       '</span><button class="botao miudo" data-acao="pend-ir">Responder pendências</button></div>');
-    html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
+    if (c.saldos.length) html += U.painelHtml("Hospedagens com saldo a receber", c.saldos.length + " no período", U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return esc(x.h.apartamento); } },
       { rotulo: "Hóspede / reserva", conteudo: function (x) { return esc(x.h.hospede || "—") + '<div class="secundario">' + esc(x.h.codigoOrigem || x.h.codigo || "") + " · " + diaBR(x.h.checkin) + " a " + diaBR(x.h.checkoutRealizado || x.h.checkout) + "</div>"; } },
       { rotulo: "Total", direita: true, conteudo: function (x) { return brl(x.total); } },
       { rotulo: "Pago", direita: true, conteudo: function (x) { return brl(x.pago); } },
       { rotulo: "Falta", direita: true, conteudo: function (x) { return "<strong>" + brl(x.pendente) + "</strong>" + (x.situacao === "FATURAR" ? '<div class="secundario">faturar</div>' : ""); } }
-    ], c.saldos, { tituloVazio: "Nenhuma hospedagem com saldo" }));
-
-    html += '<div class="painel" style="padding:14px 20px"><button class="botao" data-ir="relatorioshotel">Gerar relatório em PDF para a Fernanda</button></div>';
+    ], c.saldos.slice(0, 5), { tituloVazio: "Nenhuma hospedagem com saldo" }) +
+      (c.saldos.length > 5 ? '<div class="nota-linha"><span>e mais ' + (c.saldos.length - 5) + '</span><button class="botao miudo" data-ir="hospedagem">Ver todas</button></div>' : ""));
     return html;
   };
 

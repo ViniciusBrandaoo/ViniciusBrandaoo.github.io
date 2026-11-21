@@ -343,3 +343,21 @@ button.roteiro-item:hover { border-color: var(--pistache-forte, #2F6B2B); backgr
 
 /* Valor do indicador quebra só entre palavras (nunca "divergente(s" / ")"). */
 @media screen { .conteudo .grade-kpi .kpi-valor { overflow-wrap: break-word; word-break: normal; hyphens: none; } }
+
+/* Painel enxuto: recebido por dia em colunas e apontamentos da conferência em uma linha cada. */
+.colunas { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding: 6px 24px 0; }
+.coluna { flex: 1 1 0; min-width: 3px; height: 100%; display: flex; align-items: flex-end; border-radius: 4px; cursor: default; }
+.coluna i { display: block; width: 100%; border-radius: 4px 4px 2px 2px; background: var(--pistache, #9CCB8F); transition: background .15s; }
+.coluna:hover i { background: var(--pistache-forte, #2F6B2B); }
+.colunas-eixo { display: flex; justify-content: space-between; padding: 6px 24px 18px; font-size: 11px; color: var(--tinta-media); font-variant-numeric: tabular-nums; }
+.aponta { display: grid; padding: 0 12px 10px; }
+.aponta-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-top: 1px solid var(--borda); background: none; font: inherit; color: var(--tinta); text-align: left; cursor: pointer; border-radius: 0; }
+.aponta-item:first-child { border-top: 0; }
+.aponta-item:hover { background: var(--superficie-alt); border-radius: 10px; }
+.aponta-item:hover + .aponta-item { border-top-color: transparent; }
+.aponta-sinal { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ambar); }
+.aponta-sinal.critico { background: var(--vermelho); }
+.aponta-texto { flex: 1; min-width: 0; display: grid; }
+.aponta-texto b { font-weight: 600; font-size: .92rem; }
+.aponta-texto small { font-size: .78rem; color: var(--tinta-media); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .colunas, .colunas-eixo { padding-left: 16px; padding-right: 16px; } }
