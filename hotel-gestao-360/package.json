@@ -1,0 +1,40 @@
+{
+  "name": "hotel-gestao-360",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node --env-file-if-exists=.env db/migrate.mjs",
+    "db:status": "node --env-file-if-exists=.env db/migrate.mjs --status",
+    "prototipo": "node prototipo/build.mjs",
+    "build:prototipo": "node prototipo/build.mjs",
+    "importar": "tsx src/importacao/cli.ts",
+    "build:demo": "node prototipo/build.mjs --sem-dados",
+    "servidor": "node --env-file-if-exists=.env --import tsx servidor/indice.ts",
+    "servidor:dev": "tsx watch --env-file-if-exists=.env servidor/indice.ts",
+    "semear": "node --env-file-if-exists=.env --import tsx servidor/semear.ts",
+    "subir-planilha": "node --env-file-if-exists=.env --import tsx servidor/importar-planilha.ts",
+    "build": "node prototipo/build.mjs --sem-dados --com-backend",
+    "start": "npm run db:migrate && npm run servidor",
+    "qa": "node scripts/qa/checks-api.mjs",
+    "qa:ambiente": "bash scripts/qa/ambiente.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "@types/pg": "^8.23.1",
+    "exceljs": "^4.4.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/multipart": "^10.1.1",
+    "@fastify/rate-limit": "^11.2.0",
+    "fastify": "^5.12.1",
+    "pg": "^8.23.0",
+    "tsx": "^4.23.13"
+  }
+}

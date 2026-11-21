@@ -1,0 +1,7 @@
+node_modules/
+.env
+prototipo/partes/dados-reais.js
+prototipo/partes/dados-colaboradores.js
+*.local.html
+
+qa-relatorios/producao-leitura.json
