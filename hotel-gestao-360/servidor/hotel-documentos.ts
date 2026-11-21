@@ -4,16 +4,20 @@
  * a tela abre o formulário já preenchido para a pessoa conferir e salvar.
  */
 import { createHash } from "node:crypto";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { hashDocumento } from "./autenticacao.js";
 import { consultar } from "./banco.js";
 import { lerDocumento, type DocumentoLido } from "../src/dominio/hotel/ler-documento.js";
 
 const LIMITE = 10 * 1024 * 1024;
+// Fontes padrão do PDF (Helvetica, Times…): sem elas o leitor avisa no log a cada arquivo.
+const FONTES = join(dirname(createRequire(import.meta.url).resolve("pdfjs-dist/package.json")), "standard_fonts") + "/";
 
 /** Texto do PDF linha a linha, na ordem da página (itens com a mesma altura viram uma linha). */
 export async function textoDoPdf(buffer: Buffer): Promise<string> {
-  const doc = await getDocument({ data: new Uint8Array(buffer), isEvalSupported: false, disableFontFace: true, useSystemFonts: false }).promise;
+  const doc = await getDocument({ data: new Uint8Array(buffer), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, standardFontDataUrl: FONTES }).promise;
   const paginas: string[] = [];
   for (let n = 1; n <= Math.min(doc.numPages, 30); n++) {
     const pag = await doc.getPage(n);
