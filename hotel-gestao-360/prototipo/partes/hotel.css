@@ -416,3 +416,52 @@ button.linha-item:hover, .linha-comp:hover { background: var(--superficie-alt); 
   .modal { border-radius: 20px; }
   .modal-topo h2 { font-weight: 600; letter-spacing: -.02em; }
 }
+
+/* ============================================================ campos: foco leve e calendário próprio */
+@media screen {
+  /* Foco de campo: borda verde fina + halo suave (no lugar do contorno grosso). */
+  input:not([type="checkbox"]):not([type="radio"]):focus, input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+  select:focus, select:focus-visible, textarea:focus, textarea:focus-visible {
+    outline: none !important; border-color: var(--pistache-forte, #2F6B2B) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pistache, #9CCB8F) 38%, transparent) !important;
+    background-color: var(--superficie) !important;
+  }
+  .conteudo .botao:focus-visible, .modal .botao:focus-visible { outline: 2px solid var(--pistache-forte, #2F6B2B); outline-offset: 2px; }
+  .lista-busca input, .busca input { background: var(--superficie); border-color: var(--borda); border-radius: 10px; }
+  .lista-busca input:hover, .busca input:hover { border-color: var(--borda-forte); }
+
+  /* Campo de data/mês: ícone próprio, sem o seletor nativo. */
+  input[type="date"], input[type="month"] {
+    padding-right: 36px !important; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235F665C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.5' y='5' width='17' height='15.5' rx='2.5'/%3E%3Cpath d='M3.5 9.5h17M8 3v4M16 3v4'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: right 12px center !important; background-size: 16px !important;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator, input[type="month"]::-webkit-calendar-picker-indicator { display: none; }
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper, input[type="month"]::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+  input[type="date"]::-webkit-datetime-edit-day-field:focus, input[type="date"]::-webkit-datetime-edit-month-field:focus,
+  input[type="date"]::-webkit-datetime-edit-year-field:focus, input[type="month"]::-webkit-datetime-edit-month-field:focus,
+  input[type="month"]::-webkit-datetime-edit-year-field:focus { background: color-mix(in srgb, var(--pistache, #9CCB8F) 45%, transparent); color: var(--tinta); border-radius: 4px; }
+}
+.cal-pop { position: fixed; z-index: 10000; width: 272px; padding: 14px; border-radius: 16px; background: var(--superficie); border: 1px solid var(--borda);
+  box-shadow: 0 2px 6px rgba(23, 26, 22, .06), 0 24px 48px -16px rgba(23, 26, 22, .28); font-family: inherit; color: var(--tinta); animation: cal-entra .14s ease-out; }
+@keyframes cal-entra { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .cal-pop { animation: none; } }
+.cal-pop button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.cal-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cal-topo b { font-size: .92rem; font-weight: 600; letter-spacing: -.01em; }
+.cal-topo button { width: 30px; height: 30px; border-radius: 9px; font-size: 1.15rem; line-height: 1; color: var(--tinta-media); }
+.cal-topo button:hover { background: var(--superficie-alt); color: var(--tinta); }
+.cal-semana, .cal-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-semana span { text-align: center; font-size: 11px; font-weight: 600; color: var(--tinta-fraca, #8A9086); padding: 2px 0 6px; }
+.cal-dias button { height: 34px; border-radius: 10px; font-size: .86rem; font-variant-numeric: tabular-nums; }
+.cal-dias button:hover { background: var(--superficie-alt); }
+.cal-dias button.hoje, .cal-meses button.hoje { box-shadow: inset 0 0 0 1px var(--pistache-forte, #2F6B2B); color: var(--pistache-forte, #2F6B2B); font-weight: 600; }
+.cal-dias button.sel, .cal-meses button.sel { background: var(--tinta, #171A16); color: var(--superficie); box-shadow: none; font-weight: 600; }
+.cal-dias button:disabled { opacity: .3; cursor: default; }
+.cal-meses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.cal-meses button { height: 40px; border-radius: 10px; font-size: .86rem; text-transform: capitalize; }
+.cal-meses button:hover { background: var(--superficie-alt); }
+.cal-rodape { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borda); }
+.cal-rodape button { font-size: .8rem; font-weight: 600; color: var(--pistache-forte, #2F6B2B); padding: 4px 8px; border-radius: 8px; }
+.cal-rodape button:hover { background: var(--superficie-alt); }
+.cal-pop button:focus-visible { outline: 2px solid var(--pistache-forte, #2F6B2B); outline-offset: 1px; }

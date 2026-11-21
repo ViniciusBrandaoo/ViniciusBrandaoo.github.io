@@ -617,3 +617,101 @@
   preencherAjuda();
   T.telas.dashboard = T.telas.painelhotel;
 })();
+
+/* ============================================================================
+   Calendário próprio para os campos de data e de mês.
+   O calendário nativo do navegador não aceita estilo (fica cinza, com setas e
+   fonte do sistema). O campo continua sendo um <input type="date|month">:
+   digitar funciona igual e o valor lido pelas telas não muda; só o clique abre
+   este calendário no lugar do nativo.
+   ========================================================================== */
+(function () {
+  var MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  var SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
+  var aberto = null; // { input, caixa, ano, mes, modo }
+  var pad = function (n) { return String(n).padStart(2, "0"); };
+  var hojeIso = function () { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+
+  function fechar() {
+    if (!aberto) return;
+    aberto.caixa.remove();
+    aberto.input.removeAttribute("aria-expanded");
+    aberto = null;
+  }
+  function definir(input, valor) {
+    input.value = valor;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  function desenhar() {
+    var a = aberto, html;
+    if (a.modo === "month") {
+      var sel = a.input.value;
+      html = '<div class="cal-topo"><button type="button" data-cal="ano-" aria-label="Ano anterior">‹</button><b>' + a.ano + '</b><button type="button" data-cal="ano+" aria-label="Próximo ano">›</button></div>' +
+        '<div class="cal-meses">' + MESES.map(function (m, i) {
+          var v = a.ano + "-" + pad(i + 1), atual = hojeIso().slice(0, 7) === v;
+          return '<button type="button" data-cal-valor="' + v + '" class="' + (sel === v ? "sel" : "") + (atual ? " hoje" : "") + '">' + m.slice(0, 3) + "</button>";
+        }).join("") + "</div>" +
+        '<div class="cal-rodape"><button type="button" data-cal-valor="' + hojeIso().slice(0, 7) + '">Este mês</button></div>';
+    } else {
+      var primeiro = new Date(a.ano, a.mes, 1).getDay(), dias = new Date(a.ano, a.mes + 1, 0).getDate(), cel = [];
+      for (var i = 0; i < primeiro; i++) cel.push("<span></span>");
+      for (var d = 1; d <= dias; d++) {
+        var v = a.ano + "-" + pad(a.mes + 1) + "-" + pad(d);
+        cel.push('<button type="button" data-cal-valor="' + v + '" class="' + (a.input.value === v ? "sel" : "") + (hojeIso() === v ? " hoje" : "") + '"' +
+          (a.input.min && v < a.input.min || a.input.max && v > a.input.max ? " disabled" : "") + ">" + d + "</button>");
+      }
+      html = '<div class="cal-topo"><button type="button" data-cal="mes-" aria-label="Mês anterior">‹</button><b>' + MESES[a.mes].charAt(0).toUpperCase() + MESES[a.mes].slice(1) + " de " + a.ano + '</b><button type="button" data-cal="mes+" aria-label="Próximo mês">›</button></div>' +
+        '<div class="cal-semana">' + SEMANA.map(function (s) { return "<span>" + s + "</span>"; }).join("") + "</div>" +
+        '<div class="cal-dias">' + cel.join("") + "</div>" +
+        '<div class="cal-rodape"><button type="button" data-cal-valor="' + hojeIso() + '">Hoje</button>' + (a.input.required ? "" : '<button type="button" data-cal-valor="">Limpar</button>') + "</div>";
+    }
+    a.caixa.innerHTML = html;
+  }
+  function posicionar() {
+    var r = aberto.input.getBoundingClientRect(), c = aberto.caixa, w = c.offsetWidth, h = c.offsetHeight;
+    var esq = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+    var topo = r.bottom + 6 + h > window.innerHeight && r.top - 6 - h > 0 ? r.top - 6 - h : r.bottom + 6;
+    c.style.left = esq + "px"; c.style.top = topo + "px";
+  }
+  function abrir(input) {
+    if (aberto && aberto.input === input) return;
+    fechar();
+    var modo = input.type === "month" ? "month" : "date";
+    var base = (input.value || hojeIso()).split("-");
+    var caixa = document.createElement("div");
+    caixa.className = "cal-pop" + (modo === "month" ? " cal-pop-mes" : "");
+    caixa.setAttribute("role", "dialog");
+    caixa.setAttribute("aria-label", modo === "month" ? "Escolher mês" : "Escolher data");
+    document.body.appendChild(caixa);
+    aberto = { input: input, caixa: caixa, ano: Number(base[0]) || new Date().getFullYear(), mes: (Number(base[1]) || 1) - 1, modo: modo };
+    input.setAttribute("aria-expanded", "true");
+    desenhar(); posicionar();
+    // Clique dentro do calendário não pode tirar o foco do campo nem fechar o modal por trás.
+    caixa.addEventListener("mousedown", function (e) { e.preventDefault(); e.stopPropagation(); });
+    caixa.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b || b.disabled) return;
+      e.stopPropagation();
+      if (b.hasAttribute("data-cal-valor")) { var inp = aberto.input; definir(inp, b.getAttribute("data-cal-valor")); fechar(); inp.focus(); return; }
+      var acao = b.getAttribute("data-cal");
+      if (acao === "mes-") { aberto.mes--; if (aberto.mes < 0) { aberto.mes = 11; aberto.ano--; } }
+      if (acao === "mes+") { aberto.mes++; if (aberto.mes > 11) { aberto.mes = 0; aberto.ano++; } }
+      if (acao === "ano-") aberto.ano--;
+      if (acao === "ano+") aberto.ano++;
+      desenhar();
+    });
+  }
+  var ehCampo = function (el) { return el && el.tagName === "INPUT" && (el.type === "date" || el.type === "month") && !el.disabled && !el.readOnly; };
+  document.addEventListener("click", function (e) {
+    if (ehCampo(e.target)) { abrir(e.target); return; }
+    if (aberto && !aberto.caixa.contains(e.target)) fechar();
+  }, true);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && aberto) { e.stopPropagation(); var inp = aberto.input; fechar(); inp.focus(); return; }
+    // Alt+↓ abre, como no calendário nativo.
+    if (e.altKey && e.key === "ArrowDown" && ehCampo(e.target)) { e.preventDefault(); abrir(e.target); }
+  }, true);
+  document.addEventListener("focusout", function (e) { if (aberto && e.target === aberto.input) setTimeout(function () { if (aberto && document.activeElement !== aberto.input) fechar(); }, 0); });
+  window.addEventListener("resize", fechar);
+  document.addEventListener("scroll", function (e) { if (aberto && !aberto.caixa.contains(e.target)) fechar(); }, true);
+})();
