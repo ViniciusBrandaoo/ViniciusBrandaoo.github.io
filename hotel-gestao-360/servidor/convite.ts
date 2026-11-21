@@ -16,7 +16,8 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ESCAPES[c]!);
 const hashDe = (token: string) => createHash("sha256").update(token).digest("hex");
 const TOKEN = /^[A-Za-z0-9_-]{40,80}$/;
 
-interface Convite { id: string; email: string; nome: string; perfis: string[] }
+/** `existe`: a pessoa já tem conta; o link então serve para criar uma senha nova. */
+interface Convite { id: string; email: string; nome: string; perfis: string[]; existe: boolean }
 
 /** Cria o convite e devolve o código (só existe aqui: no banco fica o hash). */
 export async function criarConvite(ator: { userId: string | null }, d: { email: string; nome: string; perfis: string[]; dias?: number }): Promise<{ token: string; expiraEm: string }> {
@@ -36,9 +37,10 @@ export async function criarConvite(ator: { userId: string | null }, d: { email: 
 async function conviteValido(token: unknown): Promise<Convite | null> {
   if (typeof token !== "string" || !TOKEN.test(token)) return null;
   const r = await consultar<Convite>(
-    `SELECT c.id, c.email::text AS email, c.nome, c.perfis FROM convites_acesso c
-      WHERE c.token_hash = $1 AND c.usado_em IS NULL AND c.expira_em > now()
-        AND NOT EXISTS (SELECT 1 FROM users u WHERE u.email = c.email)`, [hashDe(token)]);
+    `SELECT c.id, c.email::text AS email, c.nome, c.perfis,
+            EXISTS (SELECT 1 FROM users u WHERE u.email = c.email) AS existe
+       FROM convites_acesso c
+      WHERE c.token_hash = $1 AND c.usado_em IS NULL AND c.expira_em > now()`, [hashDe(token)]);
   return r[0] ?? null;
 }
 
@@ -64,12 +66,12 @@ export function registrarConvite(app: FastifyInstance): void {
     resp.type("text/html; charset=utf-8");
     const c = await conviteValido(req.query.token);
     if (!c) return resp.code(404).send(pagina(`<h1>Link indisponível</h1><p>Este convite já foi usado ou venceu. Se você já criou a sua senha, entre pela <a href="/">página inicial</a>. Se não, peça um novo link.</p>`));
-    return pagina(`<h1>Crie a sua senha</h1><p>Olá, ${esc(c.nome.split(" ")[0]!)}. Este link é só seu e funciona uma vez.</p>
+    return pagina(`<h1>${c.existe ? "Crie uma senha nova" : "Crie a sua senha"}</h1><p>Olá, ${esc(c.nome.split(" ")[0]!)}. Este link é só seu e funciona uma vez.${c.existe ? " A senha antiga deixa de valer." : ""}</p>
 <form id="f" autocomplete="on">
 <label for="email">E-mail (seu login)</label><input id="email" name="email" type="email" autocomplete="username" value="${esc(c.email)}" readonly>
 <label for="senha">Senha (mínimo 8 caracteres)</label><input id="senha" name="senha" type="password" autocomplete="new-password" required minlength="8" maxlength="200">
 <label for="senha2">Repita a senha</label><input id="senha2" name="senha2" type="password" autocomplete="new-password" required minlength="8" maxlength="200">
-<button id="b" type="submit">Criar meu acesso</button><div id="m" class="erro" role="alert"></div></form>
+<button id="b" type="submit">${c.existe ? "Salvar a senha nova" : "Criar meu acesso"}</button><div id="m" class="erro" role="alert"></div></form>
 <script>
 var f=document.getElementById('f'),m=document.getElementById('m'),b=document.getElementById('b');
 f.addEventListener('submit',function(e){e.preventDefault();m.className='erro';m.textContent='';
@@ -77,7 +79,7 @@ if(f.senha.value!==f.senha2.value){m.textContent='As senhas não são iguais.';r
 b.disabled=true;
 fetch('/api/convite',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:new URLSearchParams(location.search).get('token'),senha:f.senha.value})})
 .then(function(r){return r.json().catch(function(){return {}}).then(function(d){if(!r.ok)throw new Error(d.erro||'Não foi possível criar o acesso.');return d})})
-.then(function(){f.style.display='none';m.className='ok';m.innerHTML='Acesso criado. <a href="/">Entrar no sistema</a>'})
+.then(function(){f.style.display='none';m.className='ok';m.innerHTML='${c.existe ? "Senha nova salva." : "Acesso criado."} <a href="/">Entrar no sistema</a>'})
 .catch(function(x){m.textContent=x.message;b.disabled=false});});
 </script>`);
   });
@@ -93,6 +95,12 @@ fetch('/api/convite',{method:'POST',headers:{'Content-Type':'application/json'},
       // Marca como usado primeiro: dois envios ao mesmo tempo não criam duas contas.
       const u0 = await c.query(`UPDATE convites_acesso SET usado_em = now() WHERE id = $1 AND usado_em IS NULL AND expira_em > now() RETURNING id`, [convite.id]);
       if (!u0.rowCount) return false;
+      // Quem já tem conta só troca a senha (perfis continuam os mesmos) e as sessões antigas caem.
+      const ja = await c.query<{ id: string }>(`UPDATE users SET senha_hash = $2 WHERE email = $1 RETURNING id`, [convite.email, hash]);
+      if (ja.rowCount) {
+        await c.query("UPDATE sessions SET revogada_em = now() WHERE user_id = $1 AND revogada_em IS NULL", [ja.rows[0]!.id]);
+        return true;
+      }
       const u = await c.query<{ id: string }>(`INSERT INTO users (nome, email, senha_hash) VALUES ($1,$2,$3) RETURNING id`, [convite.nome, convite.email, hash]);
       const r = await c.query(`INSERT INTO user_roles (user_id, role_id) SELECT $1, id FROM roles WHERE chave = ANY($2)`, [u.rows[0]!.id, convite.perfis]);
       if (!r.rowCount) throw new Error("Perfil do convite não existe.");
