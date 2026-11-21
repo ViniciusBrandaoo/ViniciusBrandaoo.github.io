@@ -340,3 +340,6 @@ button.roteiro-item:hover { border-color: var(--pistache-forte, #2F6B2B); backgr
   .conf-lista, .roteiro, .opcoes, .fl-lista, .barras, .cal-grade { padding-left: 16px; padding-right: 16px; }
   .nota-linha { padding-left: 16px; padding-right: 16px; }
 }
+
+/* Valor do indicador quebra só entre palavras (nunca "divergente(s" / ")"). */
+@media screen { .conteudo .grade-kpi .kpi-valor { overflow-wrap: break-word; word-break: normal; hyphens: none; } }

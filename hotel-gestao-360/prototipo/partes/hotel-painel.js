@@ -139,7 +139,7 @@
       { rotulo: "Ocupação hoje", valor: Math.round(c.hoje.taxa * 100) + "%", nota: c.hoje.ocupados + " de " + c.hoje.total + " aptos · " + c.hoje.hospedes + " hóspede(s)", destino: "hospedagem" },
       { rotulo: "Saldo a receber de hospedagens", valor: brl(c.pendente), nota: c.saldos.length + " hospedagem(ns)", tom: c.pendente ? "atencao" : "" },
       { rotulo: "Faturado para empresas", valor: brl(c.faturar), nota: "a cobrar das empresas (conferir faturas)", tom: c.faturar ? "atencao" : "", destino: "empresas" },
-      { rotulo: "Última conferência", valor: u ? u.divergentes + " divergente(s)" : "—", nota: u ? u.ok + " batem · " + u.atencao + " atenção · " + quando(u.criadoEm) : (ST.carregando ? "carregando…" : "nenhuma ainda"), tom: u && u.divergentes ? "critico" : "", destino: "conferencia" }
+      { rotulo: "Última conferência", valor: u ? (u.divergentes ? String(u.divergentes) : "Tudo bate") : "—", nota: u ? (u.divergentes ? (u.divergentes === 1 ? "divergência" : "divergências") + " · " : "") + u.ok + " batem · " + u.atencao + " atenção · " + quando(u.criadoEm) : (ST.carregando ? "carregando…" : "nenhuma ainda"), tom: u && u.divergentes ? "critico" : "", destino: "conferencia" }
     ].map(U.kpiHtml).join("") + "</div>";
 
     html += '<div class="grade-2">' +
