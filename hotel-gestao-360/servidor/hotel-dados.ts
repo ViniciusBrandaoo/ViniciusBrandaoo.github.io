@@ -40,8 +40,14 @@ async function hospedagensImportadas(q: Consulta, unidadeId: string, id?: string
             to_char(checkout_real,'YYYY-MM-DD') AS checkout_real, adultos, criancas, cafe_incluido,
             valor_diaria_centavos, consumos_centavos, descontos_centavos, valor_pago_centavos,
             forma_pagamento, situacao_origem, situacao,
-            total_hospedes, diarias, valor_total_centavos, canal_venda, funcionario, diarias_lancadas_centavos
-       FROM hotel_hospedagens WHERE unidade_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
+            total_hospedes, diarias, valor_total_centavos, canal_venda, funcionario, diarias_lancadas_centavos,
+            -- Apartamentos em que a reserva já apareceu, na ordem das importações: troca de apartamento.
+            (SELECT array_agg(x.apto ORDER BY x.primeiro) FROM (
+               SELECT l.registro->>'apartamento' AS apto, min(lo.criado_em) AS primeiro
+                 FROM hotel_import_linhas l JOIN hotel_import_lotes lo ON lo.id = l.lote_id
+                WHERE lo.tipo = 'hospedagens' AND l.codigo_origem = h.codigo_origem AND l.situacao <> 'REJEITADO' AND l.registro ? 'apartamento'
+                GROUP BY 1) x) AS aptos_historico
+       FROM hotel_hospedagens h WHERE unidade_id = $1 AND ($2::uuid IS NULL OR id = $2::uuid)`, [unidadeId, id ?? null]);
   const m = new Map<string, Dados>();
   for (const r of rows) {
     m.set(String(r.id), limpar({
@@ -54,6 +60,7 @@ async function hospedagensImportadas(q: Consulta, unidadeId: string, id?: string
       hospedes: r.total_hospedes, diarias: r.diarias, valorTotal: n(r.valor_total_centavos),
       diariasLancadas: n(r.diarias_lancadas_centavos),
       canalVenda: r.canal_venda, funcionario: r.funcionario,
+      aptosAnteriores: Array.isArray(r.aptos_historico) && r.aptos_historico.length > 1 ? (r.aptos_historico as string[]).filter((a) => a !== r.apartamento) : undefined,
       status: r.situacao === "CANCELADA" ? "CANCELADA"
         : /no.?show/i.test(String(r.situacao_origem ?? "")) ? "NO_SHOW" : undefined,
     }));

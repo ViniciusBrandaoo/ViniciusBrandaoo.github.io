@@ -37,6 +37,14 @@ function texto(b: Buffer): string {
   return t;
 }
 
+/** Apartamento de cada reserva em cada importação: é o que mostra a troca de apartamento dentro da mesma reserva. */
+export async function historicoAptos(): Promise<{ codigo: string; apto: string; visto: string }[]> {
+  return consultar<{ codigo: string; apto: string; visto: string }>(
+    `SELECT l.codigo_origem AS codigo, l.registro->>'apartamento' AS apto, to_char(lo.criado_em AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI:SS') AS visto
+       FROM hotel_import_linhas l JOIN hotel_import_lotes lo ON lo.id = l.lote_id
+      WHERE lo.tipo = 'hospedagens' AND l.situacao <> 'REJEITADO' AND l.codigo_origem IS NOT NULL AND l.registro ? 'apartamento'`);
+}
+
 export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: string, fim: string): Promise<Record<string, unknown>> {
   if (!arquivos.length) throw erro(400, "Envie os relatórios exportados do DataHotel (.csv).");
   if (arquivos.length > 30) throw erro(400, "No máximo 30 arquivos por conferência.");
@@ -48,6 +56,7 @@ export async function executar(ator: Ator, arquivos: ArquivoEnviado[], inicio: s
   const textos = arquivos.map((a) => ({ nome: a.nome, texto: texto(a.buffer) }));
   const m = montarDados(textos, inicio, fim, fim > hojeSP() ? hojeSP() : fim);
   if (!m.reconhecidos.length) throw erro(422, "Nenhum dos arquivos é um relatório que a conferência conhece. Confira se exportou do DataHotel em CSV.");
+  m.dados.historicoAptos = await historicoAptos();
   const resultados: Resultado[] = conferir(m.dados);
   const r = resumo(resultados);
   // Os 5 relatórios da Direção saem dos mesmos arquivos (o mais recente de cada relatório vale).

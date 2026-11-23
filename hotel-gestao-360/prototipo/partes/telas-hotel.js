@@ -251,7 +251,7 @@
     ]);
     html += U.painelHtml("Extrato diário de hospedagem", ext.length + " hospedagem(ns) · total " + brl(tot.total) + " · pago " + brl(tot.pago) + " · pendente " + brl(tot.pend), U.tabelaHtml([
       { rotulo: "Apto", conteudo: function (x) { return "<strong>" + U.esc(x.hospedagem.apartamento) + "</strong>"; } },
-      { rotulo: "Hóspede", conteudo: function (x) { var h = x.hospedagem; return '<div class="principal">' + U.esc(h.hospede || "") + '</div><div class="secundario">' + L.dataBR(h.checkin) + " → " + L.dataBR(h.checkoutRealizado || h.checkout) + (h.empresa ? " · " + U.esc(h.empresa) : "") + "</div>" + origemTag(h); } },
+      { rotulo: "Hóspede", conteudo: function (x) { var h = x.hospedagem; return '<div class="principal">' + U.esc(h.hospede || "") + '</div><div class="secundario">' + L.dataBR(h.checkin) + " → " + L.dataBR(h.checkoutRealizado || h.checkout) + (h.empresa ? " · " + U.esc(h.empresa) : "") + "</div>" + trocaTag(h) + origemTag(h); } },
       { rotulo: "Diárias", direita: true, conteudo: function (x) { return x.diarias + " × " + brl(x.hospedagem.valorDiaria || 0); } },
       { rotulo: "Total", direita: true, conteudo: function (x) { return '<span class="num">' + brl(x.total) + "</span>"; } },
       { rotulo: "Pago", direita: true, conteudo: function (x) { return '<span class="num">' + brl(x.pago) + "</span>"; } },
@@ -387,6 +387,22 @@
   };
 
   // ------------------------------------------------------------ frigobar
+
+  // Troca de apartamento: mesmo hóspede, outro apartamento (reserva arrastada no mapa ou reserva nova no mesmo dia).
+  var chaveNome = function (n) {
+    var p = String(n || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z ]/g, " ").split(/\s+/)
+      .filter(function (x) { return x.length > 1 && ["DA", "DE", "DO", "DAS", "DOS"].indexOf(x) === -1; });
+    return p.length >= 2 ? p[0] + " " + p[p.length - 1] : "";
+  };
+  function trocaTag(h) {
+    var de = (h.aptosAnteriores || []).slice();
+    var k = chaveNome(h.hospede);
+    if (k) L.estado.hospedagens.forEach(function (o) {
+      if (o.id !== h.id && o.status !== "CANCELADA" && o.apartamento !== h.apartamento && (o.checkoutRealizado || o.checkout) === h.checkin && chaveNome(o.hospede) === k && de.indexOf(o.apartamento) === -1) de.push(o.apartamento);
+    });
+    return de.length ? ' <span class="pastilha info" title="Mesmo hóspede: não é estadia nova">trocou do ' + U.esc(de.join(", ")) + " para o " + U.esc(h.apartamento) + "</span>" : "";
+  }
+  T.trocaTag = trocaTag;
 
   T.telas.frigobar = function () {
     var d = dataSel(), comp = compSel(), dia = H.frigobarDia(d), mes = H.frigobarMes(comp), nc = H.frigobarNaoCobrado(comp);

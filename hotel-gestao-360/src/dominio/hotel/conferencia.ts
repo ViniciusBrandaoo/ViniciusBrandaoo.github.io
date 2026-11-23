@@ -14,6 +14,7 @@
  *   ATENCAO    — não é erro de conta, mas pede olho humano (pendência, saldo negativo)
  */
 import { lerValor, normalizarForma, type LinhaBruta } from "./importacao.js";
+import { trocasDeApartamento, type VistoApto } from "./trocas.js";
 
 export type Situacao = "OK" | "DIVERGENTE" | "ATENCAO";
 
@@ -195,6 +196,7 @@ export function lerEstoque(texto: string): { codigo: string; descricao: string; 
 export interface Reserva {
   codigo: string; checkin: string; checkout: string; apto: string; situacao: string;
   hospedes: number; vrTotal: number; diariaLancada: number; consumo: number; recebido: number;
+  hospede?: string;
 }
 export interface Recebimento { codigo: string; dia: string; forma: string; valor: number; reserva: string; apto: string; pagador: string }
 export interface CafeLinha { dia: string; apto: string; adultos: number; criancas: number; tipo: string }
@@ -221,6 +223,8 @@ export interface DadosConferencia {
   livroCaixa?: { dia: string; forma: string; valor: number }[];
   /** Quais relatórios foram enviados. Ausente = todos (modo do script). */
   tem?: Partial<Record<Fonte, boolean>>;
+  /** Apartamento de cada reserva em cada importação anterior (para achar troca de apartamento). */
+  historicoAptos?: VistoApto[];
 }
 
 /** Transforma as linhas lidas por `lerRelatorioReservasDataHotel` em reservas com valores em centavos. */
@@ -229,6 +233,7 @@ export function reservasDeLinhas(linhas: LinhaBruta[]): Reserva[] {
     codigo: l.codigo ?? "", checkin: iso(l.checkin ?? ""), checkout: iso(l.checkout ?? ""), apto: l.apartamento ?? "",
     situacao: l.situacao ?? "", hospedes: Number(l.n_hosp ?? 0) || 0, vrTotal: num(l.vr_total) ?? 0,
     diariaLancada: num(l.diarias_lancadas) ?? 0, consumo: num(l.consumos) ?? 0, recebido: num(l.valor_pago) ?? 0,
+    ...((l.hospede ?? "").trim() ? { hospede: (l.hospede ?? "").trim() } : {}),
   }));
 }
 export function recebimentosDeLinhas(linhas: LinhaBruta[]): Recebimento[] {
@@ -449,6 +454,17 @@ function conferirTudo(d: DadosConferencia): Resultado[] {
       situacao: erros.length ? "DIVERGENTE" : "OK", detalhes: erros.length ? erros : ["Toda noite do período tem diária lançada."] });
   }
 
+  // C16 — troca de apartamento: o mesmo hóspede mudou de apartamento (não é hóspede novo nem estadia em dobro)
+  {
+    const br = (x: string) => x.slice(8, 10) + "/" + x.slice(5, 7);
+    const trocas = trocasDeApartamento(d.reservas, d.historicoAptos ?? []).filter((x) => x.dia >= d.inicio);
+    out.push({ regra: "C16", titulo: "Trocas de apartamento (mesmo hóspede)", entre: "Relatório de Reservas e importações anteriores",
+      situacao: "OK",
+      detalhes: trocas.length ? trocas.map((x) => `${x.hospede || "Hóspede"}: do ${x.de} para o ${x.para} ` +
+        (x.tipo === "MESMA_RESERVA" ? `(mesma reserva ${x.codigos[0]}, apareceu na importação de ${br(x.dia)}).` : `em ${br(x.dia)} (reserva ${x.codigos[0]} terminou e a ${x.codigos[1]} começou no mesmo dia).`))
+        : ["Nenhuma troca de apartamento no período."] });
+  }
+
   return out;
 }
 
@@ -471,7 +487,7 @@ const DEPENDE: Record<string, Fonte[]> = {
   C4: ["fatDiario", "analitico"], C5a: ["reservas", "analitico"], C5b: ["consumo", "analitico"],
   C6a: ["fatDiario", "analitico"], C6b: ["vendas", "analitico"],  C8: ["recebidas", "creditos", "aReceber"], C9a: ["reservas"], C9b: ["reservas"], C10: ["recebidas", "reservas"],
   C11: ["cafe", "reservas"], C12: ["rds", "mapa", "reservas"], C12b: ["mapa"], C13: ["rds", "camareira"],
-  C14: ["estoque"], C15: ["reservas", "analitico"],
+  C14: ["estoque"], C15: ["reservas", "analitico"], C16: ["reservas"],
 };
 
 /**
