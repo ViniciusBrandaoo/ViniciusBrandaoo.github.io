@@ -1,0 +1,115 @@
+/* Base visual comum: tipografia, cartões e formulários. Cores vêm só das variáveis de estilo.css. */
+@media screen {
+  h1, h2, h3 { font-weight: 600; letter-spacing: -.035em; }
+  .acesso-cartao { padding: 36px; border-radius: 18px; box-shadow: var(--sombra-3); }
+  .acesso-cartao::before { display: none; }
+  .acesso-tese { font-size: clamp(2rem, 3.6vw, 3.5rem); line-height: 1.15; max-width: 17ch; letter-spacing: -.055em; font-weight: 500; }
+  .acesso-tese em { font-style: normal; font-weight: 500; color: inherit; }
+  .acesso-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--tinta-media); margin: 0 0 24px; }
+  .acesso-descricao { max-width: 37ch; line-height: 1.8; color: var(--tinta-media); margin-top: 24px; }
+  #atomo { opacity: .2; }
+  .lateral { border-radius: 16px; box-shadow: none; }
+  .painel { box-shadow: none; }
+  .cabecalho h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); font-weight: 500; }
+  .painel-topo h2 { font-size: 1.05rem; letter-spacing: -.02em; }
+  .grade-kpi, .resumo { gap: 12px; border: 0; background: transparent; backdrop-filter: none; overflow: visible; }
+  .kpi, .resumo-item { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; outline: none; text-align: left; padding: 22px; }
+  .kpi-rotulo, .resumo-item dt { justify-content: flex-start; font-size: .72rem; letter-spacing: .015em; text-transform: none; font-weight: 600; }
+  .kpi-valor, .resumo-item dd { font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
+  .kpi-nota { font-family: inherit; font-size: .73rem; letter-spacing: 0; line-height: 1.6; }
+  .botao { min-height: 40px; }
+  .campo input, .campo select { min-height: 46px; }
+  :focus-visible { outline: 3px solid var(--orbital); outline-offset: 3px; }
+  @media (max-width: 700px) {
+    .acesso-cartao { padding: 24px; }
+    .acesso-tese { font-size: 2rem; max-width: 23ch; }
+    .acesso-eyebrow { margin-bottom: 14px; }
+    .acesso-descricao { margin-top: 14px; font-size: .875rem; }
+    .conteudo, .conteudo:has(.tela-dashboard) { padding: 20px 16px; }
+    .kpi, .resumo-item { padding: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    #atomo { display: none; }
+  }
+}
+
+/* Dashboard: leitura rápida e caminhos diretos para as rotinas. */
+@media screen {
+  .conteudo:has(.tela-dashboard) { max-width: 1500px; margin-inline: auto; padding: 30px 32px 48px; }
+  .tela-dashboard { container-type: inline-size; }
+  .tela-dashboard .cabecalho { margin-bottom: 26px; align-items: center; }
+  .tela-dashboard .cabecalho h1 { font-size: 2rem; }
+  .tela-dashboard .cabecalho p { font-size: .85rem; line-height: 1.6; }
+  .tela-dashboard .grade-kpi { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .tela-dashboard .kpi { min-height: 144px; padding: 20px; transition: border-color .15s, background .15s; }
+  .tela-dashboard .kpi:hover { border-color: var(--marinho-claro); }
+  .tela-dashboard .kpi.hero { grid-column: auto; }
+  .tela-dashboard .kpi-rotulo { min-height: 2.5em; font-size: .75rem; }
+  .tela-dashboard .kpi-valor { font-size: clamp(1.3rem, 10cqw, 1.8rem); margin-top: 10px; }
+  .tela-dashboard .kpi-nota { margin-top: 10px; font-size: .72rem; }
+  .dash-atalhos { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 30px; }
+  .dash-atalho { display: flex; align-items: center; gap: 12px; border: 1px solid var(--borda); border-radius: 10px; padding: 15px; background: transparent; color: var(--titulo); text-align: left; cursor: pointer; min-width: 0; }
+  .dash-atalho:hover { background: var(--superficie); border-color: var(--marinho-claro); }
+  .dash-atalho svg { flex: none; opacity: .8; }
+  .dash-atalho > span:first-of-type { flex: 1; }
+  .dash-atalho strong { display: block; font-size: .78rem; font-weight: 600; }
+  .dash-atalho small { display: block; color: var(--tinta-media); font-size: .66rem; margin-top: 4px; line-height: 1.5; }
+  .dashboard-grade { grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 20px; }
+  .dashboard-grade > .dashboard-coluna:only-child { grid-column: 1 / -1; }
+  .dashboard-grade > .painel:only-child { grid-column: 1 / -1; }
+  .dashboard-coluna { gap: 20px; }
+  .tela-dashboard .painel::before { display: none; }
+  .tela-dashboard .painel-topo { padding: 20px; gap: 8px; }
+  .tela-dashboard .painel-topo h2 { font-size: 1rem; }
+  .tela-dashboard .painel-topo .contexto { font-size: .65rem; letter-spacing: .02em; text-transform: none; }
+  .tela-dashboard .alertas { max-height: 430px; overflow-y: auto; }
+  .tela-dashboard .alerta { padding: 20px; }
+  .tela-dashboard .alerta .titulo { font-size: .85rem; line-height: 1.6; }
+  .tela-dashboard .alerta .detalhe { font-size: .75rem; line-height: 1.6; margin-top: 5px; }
+  .dash-sem-vencimentos { padding: 28px 20px; display: flex; align-items: flex-start; flex-direction: column; color: var(--tinta-media); }
+  .dash-sem-vencimentos svg { margin-bottom: 16px; }
+  .dash-sem-vencimentos strong { color: var(--titulo); font-size: .86rem; font-weight: 600; }
+  .dash-sem-vencimentos p { font-size: .76rem; line-height: 1.6; margin-bottom: 0; }
+  .dash-painel-rodape { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--borda); padding: 16px 20px; }
+  .dash-vencimento { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; border: 0; border-bottom: 1px solid var(--borda); background: transparent; color: var(--tinta); text-align: left; cursor: pointer; }
+  .dash-vencimento:hover { background: var(--superficie-alt); }
+  .dash-vencimento strong, .dash-vencimento small { display: block; font-size: .8rem; }
+  .dash-vencimento small { color: var(--tinta-media); font-size: .72rem; margin-top: 5px; }
+  .dash-vencimento b { font-size: .82rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .dash-config { margin-top: 24px; border-top: 1px solid var(--borda); }
+  .dash-config summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; padding: 20px 2px; font-size: .8rem; color: var(--tinta-media); }
+  .dash-config summary::after { content: '+'; font-size: 20px; }
+  .dash-config[open] summary::after { content: '−'; }
+  .dash-config summary span:first-child { margin-right: auto; color: var(--titulo); font-weight: 600; }
+  .dash-config .passos li { padding: 16px 20px; }
+  @container (max-width: 800px) {
+    .dashboard-grade { grid-template-columns: 1fr; }
+    .dash-atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tela-dashboard .grade-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 600px) {
+    .conteudo:has(.tela-dashboard) { padding: 24px 16px; }
+    .tela-dashboard .cabecalho h1 { font-size: 1.65rem; }
+    .tela-dashboard .kpi { padding: 15px; }
+    .dash-atalho { padding: 12px; gap: 8px; }
+    .dash-atalho small { display: none; }
+    .dash-config summary { flex-wrap: wrap; }
+  }
+}
+
+@media screen {
+ .tela-dashboard .grade-kpi { grid-template-columns: repeat(4,minmax(0,1fr)); }
+ .tela-dashboard .cabecalho-acoes { width: auto; margin-left: auto; }
+ .tela-dashboard .cabecalho-acoes .botao { flex: none; min-height: 36px; background: transparent; font-size: .75rem; }
+ .dash-indicadores { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: -4px 0 24px; }
+ .dash-indicadores button { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background: transparent; border: 0; padding: 6px 0; color: var(--tinta-media); cursor: pointer; font-size: .75rem; text-align: left; }
+ .dash-indicadores button:hover { color: var(--titulo); text-decoration: underline; }
+ .dash-indicadores strong { color: var(--titulo); background: var(--superficie); border: 1px solid var(--borda); border-radius: 5px; padding: 2px 7px; }
+ .dash-indicadores small { font-size: .7rem; }
+ @container (max-width: 800px) {
+   .tela-dashboard .grade-kpi { grid-template-columns: repeat(2,minmax(0,1fr)); }
+   .tela-dashboard .kpi { min-height: 125px; padding: 16px; }
+   .tela-dashboard .kpi-rotulo { min-height: 1.5em; }
+ }
+}

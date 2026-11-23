@@ -1,0 +1,202 @@
+/* Sistema de leitura único para os módulos: títulos, listas e tarefas. */
+@media screen {
+  .topo, .topo.topo-rolado {
+    min-height: 64px;
+    padding: 10px 34px;
+    background: var(--topo-vidro-fundo);
+    border-bottom: 1px solid var(--borda);
+    box-shadow: none;
+    backdrop-filter: blur(14px);
+  }
+  .busca { max-width: 420px; }
+  .busca input {
+    min-height: 37px;
+    padding-left: 35px;
+    color: var(--tinta);
+    border: 1px solid var(--borda);
+    border-radius: 9px;
+    background: var(--superficie);
+  }
+  .busca input::placeholder, .busca .lupa { color: var(--tinta-fraca); }
+  .busca input:hover, .busca input:focus { background: var(--superficie); border-color: var(--marinho-claro); color: var(--tinta); }
+  .busca .lupa { left: 13px; }
+  .competencia-topo-rotulo { color: var(--tinta-media); }
+  .competencia-topo .seletor-campo { color: var(--titulo); font-weight: 600; }
+  .competencia-topo .status-competencia { color: var(--tinta-media); border-left-color: var(--borda); }
+  .competencia-topo .status-competencia.ok { color: var(--verde); }
+  .conteudo, .conteudo:has(.tela-dashboard) {
+    max-width: 1300px;
+    padding: 44px 46px 72px;
+  }
+  .faixa-demo {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px 0 11px;
+    margin: 0 0 35px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--tinta-media);
+    font-size: .72rem;
+  }
+  .faixa-demo strong { color: var(--tinta); font-weight: 700; }
+  .cabecalho, .conteudo > .cabecalho, .tela-dashboard .cabecalho {
+    align-items: end;
+    gap: 20px;
+    margin-bottom: 34px;
+  }
+  .cabecalho-titulos { min-width: 0; flex: 1 1 350px; }
+  .pagina-grupo {
+    display: block;
+    margin-bottom: 12px;
+    color: var(--titulo);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+  .pagina-grupo::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 3px;
+    margin: 0 9px 3px 0;
+    border-radius: 2px;
+    background: var(--dourado);
+  }
+  .cabecalho h1, .conteudo > .cabecalho h1, .tela-dashboard .cabecalho h1 {
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 600;
+    line-height: 1.14;
+    letter-spacing: -.055em;
+  }
+  .cabecalho p { margin-top: 12px; font-size: .9rem; line-height: 1.6; }
+  .cabecalho-acoes { margin-left: auto; }
+  .botao { border-radius: 8px; box-shadow: none; }
+  .botao.primario { background: var(--marinho); border-color: var(--marinho); color: #fffefa; }
+  .botao.primario:hover { background: var(--marinho-borda); border-color: var(--marinho-borda); }
+  .painel {
+    border-color: var(--borda);
+    border-radius: 13px;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .painel + .painel { margin-top: 18px; }
+  .painel-topo { padding: 18px 23px; }
+  .painel-topo h2 { font-size: .96rem; font-weight: 700; letter-spacing: -.025em; }
+  .painel-topo .contexto { font-size: .72rem; }
+  .painel-corpo { padding: 20px 22px; }
+  .grade-kpi, .resumo { gap: 0; border: 1px solid var(--borda); border-radius: 10px; background: var(--superficie); }
+  .kpi, .resumo-item, .tela-dashboard .kpi {
+    min-height: 116px;
+    padding: 18px 20px;
+    border: 0;
+    border-right: 1px solid var(--borda);
+    border-radius: 0;
+    outline: 0;
+    background: transparent;
+  }
+  .kpi:last-child, .resumo-item:last-child { border-right: 0; }
+  .tela-dashboard .grade-kpi {
+    gap: 12px;
+    border: 0;
+    background: transparent;
+    /* Preenche a linha com quantos indicadores a pessoa escolheu (2 ocupavam
+       só metade da tela, com um vão vazio à direita). */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .tela-dashboard .kpi {
+    min-height: 136px;
+    padding: 21px;
+    border: 1px solid var(--borda);
+    border-radius: 13px;
+    background: var(--superficie);
+  }
+  .tela-dashboard .kpi:hover { border-color: var(--marinho-claro); background: var(--kpi-hover-fundo); }
+  .kpi-rotulo, .resumo-item dt { font-size: .68rem; font-weight: 700; }
+  .kpi-valor, .resumo-item dd { margin-top: 10px; }
+  .kpi-nota { margin-top: 5px; font-size: .7rem; }
+  .barra-ferramentas { padding: 12px 20px; background: var(--superficie); }
+  .lista-busca { padding: 12px 20px; background: var(--superficie); }
+  .lista-busca label { width: min(100%, 380px); }
+  .lista-busca label span { margin-bottom: 4px; font-size: .68rem; }
+  .lista-busca input { background: var(--papel); }
+  th { padding: 11px 20px; background: var(--superficie-alt); letter-spacing: .055em; font-weight: 700; }
+  td { padding: 15px 20px; border-bottom-color: var(--borda); }
+  .vazio-bloco {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    min-height: 104px;
+    padding: 24px;
+    text-align: left;
+  }
+  .vazio-sinal {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--borda);
+    border-radius: 50%;
+    color: var(--tinta-media);
+    font-size: .9rem;
+  }
+  .vazio-texto { min-width: 0; flex: 1; }
+  .vazio-bloco h3 { font-size: .88rem; font-weight: 700; letter-spacing: -.02em; }
+  .vazio-bloco p { max-width: 70ch; margin-top: 4px; font-size: .77rem; }
+  .vazio-bloco .botao { flex: none; margin: 0; }
+  .aprovacoes-vazio { padding: 23px 26px; border-radius: 13px; }
+  .relatorio-detalhe > summary { border-radius: 10px; }
+  @media (min-width: 701px) and (max-width: 980px) {
+    .topo { flex-wrap: nowrap; gap: 12px; padding-inline: 22px; }
+    .busca { order: 0; flex: 1 1 auto; min-width: 0; }
+    .topo-acoes { order: 0; width: auto; margin-left: auto; flex: none; }
+    .competencia-topo { flex: none; padding-left: 0; }
+    .conteudo, .conteudo:has(.tela-dashboard) { padding: 32px 26px 54px; }
+    .grade-kpi, .resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grade-kpi > :nth-child(2n), .resumo > :nth-child(2n) { border-right: 0; }
+    .grade-kpi > :nth-child(-n+2), .resumo > :nth-child(-n+2) { border-bottom: 1px solid var(--borda); }
+    .tela-dashboard .grade-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 700px) {
+    .topo { padding: 9px 15px; }
+    .conteudo, .conteudo:has(.tela-dashboard) { padding: 22px 16px 40px; }
+    .faixa-demo { margin-bottom: 20px; }
+    .cabecalho, .conteudo > .cabecalho, .tela-dashboard .cabecalho { margin-bottom: 22px; }
+    .cabecalho h1, .conteudo > .cabecalho h1, .tela-dashboard .cabecalho h1 { font-size: 1.8rem; }
+    .grade-kpi, .resumo { gap: 0; }
+    .kpi, .resumo-item, .tela-dashboard .kpi { min-height: 102px; padding: 15px; border-bottom: 1px solid var(--borda); }
+    .tela-dashboard .grade-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .vazio-bloco { flex-wrap: wrap; min-height: 0; padding: 19px 16px; }
+    /* 100% + recuo de 50px vazava do card; a largura desconta o recuo. */
+    .vazio-bloco .botao { width: calc(100% - 50px); margin-left: 50px; }
+    .painel-topo { padding: 14px 16px; }
+    .painel-corpo { padding: 16px; }
+    /* Título do modal com subtítulo ao lado ficava espremido em 3–4 linhas. */
+    .modal-topo { flex-direction: column; align-items: flex-start; gap: 3px; }
+    /* Linha "texto + botão" (Tabelas Legais): empilha em vez de virar coluna de uma palavra. */
+    .barra-acao { grid-template-columns: 1fr !important; }
+    .barra-acao > .botao, .barra-acao > .pastilha { justify-self: start; }
+  }
+  @media (max-width: 480px) {
+    .grade-kpi, .resumo, .tela-dashboard .grade-kpi { grid-template-columns: 1fr; }
+    .kpi, .resumo-item, .tela-dashboard .kpi {
+      min-height: 92px;
+      border-right: 0;
+      border-bottom: 1px solid var(--borda);
+    }
+    .tela-dashboard .kpi { min-height: 104px; }
+    .kpi-valor, .resumo-item dd { font-size: 1.45rem; }
+  }
+}
+
+/* Recado no topo do painel */
+.recado-painel { align-items: flex-start; justify-content: space-between; gap: 14px; border: 1px solid var(--borda); border-radius: 10px; margin: 0 0 14px; }
+.recado-painel .recado-texto { min-width: 0; }
+.recado-painel .recado-texto p { margin: 4px 0 0; line-height: 1.5; }
+.recado-painel .botao { flex-shrink: 0; }
+@media (max-width: 600px) { .recado-painel { flex-direction: column; } .recado-painel .botao { width: 100%; } }
