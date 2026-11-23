@@ -272,7 +272,7 @@ export function gerarRelatorios(o: { texto: (f: Fonte) => string | null; conf: C
     const abertas = resAtual.filter((r) => r.checkout >= HOJE && !/checked-out/i.test(r.situacao))
       .map((r) => ({ r, previsto: Math.max(r.vrTotal, r.diariaLancada + r.consumo) - r.recebido })).filter((x) => x.previsto > 0)
       .sort((a, b) => a.r.checkout.localeCompare(b.r.checkout));
-    if (!abertas.length) return "";
+    if (!abertas.length) return `<h2 class="quebra">Previsão de recebimento</h2><p class="nota">Nenhuma reserva em andamento com valor a receber na data do relatório.</p>`;
     const formaDe = (cod: string) => { const e = empresaDe?.get(cod); return e ? `Faturar para ${e}` : empresaDe ? "Hóspede paga no check-out (forma escolhida na hora)" : "Sem dado de empresa"; };
     const porDia = new Map<string, number>(); for (const a of abertas) porDia.set(a.r.checkout, (porDia.get(a.r.checkout) ?? 0) + a.previsto);
     return `<h2 class="quebra">Previsão de recebimento</h2><p class="nota">Reservas e hospedagens em andamento: quanto falta receber, em que dia (data de saída) e de que forma. Valor = total da reserva no DataHotel menos o que já foi pago.</p>` +
