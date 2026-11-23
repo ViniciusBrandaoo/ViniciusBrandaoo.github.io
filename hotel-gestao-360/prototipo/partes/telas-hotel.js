@@ -405,6 +405,9 @@
     html += U.painelHtml("Planilhas do turno · " + L.dataBR(d), plans.length ? plans.length + " turno(s) · vendido " + brl(plans.reduce(function (a, x) { return a + (x.total || 0); }, 0)) : "",
       plans.length ? '<div class="linhas">' + plans.map(function (x) {
         var vend = (x.itens || []).filter(function (i) { return i.vendido; }), rec = (x.itens || []).filter(function (i) { return i.recebido; });
+        if (x.tipo === "CONTAGEM") return '<button type="button" class="linha-item" data-acao="frig-planilha-ver" data-id="' + x.id + '"><span class="linha-texto"><b>' + U.esc((x.turno || "Turno") + (x.hora ? " " + x.hora : "")) + " · passagem de turno · sai " + U.esc(x.quemSai || x.recepcionista || "—") + "</b>" +
+          "<small>Contagem de " + (x.itens || []).length + " itens" + (x.observacaoCaixa ? " · " + U.esc(x.observacaoCaixa) : "") + "</small></span>" +
+          '<span class="linha-valor">' + (x.caixaHora != null ? "caixa " + brl(x.caixaHora) : "") + "</span></button>";
         return '<button type="button" class="linha-item" data-acao="frig-planilha-ver" data-id="' + x.id + '"><span class="linha-texto"><b>' + U.esc(x.turno || "Turno") + " · " + U.esc(x.recepcionista || "—") + "</b>" +
           "<small>" + (vend.length ? vend.map(function (i) { return i.vendido + " " + U.esc(i.produto); }).join(", ") : "nada vendido") + (rec.length ? " · recebeu " + rec.reduce(function (a, i) { return a + i.recebido; }, 0) + " item(ns)" : "") + "</small></span>" +
           '<span class="linha-valor">' + brl(x.total || 0) + "</span></button>";
@@ -473,6 +476,19 @@
   };
   T.acoes["frig-planilha-ver"] = function (id) {
     var x = L.buscarPorId("frigobarPlanilhas", id); if (!x) return;
+    if (x.tipo === "CONTAGEM") {
+      U.abrirModal({ titulo: "Passagem de turno · " + L.dataBR(x.data) + (x.hora ? " · " + x.hora : ""), sub: [x.quemSai ? "sai " + x.quemSai : "", x.quemEntra ? "entra " + x.quemEntra : "", x.origem || ""].filter(Boolean).join(" · "),
+        corpo: U.tabelaHtml([
+          { rotulo: "Produto", conteudo: function (i) { return U.esc(i.produto) + (i.obs ? '<div class="secundario">' + U.esc(i.obs) + "</div>" : ""); } },
+          { rotulo: "Contado", direita: true, conteudo: function (i) { return i.contado == null ? "—" : String(i.contado); } }
+        ], x.itens || [], {}) +
+          '<div class="fp-total"><span>Valor na gaveta</span><b>' + (x.caixaGaveta != null ? brl(x.caixaGaveta) : "—") + "</b></div>" +
+          '<div class="fp-total"><span>Caixa da hora</span><b>' + (x.caixaHora != null ? brl(x.caixaHora) : "—") + "</b></div>" +
+          (x.observacaoCaixa ? '<p class="secundario" style="margin:12px 4px 0">Observação do caixa: ' + U.esc(x.observacaoCaixa) + "</p>" : "") +
+          ((x.avisos || []).length ? '<p class="secundario" style="margin:8px 4px 0">' + U.esc(x.avisos.join(" ")) + "</p>" : ""),
+        acoes: [{ rotulo: "Fechar", classe: "primario", aoClicar: U.fecharModal }] });
+      return;
+    }
     U.abrirModal({ titulo: "Planilha · " + L.dataBR(x.data) + " · " + (x.turno || ""), sub: "preenchida por " + (x.recepcionista || "—"),
       corpo: U.tabelaHtml([
         { rotulo: "Produto", conteudo: function (i) { return U.esc(i.produto); } },
