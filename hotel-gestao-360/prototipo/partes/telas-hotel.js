@@ -1061,6 +1061,9 @@
         var trab = pz ? minutos(pz.trabalhado) : 0, meta = pz ? minutos(pz.aTrabalhar) : 0, pc = meta ? Math.min(100, Math.round(trab / meta * 100)) : 0;
         var e50 = minutos(x.he50), e100 = minutos(x.he100);
         var pag = [x.valorSalario ? "Salário " + brl(x.valorSalario) : "", x.valorProdutividade ? "Produtividade " + brl(x.valorProdutividade) : "", x.valorTicket ? "Ticket " + brl(x.valorTicket) : "", x.dataPagamento ? "pago em " + L.dataBR(x.dataPagamento) : ""].filter(Boolean).join(" · ");
+        // Diárias e refeições pagas em dinheiro pelo caixa (sangria), informadas pela Direção.
+        var pc = x.pagamentosCaixa || [];
+        if (pc.length) pag = [pag, "Pago pelo caixa " + brl(pc.reduce(function (a, y) { return a + (y.valor || 0); }, 0)) + " (" + pc.map(function (y) { return y.tipo.toLowerCase() + " " + brl(y.valor) + " em " + L.dataBR(y.data).slice(0, 5); }).join(", ") + ")"].filter(Boolean).join(" · ");
         var obs = x.observacoes && x.observacoes !== obsComum ? x.observacoes : "";
         var extra = (pag ? "<span>" + U.esc(pag) + "</span>" : "") + (x.vinculo && x.vinculo !== "CLT" ? '<span class="pastilha atencao">' + U.esc(x.vinculo) + "</span>" : "") +
           (obs ? '<span class="dica-q" tabindex="0" role="button" aria-label="Observações">?<span class="dica-q-balao dica-cima" role="tooltip">' + U.esc(obs) + "</span></span>" : "");
